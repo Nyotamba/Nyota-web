@@ -1,0 +1,28 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html { color-scheme: light; }
+  html, body, #root { min-height: 100%; height: 100%; }
+  body { @apply bg-offwhite text-ink font-sans antialiased; margin: 0; }
+  h1, h2 { text-wrap: balance; }
+  /* Anton is always uppercase (brand book T-scale). */
+  .font-display { text-transform: uppercase; font-weight: 400; line-height: 0.95; }
+  a { @apply text-accent; }
+  a:hover { @apply text-accent-hover; }
+  :focus-visible { outline: 2px solid #053129; outline-offset: 2px; }
+  .on-ink :focus-visible { outline-color: #FD790C; }
+  @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; transition: none !important; } }
+}
+
+@layer components {
+  .field { @apply w-full rounded-field border border-line-strong bg-surface px-3.5 py-3 text-base font-normal text-ink; }
+  .label { @apply flex flex-col gap-2 text-sm font-semibold; }
+  .overline { @apply text-[13px] font-bold uppercase tracking-overline text-muted; }
+  .card { @apply rounded-[18px] border border-line bg-surface; }
+  .btn { @apply inline-flex min-h-[44px] items-center justify-center gap-2 font-semibold no-underline transition-colors disabled:cursor-not-allowed; }
+  .btn-primary { @apply btn rounded-full bg-ink px-6 text-offwhite hover:bg-green hover:text-offwhite; }
+  .btn-secondary { @apply btn rounded-full border border-line-strong bg-surface px-5 text-ink hover:border-ink hover:text-ink; }
+  .btn-small { @apply btn rounded-field border border-line-strong bg-surface px-3.5 text-sm text-ink hover:border-ink hover:text-ink; }
+}

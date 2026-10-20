@@ -1,0 +1,5 @@
+node_modules
+dist
+dist-artifact
+.env.local
+.DS_Store
