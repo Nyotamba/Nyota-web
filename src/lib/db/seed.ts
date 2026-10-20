@@ -2,6 +2,7 @@
 import type { Candidate, Company, Invitation, InterviewRequest, CvView } from './types';
 
 export interface DemoState {
+  admins: string[];
   candidates: Candidate[];
   companies: Company[];
   invitations: Invitation[];
@@ -18,6 +19,7 @@ const c = (s: Seed): Candidate => ({ programme: 'Full-time MBA', linkedinUrl: ''
 
 export function createSeed(): DemoState {
   return {
+    admins: ['admin@nyota.example'],
     candidates: [
       c({
         id: 'c1', email: 'amara.diallo@iese.net', firstName: 'Amara', lastName: 'Diallo', school: 'IESE Business School',

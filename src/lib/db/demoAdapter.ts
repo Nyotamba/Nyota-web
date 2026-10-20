@@ -2,7 +2,7 @@
 import type { Candidate, NyotaDb, Session } from './types';
 import { createSeed, DEMO_ACCOUNTS, type DemoState } from './seed';
 import { CONSENT_VERSION } from '../../config/constants';
-import { isVisible } from '../candidate';
+import { isProfileComplete, isVisible } from '../candidate';
 
 const STATE_KEY = 'nyota-demo-state-v1';
 const SESSION_KEY = 'nyota-demo-session-v1';
@@ -161,6 +161,59 @@ export function createDemoDb(): NyotaDb {
         if (ids.includes(x.id) && x.consent && x.cv) x.verifiedAt = t;
       });
       commit();
+    },
+    async listAdmins() {
+      return (state.admins ?? []).map((email) => ({ email, signedIn: email === DEMO_ACCOUNTS.admin.email }));
+    },
+    async addAdmin(email) {
+      const em = email.trim().toLowerCase();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) throw new Error('Enter a valid e-mail address');
+      state.admins = Array.from(new Set([...(state.admins ?? []), em]));
+      commit();
+    },
+    async removeAdmin(email) {
+      if (email === session?.email) throw new Error('You cannot remove yourself. Ask another admin.');
+      if ((state.admins ?? []).length <= 1) throw new Error('The club needs at least one admin');
+      state.admins = (state.admins ?? []).filter((a) => a !== email);
+      commit();
+    },
+    async getDashboard() {
+      const cs = state.candidates;
+      const waiting = cs.filter((x) => x.consent && !x.verifiedAt);
+      const oldest = waiting.reduce<string | null>((m, x) => (!m || x.consent!.givenAt < m ? x.consent!.givenAt : m), null);
+      const count = <T,>(list: T[], f: (x: T) => boolean) => list.filter(f).length;
+      return {
+        students: {
+          signedUp: cs.length,
+          complete: count(cs, isProfileComplete),
+          consented: count(cs, (x) => Boolean(x.consent)),
+          readyForReview: count(cs, (x) => Boolean(x.consent) && isProfileComplete(x)),
+          waiting: waiting.length,
+          visible: count(cs, isVisible),
+        },
+        oldestWaitingDays: oldest ? Math.floor((Date.now() - Date.parse(oldest)) / 86_400_000) : null,
+        companies: {
+          total: state.companies.length,
+          invited: state.invitations.length,
+          accepted: count(state.invitations, (i) => i.status === 'Accepted'),
+        },
+        activity: {
+          cvViews: state.cvViews.length,
+          shortlisted: state.shortlists.length,
+          interviewRequests: state.interviewRequests.length,
+          consentsWithdrawn: 0,
+        },
+        perCompany: state.companies
+          .map((co) => ({
+            name: co.name,
+            invited: count(state.invitations, (i) => i.companyId === co.id),
+            accepted: count(state.invitations, (i) => i.companyId === co.id && i.status === 'Accepted'),
+            cvViews: count(state.cvViews, (v) => v.companyId === co.id),
+            shortlisted: count(state.shortlists, (s) => s.companyId === co.id),
+            interviewRequests: count(state.interviewRequests, (r) => r.companyId === co.id),
+          }))
+          .sort((a, b) => a.name.localeCompare(b.name)),
+      };
     },
     async listCompanies() {
       return clone(state.companies);

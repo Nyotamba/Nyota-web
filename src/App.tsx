@@ -13,6 +13,8 @@ import CompanyShortlist from './pages/company/Shortlist';
 import { CompanyShell } from './pages/company/CompanyShell';
 import Admin from './pages/admin/Admin';
 import AdminReview from './pages/admin/Review';
+import AdminDashboard from './pages/admin/Dashboard';
+import AdminAdmins from './pages/admin/Admins';
 import { AdminShell } from './pages/admin/AdminShell';
 import { ComingSoon } from './pages/ComingSoon';
 
@@ -57,7 +59,8 @@ export default function App() {
           <Route path="/admin/review/:id" element={<Guard role="admin"><AdminReview /></Guard>} />
           <Route path="/admin/companies" element={<Guard role="admin"><AdminShell><ComingSoon title="Companies">{later}</ComingSoon></AdminShell></Guard>} />
           <Route path="/admin/consents" element={<Guard role="admin"><AdminShell><ComingSoon title="Consents">{later}</ComingSoon></AdminShell></Guard>} />
-          <Route path="/admin/dashboard" element={<Guard role="admin"><AdminShell><ComingSoon title="Dashboard">{later}</ComingSoon></AdminShell></Guard>} />
+          <Route path="/admin/dashboard" element={<Guard role="admin"><AdminDashboard /></Guard>} />
+          <Route path="/admin/admins" element={<Guard role="admin"><AdminAdmins /></Guard>} />
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

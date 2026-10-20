@@ -301,6 +301,21 @@ export function createSupabaseDb(url: string, key: string): NyotaDb {
       check(await sb.rpc('verify_candidates', { ids }));
       emit();
     },
+    async listAdmins() {
+      const rows = check<{ email: string; signed_in: boolean }[]>(await sb.rpc('list_admins'));
+      return rows.map((r) => ({ email: r.email, signedIn: r.signed_in }));
+    },
+    async addAdmin(email) {
+      check(await sb.rpc('add_admin', { new_email: email }).then((r) => ({ ...r, data: true })));
+      emit();
+    },
+    async removeAdmin(email) {
+      check(await sb.rpc('remove_admin', { old_email: email }).then((r) => ({ ...r, data: true })));
+      emit();
+    },
+    async getDashboard() {
+      return check(await sb.rpc('admin_dashboard'));
+    },
     async listCompanies() {
       return check(await sb.from('companies').select('id,name').order('name'));
     },

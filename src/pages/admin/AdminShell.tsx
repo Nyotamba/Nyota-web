@@ -7,6 +7,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
     { to: '/admin/companies', label: 'Companies' },
     { to: '/admin/consents', label: 'Consents' },
     { to: '/admin/dashboard', label: 'Dashboard' },
+    { to: '/admin/admins', label: 'Admins' },
   ];
   return <AppShell variant="light" badge="Admin" tabs={tabs}>{children}</AppShell>;
 }

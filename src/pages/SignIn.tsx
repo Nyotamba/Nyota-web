@@ -27,7 +27,12 @@ export default function SignIn() {
       await db.sendMagicLink(email);
       setSent(true);
     } catch (err) {
-      setError(`The link could not be sent: ${(err as Error).message}`);
+      const msg = (err as Error).message;
+      setError(
+        /rate limit/i.test(msg)
+          ? 'Too many sign-in e-mails were sent in the last hour. Use the last link you received, or try again later.'
+          : `The link could not be sent: ${msg}`,
+      );
     } finally {
       setSending(false);
     }
@@ -57,11 +62,11 @@ export default function SignIn() {
       <main className="flex flex-1 justify-center px-4 py-12 md:py-20">
         <div className="flex w-full max-w-[480px] flex-col gap-8">
           <div className="flex flex-col gap-3">
-            <h1 className="m-0 font-display text-[40px] font-normal tracking-display">Sign in</h1>
+            <h1 className="m-0 font-display text-[40px] font-normal tracking-display">{as === 'company' ? 'Sign in' : 'Sign in or create your profile'}</h1>
             <p className="m-0 text-base leading-relaxed text-muted">
               {as === 'company'
                 ? 'Company access is by invitation. Use the work e-mail your invitation was sent to.'
-                : 'Use your school e-mail. We send you a sign-in link, no password needed.'}
+                : 'Students: enter your school e-mail. First time here? Your profile is created when you click the link we send you. No password needed.'}
             </p>
           </div>
 

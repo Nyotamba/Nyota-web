@@ -75,6 +75,28 @@ export interface Session {
   companyId?: string;
 }
 
+export interface AdminEntry {
+  email: string;
+  signedIn: boolean; // has signed in at least once
+}
+
+export interface CompanyActivity {
+  name: string;
+  invited: number;
+  accepted: number;
+  cvViews: number;
+  shortlisted: number;
+  interviewRequests: number;
+}
+
+export interface Dashboard {
+  students: { signedUp: number; complete: number; consented: number; readyForReview: number; waiting: number; visible: number };
+  oldestWaitingDays: number | null;
+  companies: { total: number; invited: number; accepted: number };
+  activity: { cvViews: number; shortlisted: number; interviewRequests: number; consentsWithdrawn: number };
+  perCompany: CompanyActivity[];
+}
+
 export interface CandidateFilters {
   search: string;
   functions: string[];
@@ -129,6 +151,10 @@ export interface NyotaDb {
   listVerificationQueue(): Promise<Candidate[]>;
   verifyCandidates(ids: string[]): Promise<void>;
   listCompanies(): Promise<Company[]>;
+  listAdmins(): Promise<AdminEntry[]>;
+  addAdmin(email: string): Promise<void>;
+  removeAdmin(email: string): Promise<void>;
+  getDashboard(): Promise<Dashboard>;
   getCompany(id: string): Promise<Company | null>;
   listInvitations(): Promise<Invitation[]>;
   /** Records the invitation and, on the live site, e-mails the person a sign-in link. */
