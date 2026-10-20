@@ -2,49 +2,41 @@ import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { CompanyShell } from './CompanyShell';
 import { SessionList } from '../../components/SessionList';
-import { SessionForm } from '../../components/SessionForm';
 import { Notice } from '../../components/Notice';
 import { Badge } from '../../components/Badge';
-import { db, type FairSession } from '../../lib/db';
+import { db } from '../../lib/db';
 import { useDbQuery } from '../../lib/useDb';
 import { useSession } from '../../App';
+import { CLUB_EMAIL } from '../../config/constants';
 import { fairDay, fairInputToIso, fairTimeRange, tzLabel } from '../../lib/time';
 import { fullName } from '../../lib/candidate';
 
 export default function CompanyMeetings() {
   const companyId = useSession()!.companyId!;
   const { data: sessions } = useDbQuery(() => db.listSessions());
-  const [editing, setEditing] = useState<FairSession | null>(null);
   const [notice, setNotice] = useState<{ msg: string; tone?: 'green' | 'danger' } | null>(null);
-  const say = (msg: string, tone?: 'green' | 'danger') => {
-    if (msg) setNotice({ msg, tone });
-    if (tone !== 'danger') setEditing(null);
-  };
+  const say = (msg: string, tone?: 'green' | 'danger') => msg && setNotice({ msg, tone });
   const mine = (sessions ?? []).filter((s) => s.isOrganiser);
 
   return (
     <CompanyShell>
       <div className="mx-auto flex max-w-page flex-col gap-12 px-4 py-10 md:px-10">
-        <div className="grid items-start gap-7 xl:grid-cols-12">
-          <section className="flex min-w-0 flex-col gap-5 xl:col-span-8">
-            <div className="flex flex-col gap-1">
-              <h1 className="m-0 font-display text-[40px] tracking-display">Your sessions</h1>
-              <div className="text-[15px] text-muted">
-                Presentations and workshops you run during the fair. Students register from the{' '}
-                <Link to="/sessions">public programme</Link>.
-              </div>
+        <section className="flex min-w-0 flex-col gap-5">
+          <div className="flex flex-col gap-1">
+            <h1 className="m-0 font-display text-[40px] tracking-display">Your sessions</h1>
+            <div className="max-w-[75ch] text-[15px] text-muted">
+              Sessions the IESE Africa Business Club scheduled with you. Open “Registrants” to see who signed up and who clicked
+              “Join”. To add or change a session, write to <span className="select-all font-semibold text-ink">{CLUB_EMAIL}</span>.
+              Students register from the <Link to="/sessions">public programme</Link>.
             </div>
-            {sessions ? (
-              <SessionList sessions={mine} viewer="company" onEdit={setEditing} onNotice={say} profileLinkBase="/company/candidates"
-                empty="You have not published a session yet. Use the form to add one." />
-            ) : (
-              <p className="text-muted">Loading…</p>
-            )}
-          </section>
-          <aside className="xl:sticky xl:top-6 xl:col-span-4">
-            <SessionForm editing={editing} companyId={companyId} onDone={say} />
-          </aside>
-        </div>
+          </div>
+          {sessions ? (
+            <SessionList sessions={mine} viewer="company" onNotice={say} profileLinkBase="/company/candidates"
+              empty="No session scheduled with your company yet." />
+          ) : (
+            <p className="text-muted">Loading…</p>
+          )}
+        </section>
         <Slots companyId={companyId} onNotice={(msg, tone) => setNotice({ msg, tone })} />
       </div>
       <Notice message={notice?.msg ?? null} tone={notice?.tone} onDone={() => setNotice(null)} />

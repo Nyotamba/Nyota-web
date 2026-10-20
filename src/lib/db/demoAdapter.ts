@@ -203,20 +203,30 @@ export function createDemoDb(): NyotaDb {
       const s = (state.sessions ?? []).find((x) => x.id === sessionId);
       const regs = (state.registrations = state.registrations ?? []);
       if (s?.capacity && regs.filter((r) => r.sessionId === sessionId).length >= s.capacity) throw new Error('This session is full');
-      if (!regs.some((r) => r.sessionId === sessionId && r.candidateId === cid)) regs.push({ sessionId, candidateId: cid });
+      if (!regs.some((r) => r.sessionId === sessionId && r.candidateId === cid)) regs.push({ sessionId, candidateId: cid, createdAt: now() });
       commit();
     },
     async unregisterSession(sessionId) {
       state.registrations = (state.registrations ?? []).filter((r) => !(r.sessionId === sessionId && r.candidateId === session?.candidateId));
       commit();
     },
+    async markSessionJoined(sessionId) {
+      const r = (state.registrations ?? []).find((x) => x.sessionId === sessionId && x.candidateId === session?.candidateId);
+      if (r && !r.joinedAt) {
+        r.joinedAt = now();
+        commit();
+      }
+    },
     async listRegistrants(sessionId) {
       return (state.registrations ?? [])
         .filter((r) => r.sessionId === sessionId)
         .map((r) => {
           const c = findCandidate(r.candidateId);
-          const show = session?.role === 'admin' || isVisible(c);
-          return { candidateId: c.id, name: show ? `${c.firstName} ${c.lastName}` : null, school: show ? c.school : null, visible: isVisible(c) };
+          return {
+            candidateId: c.id, name: `${c.firstName} ${c.lastName}`, school: c.school, programme: c.programme,
+            graduationYear: c.graduationYear || null, linkedinUrl: c.linkedinUrl || null, visible: isVisible(c),
+            registeredAt: r.createdAt ?? '', joinedAt: r.joinedAt ?? null,
+          };
         });
     },
     async listSlots(companyId) {

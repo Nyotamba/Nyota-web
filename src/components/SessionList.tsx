@@ -5,6 +5,7 @@ import { fairDay, fairDayKey, fairTimeRange, joinWindow } from '../lib/time';
 import { CLUB_NAME } from '../config/constants';
 import { Badge } from './Badge';
 import { Calendar } from './icons';
+import { AddToCalendar } from './AddToCalendar';
 
 /**
  * The fair programme. What each card offers depends on who is looking:
@@ -88,12 +89,23 @@ function SessionCard({ s, viewer, onEdit, onNotice, profileLinkBase }: {
         )}
         {/* Students */}
         {viewer === 'student' && !w.over && !s.isRegistered && (
-          <button type="button" className="btn-primary text-[15px]" disabled={busy || full}
-            onClick={() => act(() => db.registerSession(s.id), `You are registered for “${s.title}”`)}>
-            {full ? 'Full' : 'Register'}
-          </button>
+          <>
+            <button type="button" className="btn-primary text-[15px]" disabled={busy || full}
+              onClick={() => act(() => db.registerSession(s.id), `You are registered for “${s.title}”. Add it to your calendar.`)}>
+              {full ? 'Full' : 'Register'}
+            </button>
+            <span className="text-[12px] leading-snug text-muted">
+              {s.companyName ?? CLUB_NAME} will see your name, school and LinkedIn.
+            </span>
+          </>
         )}
         {viewer === 'student' && s.isRegistered && <JoinButton s={s} />}
+        {viewer === 'student' && s.isRegistered && !w.over && (
+          <AddToCalendar event={{
+            title: s.title, startsAt: s.startsAt, durationMin: s.durationMin, pagePath: '/student/sessions',
+            details: `${s.kind} by ${s.companyName ?? CLUB_NAME} at the Nyota Africa Career Fair.`,
+          }} />
+        )}
         {viewer === 'student' && s.isRegistered && !w.over && (
           <button type="button" className="btn-small" disabled={busy}
             onClick={() => act(() => db.unregisterSession(s.id), 'Registration cancelled')}>
@@ -103,12 +115,12 @@ function SessionCard({ s, viewer, onEdit, onNotice, profileLinkBase }: {
         {/* Organisers (the company that runs it, or the club) */}
         {s.isOrganiser && (
           <>
-            <JoinButton s={s} organiser />
+            <JoinButton s={s} organiser canEdit={Boolean(onEdit)} />
             <button type="button" className="btn-small" aria-expanded={showRegistrants} onClick={() => setShowRegistrants((v) => !v)}>
               {showRegistrants ? 'Hide registrants' : `Registrants (${s.registered})`}
             </button>
             {onEdit && <button type="button" className="btn-small" onClick={() => onEdit(s)}>Edit</button>}
-            {confirmDelete ? (
+            {!onEdit ? null : confirmDelete ? (
               <span className="flex gap-2">
                 <button type="button" disabled={busy} className="btn-small border-danger text-danger hover:border-danger hover:text-danger"
                   onClick={() => act(() => db.deleteSession(s.id), 'Session deleted')}>Delete</button>
@@ -125,7 +137,7 @@ function SessionCard({ s, viewer, onEdit, onNotice, profileLinkBase }: {
 }
 
 /** The video link is only handed out inside the join window (organisers: any time). */
-function JoinButton({ s, organiser = false }: { s: FairSession; organiser?: boolean }) {
+function JoinButton({ s, organiser = false, canEdit = false }: { s: FairSession; organiser?: boolean; canEdit?: boolean }) {
   const [now, setNow] = useState(Date.now());
   const [url, setUrl] = useState<string | null>(null);
   const w = joinWindow(s.startsAt, s.durationMin, now);
@@ -141,9 +153,16 @@ function JoinButton({ s, organiser = false }: { s: FairSession; organiser?: bool
 
   if (!organiser && w.over) return <span className="text-[13px] text-muted">This session has ended.</span>;
   if (available && url) {
-    return <a href={url} target="_blank" rel="noreferrer" className="btn rounded-full bg-green px-5 text-[15px] text-white hover:bg-ink hover:text-white">{organiser ? 'Open video link' : 'Join now'}</a>;
+    return (
+      <a href={url} target="_blank" rel="noreferrer" onClick={() => !organiser && db.markSessionJoined(s.id)}
+        className="btn rounded-full bg-green px-5 text-[15px] text-white hover:bg-ink hover:text-white">
+        {organiser ? 'Open video link' : 'Join now'}
+      </a>
+    );
   }
-  if (organiser) return <span className="text-[13px] text-danger">No video link yet. Edit the session to add it.</span>;
+  if (organiser) {
+    return <span className="text-[13px] text-danger">{canEdit ? 'No video link yet. Edit the session to add it.' : 'No video link yet. The club will add it.'}</span>;
+  }
   return (
     <span className="text-[13px] leading-snug text-muted">
       The “Join” button appears here 15 minutes before the start.
@@ -160,23 +179,43 @@ function Registrants({ sessionId, profileLinkBase }: { sessionId: string; profil
   if (error) return <p className="m-0 text-sm text-danger">{error}</p>;
   if (!list) return <p className="m-0 text-sm text-muted">Loading…</p>;
   if (!list.length) return <p className="m-0 text-sm text-muted">Nobody has registered yet.</p>;
-  const hidden = list.filter((r) => !r.name).length;
+  const joined = list.filter((r) => r.joinedAt).length;
+  const canOpen = (r: Registrant) => profileLinkBase && (r.visible || profileLinkBase.startsWith('/admin'));
   return (
-    <div className="flex flex-col gap-2 rounded-xl bg-offwhite p-4 text-sm">
-      <ul className="m-0 flex list-none flex-col gap-1.5 p-0">
-        {list.filter((r) => r.name).map((r) => (
-          <li key={r.candidateId} className="flex flex-wrap items-center gap-2">
-            <span className="font-semibold">{r.name}</span>
-            <span className="text-muted">{r.school}</span>
-            {profileLinkBase && (r.visible || profileLinkBase.startsWith('/admin')) && <Link to={`${profileLinkBase}/${r.candidateId}`} className="text-[13px] font-semibold">Profile</Link>}
+    <div className="flex flex-col gap-3 rounded-xl bg-offwhite p-4 text-sm">
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="flex-1 font-semibold tabular-nums">{list.length} registered · {joined} clicked “Join”</span>
+        <button type="button" className="btn-small text-[13px]" onClick={() => downloadCsv(list)}>Download list (CSV)</button>
+      </div>
+      <ul className="m-0 flex list-none flex-col gap-2 p-0">
+        {list.map((r) => (
+          <li key={r.candidateId} className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            {canOpen(r) ? (
+              <Link to={`${profileLinkBase}/${r.candidateId}`} className="font-semibold">{r.name || 'Unnamed student'}</Link>
+            ) : (
+              <span className="font-semibold">{r.name || 'Unnamed student'}</span>
+            )}
+            <span className="text-muted">{[r.school, r.programme, r.graduationYear].filter(Boolean).join(' · ')}</span>
+            {r.linkedinUrl && <a href={r.linkedinUrl} target="_blank" rel="noreferrer" className="text-[13px] font-semibold">LinkedIn</a>}
+            {r.joinedAt && <Badge tone="green" check>Joined</Badge>}
           </li>
         ))}
       </ul>
-      {hidden > 0 && (
-        <p className="m-0 text-[13px] text-muted">
-          + {hidden} student{hidden > 1 ? 's' : ''} who have not shared a verified profile yet (names hidden).
-        </p>
-      )}
+      <p className="m-0 text-[12px] text-muted">“Joined” means the student clicked the Join button; the video tool itself is not tracked.</p>
     </div>
   );
+}
+
+function downloadCsv(list: Registrant[]) {
+  const esc = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+  const rows = [
+    ['Name', 'School', 'Programme', 'Graduation', 'LinkedIn', 'Registered at', 'Clicked Join at'],
+    ...list.map((r) => [r.name, r.school, r.programme, r.graduationYear, r.linkedinUrl, r.registeredAt, r.joinedAt]),
+  ];
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(['\ufeff' + rows.map((row) => row.map(esc).join(',')).join('\r\n')], { type: 'text/csv;charset=utf-8' }));
+  a.download = 'registrants.csv';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
 }

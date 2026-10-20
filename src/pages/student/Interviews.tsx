@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { StudentShell } from './StudentShell';
 import { Badge } from '../../components/Badge';
 import { Notice } from '../../components/Notice';
+import { AddToCalendar } from '../../components/AddToCalendar';
 import { db } from '../../lib/db';
 import { useDbQuery } from '../../lib/useDb';
 import { fairDay, fairTimeRange, joinWindow } from '../../lib/time';
@@ -60,6 +61,12 @@ export default function StudentInterviews() {
                   )}
                   <button type="button" disabled={busy} className="btn-small"
                     onClick={() => act(() => db.cancelBooking(iv.booked!.slotId), 'Booking cancelled')}>Cancel booking</button>
+                  <div className="w-full">
+                    <AddToCalendar event={{
+                      title: `Interview with ${iv.companyName}`, startsAt: iv.booked.startsAt, durationMin: iv.booked.durationMin,
+                      pagePath: '/student/meetings', details: `Interview with ${iv.companyName} at the Nyota Africa Career Fair.`,
+                    }} />
+                  </div>
                 </div>
               )}
 

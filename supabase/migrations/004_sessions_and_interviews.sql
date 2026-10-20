@@ -129,7 +129,8 @@ language sql security definer set search_path = public as $$
   delete from session_registrations where session_id = sid and candidate_id = my_candidate()
 $$;
 
-create or replace function session_registrants(sid uuid) returns table (candidate_id uuid, name text, school text, visible boolean)
+drop function if exists session_registrants(uuid);
+create function session_registrants(sid uuid) returns table (candidate_id uuid, name text, school text, visible boolean)
 language plpgsql stable security definer set search_path = public as $$
 begin
   if not is_session_organiser(sid) then raise exception 'Only the organiser can see who registered'; end if;

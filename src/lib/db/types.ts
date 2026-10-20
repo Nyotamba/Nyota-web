@@ -104,11 +104,17 @@ export interface SessionInput {
   meetingUrl: string;
 }
 
+/** A student registered for a session, as the organising company and admins see them. */
 export interface Registrant {
   candidateId: string;
-  name: string | null; // null when the student has not shared a verified profile
-  school: string | null;
-  visible: boolean;
+  name: string;
+  school: string;
+  programme: string;
+  graduationYear: number | null;
+  linkedinUrl: string | null;
+  visible: boolean; // shared a verified profile: the full profile can be opened
+  registeredAt: string;
+  joinedAt: string | null; // clicked "Join"
 }
 
 export interface InterviewSlot {
@@ -213,6 +219,8 @@ export interface NyotaDb {
   deleteSession(sessionId: string): Promise<void>;
   registerSession(sessionId: string): Promise<void>;
   unregisterSession(sessionId: string): Promise<void>;
+  /** Records that a registered student clicked "Join". */
+  markSessionJoined(sessionId: string): Promise<void>;
   listRegistrants(sessionId: string): Promise<Registrant[]>;
 
   // Interview slots (1:1)

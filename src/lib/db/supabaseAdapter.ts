@@ -337,11 +337,18 @@ export function createSupabaseDb(url: string, key: string): NyotaDb {
       maybe(await sb.rpc('unregister_session', { sid: sessionId }));
       emit();
     },
+    async markSessionJoined(sessionId) {
+      await sb.rpc('mark_session_joined', { sid: sessionId });
+    },
     async listRegistrants(sessionId) {
-      const rows = check<{ candidate_id: string; name: string | null; school: string | null; visible: boolean }[]>(
-        await sb.rpc('session_registrants', { sid: sessionId }),
-      );
-      return rows.map((r) => ({ candidateId: r.candidate_id, name: r.name, school: r.school, visible: r.visible }));
+      const rows = check<{
+        candidate_id: string; name: string; school: string; programme: string; graduation_year: number | null;
+        linkedin_url: string | null; visible: boolean; registered_at: string; joined_at: string | null;
+      }[]>(await sb.rpc('session_registrants', { sid: sessionId }));
+      return rows.map((r) => ({
+        candidateId: r.candidate_id, name: r.name, school: r.school, programme: r.programme, graduationYear: r.graduation_year,
+        linkedinUrl: r.linkedin_url, visible: r.visible, registeredAt: r.registered_at, joinedAt: r.joined_at,
+      }));
     },
 
     async listSlots(companyId) {
