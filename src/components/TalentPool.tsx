@@ -63,6 +63,9 @@ export function TalentPool({ rows }: { rows: TalentRow[] }) {
   const languages = tally(list.flatMap((r) => r.languages));
   const worked = tally(list.flatMap((r) => parseCountries(r.workedCountries)));
   const targeted = tally(list.flatMap((r) => parseCountries(r.countries)));
+  const africaNames = new Set(AFRICA_COUNTRIES.map((c) => c.name));
+  const africaXp = list.filter((r) => parseCountries(r.workedCountries).some((c) => africaNames.has(c))).length;
+  const [mapView, setMapView] = useState<'worked' | 'targeted'>('worked');
   const women = list.filter((r) => r.gender === 'Woman').length;
   const answered = list.filter((r) => r.gender !== 'Not answered' && r.gender !== 'Prefer not to say').length;
 
@@ -71,8 +74,8 @@ export function TalentPool({ rows }: { rows: TalentRow[] }) {
       <div className="flex flex-col gap-1">
         <h2 id="pool-title" className="m-0 font-display text-[32px] tracking-display">Talent pool</h2>
         <p className="m-0 max-w-[75ch] text-sm text-muted">
-          Anonymous counts of every student who signed up. Gender is optional and never shown to companies; Nyota never asks for
-          nationality or origin.
+          Who the students are: their professional background first, then what they look for. Anonymous counts; gender is optional
+          and never shown to companies, and Nyota never asks for nationality or origin.
         </p>
       </div>
 
@@ -97,37 +100,53 @@ export function TalentPool({ rows }: { rows: TalentRow[] }) {
         <div className="card p-7 text-[15px] text-muted">No student matches these filters yet.</div>
       ) : (
         <>
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <Headline label="Already worked in Africa" value={`${Math.round((africaXp / n) * 100)}%`}
+              sub={`${africaXp} of ${n} students name an African country they worked in`} />
+            <Headline label="Median experience" value={median(list.map((r) => r.yearsExperience))} sub="years of work before the MBA" />
+            <Headline label="Most common past sector" value={pastSectors[0]?.[0] ?? '—'} small
+              sub={pastSectors[0] ? `${pastSectors[0][1]} students have worked in it` : 'Not filled in yet'} />
             <Headline label="Women" value={answered ? `${Math.round((women / answered) * 100)}%` : '—'}
               sub={answered ? `of the ${answered} who answered the gender question` : 'Nobody answered the gender question yet'} />
-            <Headline label="Median experience" value={median(list.map((r) => r.yearsExperience))} sub="years of work before the MBA" />
-            <Headline label="Countries targeted" value={String(targeted.length)} sub={`${worked.length} countries where they have worked`} />
           </div>
 
           <div className="grid items-start gap-4 xl:grid-cols-12">
             <div className="card flex flex-col gap-4 p-5 xl:col-span-7">
-              <div className="flex flex-col gap-1">
-                <h3 className="m-0 text-base font-bold">Where they want to work</h3>
-                <p className="m-0 text-[13px] text-muted">Countries named in “Target countries”. Hover a country for the count.</p>
+              <div className="flex flex-wrap items-start gap-3">
+                <div className="flex flex-1 flex-col gap-1">
+                  <h3 className="m-0 text-base font-bold">{mapView === 'worked' ? 'Where they have worked' : 'Where they want to work'}</h3>
+                  <p className="m-0 text-[13px] text-muted">Hover a country for the number of students.</p>
+                </div>
+                <div role="group" aria-label="Map shows" className="grid grid-cols-2 overflow-hidden rounded-field border border-line-strong">
+                  {([['worked', 'Worked in'], ['targeted', 'Want to work in']] as const).map(([v, label]) => (
+                    <button key={v} type="button" aria-pressed={mapView === v} onClick={() => setMapView(v)}
+                      className={`min-h-[44px] px-3 text-[13px] font-semibold ${mapView === v ? 'bg-ink text-offwhite' : 'bg-surface text-ink hover:bg-offwhite'}`}>{label}</button>
+                  ))}
+                </div>
               </div>
-              <AfricaMap counts={targeted} />
+              <AfricaMap counts={mapView === 'worked' ? worked : targeted} />
             </div>
             <div className="flex flex-col gap-4 xl:col-span-5">
-              <Bars title="Gender" data={byGender} n={n} />
-              <Bars title="Class" data={byYear} n={n} />
+              <Bars title="Work experience" data={byExp} n={n} />
+              <Bars title="Sectors they worked in" data={pastSectors} n={n} multi />
             </div>
           </div>
 
+          <h3 className="m-0 mt-2 text-lg font-bold">Background</h3>
           <div className="grid items-start gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <Bars title="Countries they worked in" data={worked} n={n} multi limit={10} />
             <Bars title="School" data={bySchool} n={n} />
             <Bars title="Programme" data={byProgramme} n={n} />
-            <Bars title="Work experience" data={byExp} n={n} />
-            <Bars title="Sectors they worked in" data={pastSectors} n={n} multi />
-            <Bars title="Countries they worked in" data={worked} n={n} multi limit={8} />
-            <Bars title="Target functions" data={functions} n={n} multi />
-            <Bars title="Target sectors" data={targetSectors} n={n} multi />
+            <Bars title="Class" data={byYear} n={n} />
+            <Bars title="Gender" data={byGender} n={n} />
             <Bars title="Languages" data={languages} n={n} multi />
-            <Bars title="Looking for" data={byType} n={n} />
+          </div>
+
+          <h3 className="m-0 mt-2 text-lg font-bold">What they are looking for</h3>
+          <div className="grid items-start gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <Bars title="Target functions" data={functions} n={n} multi limit={5} />
+            <Bars title="Target sectors" data={targetSectors} n={n} multi limit={5} />
+            <Bars title="Position type" data={byType} n={n} />
           </div>
         </>
       )}
@@ -155,11 +174,11 @@ function Filter({ id, label, value, onChange, options, all }: {
   );
 }
 
-function Headline({ label, value, sub }: { label: string; value: string; sub: string }) {
+function Headline({ label, value, sub, small = false }: { label: string; value: string; sub: string; small?: boolean }) {
   return (
     <div className="card flex flex-col gap-1.5 p-5">
       <span className="text-[13px] font-semibold text-muted">{label}</span>
-      <span className="font-display text-[40px] leading-none tabular-nums">{value}</span>
+      <span className={`font-display leading-none tabular-nums ${small ? 'text-[28px]' : 'text-[40px]'}`}>{value}</span>
       <span className="text-[13px] text-muted">{sub}</span>
     </div>
   );
