@@ -2,7 +2,7 @@
 // (row-level security in supabase/schema.sql); this file only maps rows to the UI types.
 import { createClient, FunctionsHttpError, type EmailOtpType, type SupabaseClient } from '@supabase/supabase-js';
 import type { Candidate, Consent, FairSession, InterviewSlot, InvitationStatus, NyotaDb, OAuthProvider, PositionType, Session, StudentInterview } from './types';
-import { CONSENT_VERSION, CV_LINK_TTL_SECONDS } from '../../config/constants';
+import { CONSENT_VERSION, CV_LINK_TTL_SECONDS, SCHOOLS } from '../../config/constants';
 
 // Every candidate column except e-mail, which companies may not read (column privileges).
 const BASE_COLS =
@@ -464,6 +464,25 @@ export function createSupabaseDb(url: string, key: string): NyotaDb {
     },
     async getDashboard() {
       return check(await sb.rpc('admin_dashboard'));
+    },
+    async listSchools() {
+      const { data, error } = await sb.from('schools').select('name').order('name');
+      // Until migration 008 has run (no table yet), keep the built-in list.
+      if (error || !data?.length) return [...SCHOOLS].sort((a, b) => a.localeCompare(b));
+      return data.map((r) => r.name as string);
+    },
+    async addSchool(name) {
+      const res = await sb.from('schools').insert({ name: name.trim() });
+      if (res.error?.code === '23505') throw new Error('This school is already in the list.');
+      if (res.error && /schools/.test(res.error.message) && /exist/.test(res.error.message)) {
+        throw new Error('Run the SQL update 008 in Supabase first (it creates the schools list).');
+      }
+      ok(res);
+      emit();
+    },
+    async removeSchool(name) {
+      ok(await sb.from('schools').delete().eq('name', name));
+      emit();
     },
     async addCompany(name) {
       const res = await sb.from('companies').insert({ name: name.trim() }).select('id,name').single();

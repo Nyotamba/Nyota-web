@@ -7,6 +7,7 @@ export interface DemoSession extends SessionInput {
 
 export interface DemoState {
   admins: string[];
+  schools?: string[];
   sessions?: DemoSession[];
   registrations?: { sessionId: string; candidateId: string; createdAt?: string; joinedAt?: string | null }[];
   slots?: InterviewSlot[];

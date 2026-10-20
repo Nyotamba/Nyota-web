@@ -226,6 +226,10 @@ export interface NyotaDb {
 
   listVerificationQueue(): Promise<Candidate[]>;
   verifyCandidates(ids: string[]): Promise<void>;
+  /** Business schools offered in the profile form (managed by admins). */
+  listSchools(): Promise<string[]>;
+  addSchool(name: string): Promise<void>;
+  removeSchool(name: string): Promise<void>;
   listCompanies(): Promise<Company[]>;
   addCompany(name: string): Promise<Company>;
   // Sessions (group events)

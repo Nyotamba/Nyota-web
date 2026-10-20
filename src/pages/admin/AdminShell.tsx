@@ -6,6 +6,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
     { to: '/admin', label: 'Verification', end: true },
     { to: '/admin/sessions', label: 'Sessions' },
     { to: '/admin/companies', label: 'Companies' },
+    { to: '/admin/schools', label: 'Schools' },
     { to: '/admin/consents', label: 'Consents' },
     { to: '/admin/dashboard', label: 'Dashboard' },
     { to: '/admin/admins', label: 'Admins' },

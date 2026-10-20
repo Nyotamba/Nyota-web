@@ -1,7 +1,7 @@
 // Browser-storage implementation of NyotaDb, used until the real database is connected.
 import type { Candidate, NyotaDb, Session } from './types';
 import { createSeed, DEMO_ACCOUNTS, type DemoState } from './seed';
-import { CONSENT_VERSION } from '../../config/constants';
+import { CONSENT_VERSION, SCHOOLS } from '../../config/constants';
 import { isProfileComplete, isVisible } from '../candidate';
 
 const STATE_KEY = 'nyota-demo-state-v1';
@@ -36,6 +36,7 @@ export function createDemoDb(): NyotaDb {
   state.sessions ??= seed.sessions;
   state.registrations ??= seed.registrations;
   state.slots ??= seed.slots;
+  state.schools ??= [...SCHOOLS];
   let session: Session | null = read<Session>(SESSION_KEY);
   const listeners = new Set<() => void>();
 
@@ -347,6 +348,20 @@ export function createDemoDb(): NyotaDb {
       state.companies.push(co);
       commit();
       return clone(co);
+    },
+    async listSchools() {
+      return [...(state.schools ?? SCHOOLS)].sort((a, b) => a.localeCompare(b));
+    },
+    async addSchool(name) {
+      const n = name.trim();
+      if (n.length < 2) throw new Error('Enter the school name.');
+      if ((state.schools ?? []).some((x) => x.toLowerCase() === n.toLowerCase())) throw new Error('This school is already in the list.');
+      (state.schools = state.schools ?? []).push(n);
+      commit();
+    },
+    async removeSchool(name) {
+      state.schools = (state.schools ?? []).filter((x) => x !== name);
+      commit();
     },
     async listCompanies() {
       return clone(state.companies);

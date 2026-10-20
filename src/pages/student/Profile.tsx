@@ -29,6 +29,7 @@ export default function StudentProfile() {
   const [notice, setNotice] = useState<{ msg: string; tone: 'green' | 'danger' } | null>(null);
   const [confirmWithdraw, setConfirmWithdraw] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const { data: schoolList = SCHOOLS as readonly string[] } = useDbQuery(() => db.listSchools());
 
   useEffect(() => {
     if (cand && !form) setForm(toInput(cand));
@@ -91,13 +92,13 @@ export default function StudentProfile() {
             <div className="flex flex-col gap-2">
               <label className="label" htmlFor="p-school">School
                 <select id="p-school" className="field"
-                  value={(SCHOOLS as readonly string[]).includes(form.school) ? form.school : OTHER_SCHOOL}
+                  value={schoolList.includes(form.school) ? form.school : OTHER_SCHOOL}
                   onChange={(e) => set('school', e.target.value === OTHER_SCHOOL ? '' : e.target.value)}>
-                  {SCHOOLS.map((s) => <option key={s}>{s}</option>)}
+                  {schoolList.map((s) => <option key={s}>{s}</option>)}
                   <option value={OTHER_SCHOOL}>Other (type it)</option>
                 </select>
               </label>
-              {!(SCHOOLS as readonly string[]).includes(form.school) && (
+              {!schoolList.includes(form.school) && (
                 <input id="p-school-other" aria-label="School name" required className="field" placeholder="Your business school"
                   value={form.school} onChange={(e) => set('school', e.target.value)} />
               )}
