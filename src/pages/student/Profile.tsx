@@ -4,7 +4,7 @@ import { StudentShell } from './StudentShell';
 import { ChipGroup } from '../../components/Chip';
 import { Notice } from '../../components/Notice';
 import { Check, FileIcon } from '../../components/icons';
-import { db, type Candidate, type CandidateProfileInput, type PositionType } from '../../lib/db';
+import { db, type Candidate, type CandidateProfileInput, type Gender, type PositionType } from '../../lib/db';
 import { useDbQuery } from '../../lib/useDb';
 import { useSession } from '../../App';
 import { formatDate, formatKb, isProfileComplete, isVisible } from '../../lib/candidate';
@@ -18,6 +18,7 @@ const toInput = (c: Candidate): CandidateProfileInput => ({
   linkedinUrl: c.linkedinUrl, functions: c.functions, sectors: c.sectors, regions: c.regions, countries: c.countries,
   languages: c.languages, positionType: c.positionType, availableFrom: c.availableFrom, story: c.story,
   jobTitle: c.jobTitle, employer: c.employer, yearsExperience: c.yearsExperience, pastSectors: c.pastSectors, workedCountries: c.workedCountries,
+  gender: c.gender,
 });
 const OTHER_SCHOOL = '__other__';
 
@@ -107,6 +108,16 @@ export default function StudentProfile() {
               <label className="label" htmlFor="p-prog">Program<input id="p-prog" className="field" value={form.programme} onChange={(e) => set('programme', e.target.value)} /></label>
               <label className="label" htmlFor="p-grad">Graduation<input id="p-grad" className="field" type="number" min={2025} max={2032} value={form.graduationYear} onChange={(e) => set('graduationYear', Number(e.target.value))} /></label>
             </div>
+            <label className="label sm:col-span-2" htmlFor="p-gender">Gender <span className="font-normal text-muted">(optional)</span>
+              <select id="p-gender" className="field" value={form.gender ?? ''}
+                onChange={(e) => set('gender', (e.target.value || null) as Gender | null)}>
+                <option value="">Not answered</option>
+                {(['Woman', 'Man', 'Non-binary', 'Prefer not to say'] as Gender[]).map((g) => <option key={g}>{g}</option>)}
+              </select>
+              <span className="text-[13px] font-normal leading-snug text-muted">
+                Used only by the club for anonymous statistics on the talent pool. Companies never see it.
+              </span>
+            </label>
             <label className="label sm:col-span-2" htmlFor="p-li">LinkedIn URL<input id="p-li" className="field" type="url" placeholder="https://www.linkedin.com/in/…" value={form.linkedinUrl} onChange={(e) => set('linkedinUrl', e.target.value)} /></label>
           </Fieldset>
 

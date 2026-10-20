@@ -2,11 +2,13 @@ import { Link } from 'react-router-dom';
 import { AdminShell } from './AdminShell';
 import { db, type Dashboard } from '../../lib/db';
 import { useDbQuery } from '../../lib/useDb';
+import { TalentPool } from '../../components/TalentPool';
 
 const pct = (part: number, whole: number) => (whole ? Math.round((part / whole) * 100) : 0);
 
 export default function AdminDashboard() {
   const { data: d, error } = useDbQuery(() => db.getDashboard());
+  const { data: pool, error: poolError } = useDbQuery(() => db.getTalentPool());
   return (
     <AdminShell>
       <div className="mx-auto flex max-w-page flex-col gap-8 px-4 py-10 md:px-10">
@@ -17,6 +19,12 @@ export default function AdminDashboard() {
         {error && <p className="card m-0 p-6 text-danger">The dashboard could not load: {error.message}</p>}
         {!d && !error && <p className="text-muted">Loading figures…</p>}
         {d && <Body d={d} />}
+        {pool && <TalentPool rows={pool} />}
+        {poolError && (
+          <p className="card m-0 p-6 text-[15px] text-muted">
+            The talent pool needs the latest database update (SQL 009). Run it in Supabase → SQL Editor, then reload this page.
+          </p>
+        )}
       </div>
     </AdminShell>
   );

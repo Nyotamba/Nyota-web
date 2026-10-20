@@ -1,7 +1,7 @@
 // Live implementation of NyotaDb on Supabase. Access rules are enforced by the database
 // (row-level security in supabase/schema.sql); this file only maps rows to the UI types.
 import { createClient, FunctionsHttpError, type EmailOtpType, type SupabaseClient } from '@supabase/supabase-js';
-import type { Candidate, Consent, FairSession, InterviewSlot, InvitationStatus, NyotaDb, OAuthProvider, PositionType, Session, StudentInterview } from './types';
+import type { Candidate, Consent, FairSession, Gender, TalentRow, InterviewSlot, InvitationStatus, NyotaDb, OAuthProvider, PositionType, Session, StudentInterview } from './types';
 import { CONSENT_VERSION, CV_LINK_TTL_SECONDS, SCHOOLS } from '../../config/constants';
 
 // Every candidate column except e-mail, which companies may not read (column privileges).
@@ -75,6 +75,7 @@ function toCandidate(r: CandidateRow, consent: Consent | null, email = ''): Cand
     yearsExperience: r.years_experience ?? null,
     pastSectors: r.past_sectors ?? [],
     workedCountries: r.worked_countries ?? '',
+    gender: null,
     cv: r.cv_path ? { name: 'cv.pdf', sizeBytes: r.cv_size_bytes ?? 0, uploadedAt: r.cv_uploaded_at ?? '' } : null,
     consent,
     verifiedAt: r.verified_at,
@@ -254,7 +255,12 @@ export function createSupabaseDb(url: string, key: string): NyotaDb {
       if (!row) return null;
       const s = await loadSession();
       const consent = s?.role === 'company' ? IMPLIED_CONSENT : await activeConsent(id);
-      return toCandidate(row, consent, s?.candidateId === id ? s.email : '');
+      const c = toCandidate(row, consent, s?.candidateId === id ? s.email : '');
+      if (s?.candidateId === id) {
+        const { data } = await sb.from('candidate_private').select('gender').eq('candidate_id', id).maybeSingle();
+        c.gender = (data?.gender as Gender | undefined) ?? null;
+      }
+      return c;
     },
     async saveProfile(candidateId, input) {
       const base = {
@@ -286,7 +292,11 @@ export function createSupabaseDb(url: string, key: string): NyotaDb {
           sb.from('candidates').update(hasBackground ? { ...base, ...background } : base).eq('id', candidateId).select(cols).single(),
         ),
       ) as unknown as CandidateRow;
-      return changed(toCandidate(row, await activeConsent(candidateId), session?.email ?? ''));
+      // Gender lives in a separate table companies cannot read (migration 009); skip quietly if it is not there yet.
+      await sb.from('candidate_private').upsert({ candidate_id: candidateId, gender: input.gender, updated_at: new Date().toISOString() });
+      const saved = toCandidate(row, await activeConsent(candidateId), session?.email ?? '');
+      saved.gender = input.gender;
+      return changed(saved);
     },
     async setCv(candidateId, file) {
       const path = `${candidateId}/cv.pdf`;
@@ -461,6 +471,19 @@ export function createSupabaseDb(url: string, key: string): NyotaDb {
     async removeAdmin(email) {
       check(await sb.rpc('remove_admin', { old_email: email }).then((r) => ({ ...r, data: true })));
       emit();
+    },
+    async getTalentPool() {
+      const rows = check<{
+        school: string; programme: string; graduation_year: number | null; gender: TalentRow['gender']; years_experience: number | null;
+        past_sectors: string[]; functions: string[]; sectors: string[]; countries: string; worked_countries: string; languages: string[];
+        position_type: TalentRow['positionType']; complete: boolean; consented: boolean; visible: boolean;
+      }[]>(await sb.rpc('admin_talent_pool'));
+      return rows.map((r) => ({
+        school: r.school, programme: r.programme, graduationYear: r.graduation_year, gender: r.gender, yearsExperience: r.years_experience,
+        pastSectors: r.past_sectors ?? [], functions: r.functions ?? [], sectors: r.sectors ?? [], countries: r.countries ?? '',
+        workedCountries: r.worked_countries ?? '', languages: r.languages ?? [], positionType: r.position_type,
+        complete: r.complete, consented: r.consented, visible: r.visible,
+      }));
     },
     async getDashboard() {
       return check(await sb.rpc('admin_dashboard'));

@@ -303,6 +303,14 @@ export function createDemoDb(): NyotaDb {
       state.admins = (state.admins ?? []).filter((a) => a !== email);
       commit();
     },
+    async getTalentPool() {
+      return state.candidates.map((c) => ({
+        school: c.school, programme: c.programme, graduationYear: c.graduationYear || null, gender: c.gender ?? 'Not answered',
+        yearsExperience: c.yearsExperience ?? null, pastSectors: c.pastSectors ?? [], functions: c.functions, sectors: c.sectors,
+        countries: c.countries, workedCountries: c.workedCountries ?? '', languages: c.languages, positionType: c.positionType,
+        complete: isProfileComplete(c), consented: Boolean(c.consent), visible: isVisible(c),
+      }));
+    },
     async getDashboard() {
       const cs = state.candidates;
       const waiting = cs.filter((x) => x.consent && !x.verifiedAt);

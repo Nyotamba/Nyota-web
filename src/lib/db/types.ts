@@ -1,5 +1,7 @@
 // Domain types. They mirror the tables in supabase/schema.sql (snake_case there).
 export type PositionType = 'Full-time' | 'Internship' | 'Both';
+/** Optional; only admins see it, and only as counts. Companies never receive it. */
+export type Gender = 'Woman' | 'Man' | 'Non-binary' | 'Prefer not to say';
 export type Role = 'student' | 'company' | 'admin';
 
 export interface CvFile {
@@ -36,6 +38,7 @@ export interface Candidate {
   yearsExperience: number | null;
   pastSectors: string[];
   workedCountries: string;
+  gender: Gender | null; // filled only for the student's own profile
   cv: CvFile | null;
   consent: Consent | null;
   verifiedAt: string | null;
@@ -141,6 +144,25 @@ export interface StudentInterview {
   requestedAt: string;
   booked: { slotId: string; startsAt: string; durationMin: number; meetingUrl: string } | null;
   freeSlots: { id: string; startsAt: string; durationMin: number }[];
+}
+
+/** One anonymous row per student for the dashboard (no name, e-mail or CV). */
+export interface TalentRow {
+  school: string;
+  programme: string;
+  graduationYear: number | null;
+  gender: Gender | 'Not answered';
+  yearsExperience: number | null;
+  pastSectors: string[];
+  functions: string[];
+  sectors: string[];
+  countries: string;
+  workedCountries: string;
+  languages: string[];
+  positionType: PositionType;
+  complete: boolean;
+  consented: boolean;
+  visible: boolean;
 }
 
 export interface AdminEntry {
@@ -256,6 +278,7 @@ export interface NyotaDb {
   addAdmin(email: string): Promise<void>;
   removeAdmin(email: string): Promise<void>;
   getDashboard(): Promise<Dashboard>;
+  getTalentPool(): Promise<TalentRow[]>;
   getCompany(id: string): Promise<Company | null>;
   listInvitations(): Promise<Invitation[]>;
   /** Records the invitation and, on the live site, e-mails the person a sign-in link. */
