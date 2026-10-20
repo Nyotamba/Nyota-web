@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { TalentRow } from '../lib/db';
 import { AFRICA_COUNTRIES } from './africaCountries';
+import { WORLD_COUNTRIES } from './worldCountries';
 
 // Sequential ramp for the map, one hue (brand greens) from light to dark. 0 = no student.
 const RAMP = ['#DDE7DC', '#A9C8B3', '#6FA083', '#2F7350', '#053129'];
@@ -14,9 +15,17 @@ const ALIASES: Record<string, string> = {
   'congo-brazzaville': 'Republic of the Congo', 'congo brazzaville': 'Republic of the Congo', swaziland: 'Eswatini',
   car: 'Central African Republic', 'the gambia': 'Gambia', 'south-africa': 'South Africa', rsa: 'South Africa',
   'cabo verde': 'Cape Verde', 'western sahara': 'Western Sahara',
+  usa: 'United States', us: 'United States', 'united states of america': 'United States', america: 'United States',
+  uk: 'United Kingdom', england: 'United Kingdom', 'great britain': 'United Kingdom', scotland: 'United Kingdom',
+  guyane: 'French Guiana', 'guyane francaise': 'French Guiana', 'french guyana': 'French Guiana',
+  holland: 'Netherlands', 'the netherlands': 'Netherlands', uae: 'United Arab Emirates', emirates: 'United Arab Emirates',
+  espana: 'Spain', espagne: 'Spain', allemagne: 'Germany', belgique: 'Belgium', suisse: 'Switzerland', italie: 'Italy',
+  'royaume-uni': 'United Kingdom', 'etats-unis': 'United States', bresil: 'Brazil', maroc: 'Morocco', algerie: 'Algeria',
+  tunisie: 'Tunisia', egypte: 'Egypt', 'afrique du sud': 'South Africa', cameroun: 'Cameroon', senegal: 'Senegal',
+  'cote divoire ': 'Côte d’Ivoire',
 };
 const fold = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[’`]/g, "'").toLowerCase().trim();
-const MAP_NAMES = new Map(AFRICA_COUNTRIES.map((c) => [fold(c.name), c.name]));
+const MAP_NAMES = new Map([...WORLD_COUNTRIES, ...AFRICA_COUNTRIES].map((c) => [fold(c.name), c.name]));
 export function parseCountries(text: string) {
   return text
     .split(/,|;|\/|\band\b|&/i)
@@ -66,6 +75,7 @@ export function TalentPool({ rows }: { rows: TalentRow[] }) {
   const africaNames = new Set(AFRICA_COUNTRIES.map((c) => c.name));
   const africaXp = list.filter((r) => parseCountries(r.workedCountries).some((c) => africaNames.has(c))).length;
   const [mapView, setMapView] = useState<'worked' | 'targeted'>('worked');
+  const [mapScope, setMapScope] = useState<'africa' | 'world'>('africa');
   const women = list.filter((r) => r.gender === 'Woman').length;
   const answered = list.filter((r) => r.gender !== 'Not answered' && r.gender !== 'Prefer not to say').length;
 
@@ -124,7 +134,13 @@ export function TalentPool({ rows }: { rows: TalentRow[] }) {
                   ))}
                 </div>
               </div>
-              <AfricaMap counts={mapView === 'worked' ? worked : targeted} />
+              <div role="group" aria-label="Map area" className="grid w-44 grid-cols-2 overflow-hidden rounded-field border border-line-strong">
+                {([['africa', 'Africa'], ['world', 'World']] as const).map(([v, label]) => (
+                  <button key={v} type="button" aria-pressed={mapScope === v} onClick={() => setMapScope(v)}
+                    className={`min-h-[44px] text-[13px] font-semibold ${mapScope === v ? 'bg-ink text-offwhite' : 'bg-surface text-ink hover:bg-offwhite'}`}>{label}</button>
+                ))}
+              </div>
+              <CountryMap counts={mapView === 'worked' ? worked : targeted} scope={mapScope} />
             </div>
             <div className="flex flex-col gap-4 xl:col-span-5">
               <Bars title="Work experience" data={byExp} n={n} />
@@ -219,19 +235,22 @@ function Bars({ title, data, n, multi = false, limit = 8 }: { title: string; dat
   );
 }
 
-function AfricaMap({ counts }: { counts: Count[] }) {
+function CountryMap({ counts, scope }: { counts: Count[]; scope: 'africa' | 'world' }) {
+  const shapes = scope === 'africa' ? AFRICA_COUNTRIES : WORLD_COUNTRIES;
+  const [vw, vh] = scope === 'africa' ? [400, 420] : [800, 460];
   const [hover, setHover] = useState<{ name: string; count: number; x: number; y: number } | null>(null);
   const byName = new Map(counts);
-  const max = Math.max(1, ...AFRICA_COUNTRIES.map((c) => byName.get(c.name) ?? 0));
+  const max = Math.max(1, ...shapes.map((c) => byName.get(c.name) ?? 0));
   const step = (v: number) => (v === 0 ? EMPTY : RAMP[Math.min(RAMP.length - 1, Math.floor(((v - 1) / max) * RAMP.length))]);
-  const elsewhere = counts.filter(([name]) => !AFRICA_COUNTRIES.some((c) => c.name === name));
-  const top = counts.filter(([name]) => AFRICA_COUNTRIES.some((c) => c.name === name)).slice(0, 6);
+  const elsewhere = counts.filter(([name]) => !shapes.some((c) => c.name === name));
+  const top = counts.filter(([name]) => shapes.some((c) => c.name === name)).slice(0, 6);
 
   return (
-    <div className="flex flex-col gap-4 lg:flex-row">
-      <div className="relative mx-auto w-full max-w-[420px]" onMouseLeave={() => setHover(null)}>
-        <svg viewBox="0 0 400 420" className="h-auto w-full" role="img" aria-label="Map of Africa shaded by the number of students targeting each country">
-          {AFRICA_COUNTRIES.map((c) => {
+    <div className={`flex flex-col gap-4 ${scope === 'africa' ? 'lg:flex-row' : ''}`}>
+      <div className={`relative mx-auto w-full ${scope === 'africa' ? 'max-w-[420px]' : ''}`} onMouseLeave={() => setHover(null)}>
+        <svg viewBox={`0 0 ${vw} ${vh}`} className="h-auto w-full" role="img"
+          aria-label={`Map of ${scope === 'africa' ? 'Africa' : 'the world centred on Africa'} shaded by the number of students per country`}>
+          {shapes.map((c) => {
             const v = byName.get(c.name) ?? 0;
             return (
               <path key={c.name} d={c.d} fill={step(v)} stroke="#FFFFFF" strokeWidth={0.8} strokeLinejoin="round"
@@ -246,7 +265,7 @@ function AfricaMap({ counts }: { counts: Count[] }) {
         </svg>
         {hover && (
           <div className="pointer-events-none absolute z-10 rounded-lg bg-ink px-3 py-2 text-[13px] text-offwhite shadow-lg"
-            style={{ left: Math.min(hover.x + 12, 300), top: Math.max(hover.y - 40, 0) }}>
+            style={{ left: Math.max(0, Math.min(hover.x + 12, (scope === 'africa' ? 300 : 620))), top: Math.max(hover.y - 40, 0) }}>
             <strong>{hover.name}</strong> · {hover.count} student{hover.count === 1 ? '' : 's'}
           </div>
         )}

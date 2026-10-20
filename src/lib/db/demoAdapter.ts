@@ -349,6 +349,41 @@ export function createDemoDb(): NyotaDb {
           .sort((a, b) => a.name.localeCompare(b.name)),
       };
     },
+    async listSchoolEntries() {
+      const logos = state.schoolLogos ?? {};
+      return (await this.listSchools()).map((name) => ({ name, logoUrl: logos[name]?.logoUrl ?? null, showOnSite: logos[name]?.showOnSite ?? false }));
+    },
+    async uploadLogo(target, file) {
+      if (!/^image\/(png|jpeg|webp)$/.test(file.type)) throw new Error('Use a PNG, JPEG or WebP image.');
+      if (file.size > 300 * 1024) throw new Error('In the demo, keep logos under 300 KB.');
+      const url = await new Promise<string>((res, rej) => {
+        const r = new FileReader();
+        r.onload = () => res(String(r.result));
+        r.onerror = () => rej(new Error('Could not read the file.'));
+        r.readAsDataURL(file);
+      });
+      if (target.kind === 'company') Object.assign(state.companies.find((c) => c.id === target.id)!, { logoUrl: url });
+      else {
+        const logos = (state.schoolLogos ??= {});
+        logos[target.name] = { showOnSite: logos[target.name]?.showOnSite ?? false, logoUrl: url };
+      }
+      commit();
+    },
+    async setShowOnSite(target, show) {
+      if (target.kind === 'company') Object.assign(state.companies.find((c) => c.id === target.id)!, { showOnSite: show });
+      else {
+        const logos = (state.schoolLogos ??= {});
+        logos[target.name] = { logoUrl: logos[target.name]?.logoUrl ?? null, showOnSite: show };
+      }
+      commit();
+    },
+    async getPartners() {
+      const logos = state.schoolLogos ?? {};
+      return {
+        companies: state.companies.filter((c) => c.showOnSite && c.logoUrl).map((c) => ({ name: c.name, logoUrl: c.logoUrl! })),
+        schools: Object.entries(logos).filter(([, v]) => v.showOnSite && v.logoUrl).map(([name, v]) => ({ name, logoUrl: v.logoUrl! })),
+      };
+    },
     async addCompany(name) {
       const n = name.trim();
       if (state.companies.some((c) => c.name.toLowerCase() === n.toLowerCase())) throw new Error('This company already exists.');

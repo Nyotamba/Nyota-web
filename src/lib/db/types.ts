@@ -50,7 +50,22 @@ export type CandidateProfileInput = Omit<Candidate, 'id' | 'email' | 'cv' | 'con
 export interface Company {
   id: string;
   name: string;
+  logoUrl?: string | null;
+  showOnSite?: boolean; // logo on the homepage (brand book K7: only once confirmed in writing)
 }
+
+export interface SchoolEntry {
+  name: string;
+  logoUrl: string | null;
+  showOnSite: boolean;
+}
+
+export interface Partner {
+  name: string;
+  logoUrl: string;
+}
+
+export type LogoTarget = { kind: 'company'; id: string } | { kind: 'school'; name: string };
 
 export type InvitationStatus = 'Invited' | 'Accepted';
 export interface Invitation {
@@ -251,6 +266,12 @@ export interface NyotaDb {
   /** Business schools offered in the profile form (managed by admins). */
   listSchools(): Promise<string[]>;
   addSchool(name: string): Promise<void>;
+  listSchoolEntries(): Promise<SchoolEntry[]>;
+  /** PNG, JPEG or WebP, 1 MB max. */
+  uploadLogo(target: LogoTarget, file: File): Promise<void>;
+  setShowOnSite(target: LogoTarget, show: boolean): Promise<void>;
+  /** Logos chosen for the homepage (public). */
+  getPartners(): Promise<{ companies: Partner[]; schools: Partner[] }>;
   removeSchool(name: string): Promise<void>;
   listCompanies(): Promise<Company[]>;
   addCompany(name: string): Promise<Company>;

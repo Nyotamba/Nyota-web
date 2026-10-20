@@ -507,12 +507,50 @@ export function createSupabaseDb(url: string, key: string): NyotaDb {
       ok(await sb.from('schools').delete().eq('name', name));
       emit();
     },
+    async listSchoolEntries() {
+      const full = await sb.from('schools').select('name,logo_url,show_on_site').order('name');
+      if (!full.error && full.data?.length) {
+        return full.data.map((r) => ({ name: r.name as string, logoUrl: (r.logo_url as string | null) ?? null, showOnSite: Boolean(r.show_on_site) }));
+      }
+      // Before migration 010 (no logo columns) or 008 (no table): names only.
+      return (await this.listSchools()).map((name) => ({ name, logoUrl: null, showOnSite: false }));
+    },
+    async uploadLogo(target, file) {
+      if (!/^image\/(png|jpeg|webp)$/.test(file.type)) throw new Error('Use a PNG, JPEG or WebP image.');
+      if (file.size > 1024 * 1024) throw new Error('This image is over 1 MB. Export a smaller version.');
+      const key = target.kind === 'company' ? target.id : target.name;
+      const slug = key.normalize('NFD').replace(/[^\w]+/g, '-').toLowerCase().slice(0, 60);
+      const path = `${target.kind}/${slug}-${Date.now()}.${file.type.split('/')[1]}`;
+      const up = await sb.storage.from('logos').upload(path, file, { contentType: file.type, upsert: true });
+      if (up.error) {
+        throw new Error(/bucket/i.test(up.error.message) ? 'Run the SQL update 010 in Supabase first (it creates the logo storage).' : up.error.message);
+      }
+      const url = sb.storage.from('logos').getPublicUrl(path).data.publicUrl;
+      if (target.kind === 'company') ok(await sb.from('companies').update({ logo_url: url }).eq('id', target.id));
+      else ok(await sb.from('schools').update({ logo_url: url }).eq('name', target.name));
+      emit();
+    },
+    async setShowOnSite(target, show) {
+      if (target.kind === 'company') ok(await sb.from('companies').update({ show_on_site: show }).eq('id', target.id));
+      else ok(await sb.from('schools').update({ show_on_site: show }).eq('name', target.name));
+      emit();
+    },
+    async getPartners() {
+      const { data, error } = await sb.rpc('public_partners');
+      if (error || !data) return { companies: [], schools: [] };
+      return data as { companies: { name: string; logoUrl: string }[]; schools: { name: string; logoUrl: string }[] };
+    },
     async addCompany(name) {
       const res = await sb.from('companies').insert({ name: name.trim() }).select('id,name').single();
       if (res.error?.message.includes('duplicate')) throw new Error('This company already exists.');
       return changed(check(res));
     },
     async listCompanies() {
+      const full = await sb.from('companies').select('id,name,logo_url,show_on_site').order('name');
+      if (!full.error) {
+        return (full.data ?? []).map((r) => ({ id: r.id as string, name: r.name as string, logoUrl: (r.logo_url as string | null) ?? null, showOnSite: Boolean(r.show_on_site) }));
+      }
+      // Before migration 010: no logo columns yet.
       return check(await sb.from('companies').select('id,name').order('name'));
     },
     async getCompany(id) {

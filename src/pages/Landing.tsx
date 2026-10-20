@@ -88,15 +88,7 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Partners */}
-      <section aria-labelledby="partners" className="flex flex-col gap-6 border-y border-line px-4 pb-14 pt-10 md:px-10 xl:px-20">
-        <h2 id="partners" className="overline m-0">Participating companies</h2>
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-          {Array.from({ length: 6 }, (_, i) => (
-            <div key={i} className="flex h-[72px] items-center justify-center rounded-xl border border-dashed border-line-strong text-sm text-muted">[Company logo]</div>
-          ))}
-        </div>
-      </section>
+      <Partners />
 
       {/* How it works */}
       <section id="how" className="flex scroll-mt-4 flex-col gap-14 px-4 py-20 md:px-10 md:py-[120px] xl:px-20">
@@ -191,6 +183,39 @@ export default function Landing() {
         </div>
       </footer>
     </div>
+  );
+}
+
+/** Logos an admin chose to show (brand book K1–K3: official files, equal height, confirmed partners only). */
+function Partners() {
+  const { data } = useDbQuery(() => db.getPartners());
+  const companies = data?.companies ?? [];
+  const schools = data?.schools ?? [];
+  const strip = (title: string, id: string, list: { name: string; logoUrl: string }[], placeholder: string) => (
+    <div className="flex flex-col gap-6">
+      <h2 id={id} className="overline m-0">{title}</h2>
+      {list.length ? (
+        <ul className="m-0 grid list-none grid-cols-2 gap-4 p-0 sm:grid-cols-3 lg:grid-cols-6">
+          {list.map((p) => (
+            <li key={p.name} className="flex h-[72px] items-center justify-center rounded-xl border border-line bg-surface px-4" title={p.name}>
+              <img src={p.logoUrl} alt={p.name} className="max-h-10 max-w-full object-contain" loading="lazy" />
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+          {Array.from({ length: 6 }, (_, i) => (
+            <div key={i} className="flex h-[72px] items-center justify-center rounded-xl border border-dashed border-line-strong text-sm text-muted">{placeholder}</div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+  return (
+    <section aria-labelledby="partners" className="flex flex-col gap-10 border-y border-line px-4 pb-14 pt-10 md:px-10 xl:px-20">
+      {strip('Participating companies', 'partners', companies, '[Company logo]')}
+      {schools.length > 0 && strip('Partner schools', 'partner-schools', schools, '')}
+    </section>
   );
 }
 

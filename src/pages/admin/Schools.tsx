@@ -1,11 +1,12 @@
 import { useState, type FormEvent } from 'react';
 import { AdminShell } from './AdminShell';
 import { Notice } from '../../components/Notice';
+import { LogoEditor } from '../../components/LogoEditor';
 import { db } from '../../lib/db';
 import { useDbQuery } from '../../lib/useDb';
 
 export default function AdminSchools() {
-  const { data: schools } = useDbQuery(() => db.listSchools());
+  const { data: schools } = useDbQuery(() => db.listSchoolEntries());
   const [name, setName] = useState('');
   const [confirm, setConfirm] = useState<string | null>(null);
   const [notice, setNotice] = useState<{ msg: string; tone?: 'green' | 'danger' } | null>(null);
@@ -37,10 +38,12 @@ export default function AdminSchools() {
               not listed.
             </div>
           </div>
-          <ul className="m-0 grid list-none gap-0 overflow-hidden rounded-2xl border border-line bg-surface p-0 sm:grid-cols-2">
-            {schools?.map((s) => (
-              <li key={s} className="flex items-center gap-2 border-b border-line-soft px-5 py-3 text-[15px] sm:odd:border-r">
-                <span className="min-w-0 flex-1 truncate font-semibold">{s}</span>
+          <ul className="m-0 flex list-none flex-col overflow-hidden rounded-2xl border border-line bg-surface p-0">
+            {schools?.map(({ name: s, logoUrl, showOnSite }) => (
+              <li key={s} className="flex flex-wrap items-center gap-3 border-b border-line-soft px-5 py-3 text-[15px] last:border-b-0">
+                <span className="min-w-[180px] flex-1 font-semibold">{s}</span>
+                <LogoEditor target={{ kind: 'school', name: s }} name={s} logoUrl={logoUrl} showOnSite={showOnSite}
+                  onNotice={(msg, tone) => setNotice({ msg, tone })} />
                 {confirm === s ? (
                   <span className="flex gap-1.5">
                     <button type="button" className="btn-small border-danger text-[13px] text-danger hover:border-danger hover:text-danger"

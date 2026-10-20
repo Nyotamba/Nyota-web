@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { AdminShell } from './AdminShell';
 import { Badge } from '../../components/Badge';
 import { CopyCode } from '../../components/CopyCode';
+import { LogoEditor } from '../../components/LogoEditor';
 import { Notice } from '../../components/Notice';
 import { db, type Company, type Invitation } from '../../lib/db';
 import { useDbQuery } from '../../lib/useDb';
@@ -30,7 +31,8 @@ export default function AdminCompanies() {
           <div className="flex flex-col gap-1">
             <h1 className="m-0 font-display text-[34px] tracking-display md:text-[40px]">Companies</h1>
             <div className="text-[15px] text-muted">
-              Companies taking part in the fair, their invited members and the access codes to send them.
+              Companies taking part in the fair: logos, invited members and the access codes to send them. Show a logo on the homepage
+              only once the company has confirmed its participation in writing.
             </div>
           </div>
           {companies?.length === 0 && <div className="card p-7 text-[15px] text-muted">No company yet. Add the first one with the form.</div>}
@@ -86,6 +88,8 @@ function CompanyCard({ company, members, onNotice }: {
         <h2 className="m-0 flex-1 text-lg font-bold">{company.name}</h2>
         <span className="text-sm tabular-nums text-muted">{accepted} of {members.length} members signed in</span>
       </div>
+      <LogoEditor target={{ kind: 'company', id: company.id }} name={company.name} logoUrl={company.logoUrl}
+        showOnSite={company.showOnSite} onNotice={onNotice} />
       {members.length > 0 && (
         <ul className="m-0 flex list-none flex-col p-0">
           {members.map((m) => (
