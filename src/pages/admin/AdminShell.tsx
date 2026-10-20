@@ -4,6 +4,7 @@ import { AppShell } from '../../components/AppShell';
 export function AdminShell({ children }: { children: ReactNode }) {
   const tabs = [
     { to: '/admin', label: 'Verification', end: true },
+    { to: '/admin/sessions', label: 'Sessions' },
     { to: '/admin/companies', label: 'Companies' },
     { to: '/admin/consents', label: 'Consents' },
     { to: '/admin/dashboard', label: 'Dashboard' },

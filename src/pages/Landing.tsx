@@ -4,6 +4,9 @@ import { Logo } from '../components/Logo';
 import { Badge } from '../components/Badge';
 import { NyotaMark, AfricaOutline, Filter, Lock, Star, Calendar } from '../components/icons';
 import { RibbonPattern } from '../components/RibbonPattern';
+import { db } from '../lib/db';
+import { useDbQuery } from '../lib/useDb';
+import { fairDay, fairTimeRange } from '../lib/time';
 import {
   CLUB_EMAIL, CLUB_INSTAGRAM, CLUB_LINKEDIN, CLUB_NAME, FORUM_DATE, FORUM_NAME, FORUM_VENUE, NYOTA_LINKEDIN, RETENTION_MONTHS,
 } from '../config/constants';
@@ -21,6 +24,7 @@ export default function Landing() {
       <header className="flex h-[72px] items-center gap-6 border-b border-line px-4 md:h-[88px] md:gap-12 md:px-10 xl:px-20">
         <Logo size="lg" />
         <nav aria-label="Main" className="hidden flex-1 gap-8 text-[15px] font-medium lg:flex">
+          <Link to="/sessions" className="text-ink no-underline hover:text-accent">Programme</Link>
           <a href="#how" onClick={jump('how')} className="text-ink no-underline hover:text-accent">How it works</a>
           <a href="#companies" onClick={jump('companies')} className="text-ink no-underline hover:text-accent">For companies</a>
           <a href="#privacy" onClick={jump('privacy')} className="text-ink no-underline hover:text-accent">Privacy</a>
@@ -115,6 +119,8 @@ export default function Landing() {
         </ol>
       </section>
 
+      <UpcomingSessions />
+
       {/* Companies */}
       <section id="companies" className="on-ink relative isolate mx-2 grid scroll-mt-4 overflow-hidden items-start gap-12 rounded-[32px] bg-ink px-6 py-16 text-offwhite sm:mx-4 md:px-12 md:py-[104px] lg:grid-cols-12 lg:gap-6 xl:mx-10 xl:px-20">
         <RibbonPattern className="-z-10 text-ink-line" seed={3} lines={6} />
@@ -185,6 +191,31 @@ export default function Landing() {
         </div>
       </footer>
     </div>
+  );
+}
+
+/** The next sessions of the programme, so visitors see the fair is live. Hidden until there is one. */
+function UpcomingSessions() {
+  const { data: sessions = [] } = useDbQuery(() => db.listSessions());
+  const next = sessions.filter((s) => Date.parse(s.startsAt) + s.durationMin * 60_000 > Date.now()).slice(0, 3);
+  if (!next.length) return null;
+  return (
+    <section id="programme" className="flex flex-col gap-10 px-4 pb-20 md:px-10 md:pb-[120px] xl:px-20">
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:gap-10">
+        <H2 className="flex-1">On the programme.</H2>
+        <Link to="/sessions" className="btn-secondary self-start text-[15px] lg:self-auto">See the full programme</Link>
+      </div>
+      <ul className="m-0 grid list-none gap-6 p-0 md:grid-cols-3">
+        {next.map((s) => (
+          <li key={s.id} className="flex flex-col gap-3 rounded-[20px] border border-line bg-surface p-7">
+            <span className="text-[13px] font-bold uppercase tracking-overline text-muted">{s.kind}</span>
+            <h3 className="m-0 text-xl font-bold leading-snug">{s.title}</h3>
+            <span className="text-sm font-semibold text-muted">{s.companyName ?? 'IESE Africa Business Club'}</span>
+            <span className="mt-auto text-sm tabular-nums">{fairDay(s.startsAt)}<br />{fairTimeRange(s.startsAt, s.durationMin)}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 

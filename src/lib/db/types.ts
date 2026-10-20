@@ -66,13 +66,67 @@ export interface CvView {
   viewedAt: string;
 }
 
-export type OAuthProvider = 'google' | 'azure'; // azure = Microsoft (work and personal accounts)
+export type OAuthProvider = 'linkedin_oidc' | 'azure' | 'google'; // azure = Microsoft (work and personal accounts)
 
 export interface Session {
   role: Role;
   email: string;
   candidateId?: string;
   companyId?: string;
+}
+
+export type SessionKind = 'Presentation' | 'Panel' | 'Workshop' | 'Networking';
+
+/** A group session in the fair programme, as the caller sees it. */
+export interface FairSession {
+  id: string;
+  companyId: string | null; // null = organised by the club
+  companyName: string | null;
+  title: string;
+  kind: SessionKind;
+  description: string;
+  startsAt: string; // ISO
+  durationMin: number;
+  capacity: number | null;
+  registered: number;
+  isRegistered: boolean;
+  isOrganiser: boolean;
+}
+
+export interface SessionInput {
+  companyId: string | null;
+  title: string;
+  kind: SessionKind;
+  description: string;
+  startsAt: string; // ISO
+  durationMin: number;
+  capacity: number | null;
+  meetingUrl: string;
+}
+
+export interface Registrant {
+  candidateId: string;
+  name: string | null; // null when the student has not shared a verified profile
+  school: string | null;
+  visible: boolean;
+}
+
+export interface InterviewSlot {
+  id: string;
+  companyId: string;
+  startsAt: string;
+  durationMin: number;
+  meetingUrl: string;
+  candidateId: string | null;
+  bookedAt: string | null;
+}
+
+export interface StudentInterview {
+  companyId: string;
+  companyName: string;
+  requestedAt: string;
+  booked: { slotId: string; startsAt: string; durationMin: number; meetingUrl: string } | null;
+  freeSlots: { id: string; startsAt: string; durationMin: number }[];
 }
 
 export interface AdminEntry {
@@ -151,6 +205,24 @@ export interface NyotaDb {
   listVerificationQueue(): Promise<Candidate[]>;
   verifyCandidates(ids: string[]): Promise<void>;
   listCompanies(): Promise<Company[]>;
+  // Sessions (group events)
+  listSessions(): Promise<FairSession[]>;
+  /** Video link: organisers always; registered students from 15 min before to 30 min after. */
+  getSessionLink(sessionId: string): Promise<string | null>;
+  saveSession(sessionId: string | null, input: SessionInput): Promise<void>;
+  deleteSession(sessionId: string): Promise<void>;
+  registerSession(sessionId: string): Promise<void>;
+  unregisterSession(sessionId: string): Promise<void>;
+  listRegistrants(sessionId: string): Promise<Registrant[]>;
+
+  // Interview slots (1:1)
+  listSlots(companyId: string): Promise<InterviewSlot[]>;
+  addSlot(companyId: string, slot: { startsAt: string; durationMin: number; meetingUrl: string }): Promise<void>;
+  deleteSlot(slotId: string): Promise<void>;
+  listStudentInterviews(): Promise<StudentInterview[]>;
+  bookSlot(slotId: string): Promise<void>;
+  cancelBooking(slotId: string): Promise<void>;
+
   listAdmins(): Promise<AdminEntry[]>;
   addAdmin(email: string): Promise<void>;
   removeAdmin(email: string): Promise<void>;

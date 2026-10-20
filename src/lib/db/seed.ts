@@ -1,8 +1,15 @@
 // Fictional demo data — mirrors supabase/seed.sql. Never ship it to production.
-import type { Candidate, Company, Invitation, InterviewRequest, CvView } from './types';
+import type { Candidate, Company, Invitation, InterviewRequest, CvView, InterviewSlot, SessionInput } from './types';
+
+export interface DemoSession extends SessionInput {
+  id: string;
+}
 
 export interface DemoState {
   admins: string[];
+  sessions?: DemoSession[];
+  registrations?: { sessionId: string; candidateId: string }[];
+  slots?: InterviewSlot[];
   candidates: Candidate[];
   companies: Company[];
   invitations: Invitation[];
@@ -20,6 +27,17 @@ const c = (s: Seed): Candidate => ({ programme: 'Full-time MBA', linkedinUrl: ''
 export function createSeed(): DemoState {
   return {
     admins: ['admin@nyota.example'],
+    // Fair: 16–19 February 2027 (CET = UTC+1). Times below are UTC.
+    sessions: [
+      { id: 's1', companyId: null, title: 'Opening of the Nyota Africa Career Fair', kind: 'Panel', description: 'Welcome from the IESE Africa Business Club and how the fair works: sessions, shortlists and interviews.', startsAt: '2027-02-16T17:00:00Z', durationMin: 45, capacity: null, meetingUrl: 'https://example.com/demo-opening' },
+      { id: 's2', companyId: 'co1', title: 'Investing in West African fintech', kind: 'Presentation', description: 'Kora Capital (demo) presents its portfolio and the roles it is hiring for.', startsAt: '2027-02-17T12:00:00Z', durationMin: 45, capacity: 80, meetingUrl: 'https://example.com/demo-kora' },
+      { id: 's3', companyId: 'co2', title: 'Building the Sahel grid: a project finance workshop', kind: 'Workshop', description: 'A hands-on case with the Sahel Grid Energy (demo) team. Limited seats.', startsAt: '2027-02-18T15:00:00Z', durationMin: 60, capacity: 25, meetingUrl: 'https://example.com/demo-sahel' },
+    ],
+    registrations: [{ sessionId: 's1', candidateId: 'c1' }, { sessionId: 's2', candidateId: 'c3' }],
+    slots: [
+      { id: 'sl1', companyId: 'co1', startsAt: '2027-02-17T14:00:00Z', durationMin: 30, meetingUrl: 'https://example.com/demo-kora-interviews', candidateId: null, bookedAt: null },
+      { id: 'sl2', companyId: 'co1', startsAt: '2027-02-17T14:30:00Z', durationMin: 30, meetingUrl: 'https://example.com/demo-kora-interviews', candidateId: null, bookedAt: null },
+    ],
     candidates: [
       c({
         id: 'c1', email: 'amara.diallo@iese.net', firstName: 'Amara', lastName: 'Diallo', school: 'IESE Business School',

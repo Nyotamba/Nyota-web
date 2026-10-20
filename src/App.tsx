@@ -15,6 +15,11 @@ import Admin from './pages/admin/Admin';
 import AdminReview from './pages/admin/Review';
 import AdminDashboard from './pages/admin/Dashboard';
 import AdminAdmins from './pages/admin/Admins';
+import AdminSessions from './pages/admin/Sessions';
+import PublicSessions from './pages/Sessions';
+import StudentSessions from './pages/student/Sessions';
+import StudentInterviews from './pages/student/Interviews';
+import CompanyMeetings from './pages/company/Meetings';
 import { AdminShell } from './pages/admin/AdminShell';
 import { ComingSoon } from './pages/ComingSoon';
 
@@ -41,18 +46,20 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/sign-in" element={<SignIn />} />
+          <Route path="/sessions" element={<PublicSessions />} />
 
           <Route path="/student/profile" element={<Guard role="student"><StudentProfile /></Guard>} />
           <Route path="/student/preview" element={<Guard role="student"><StudentPreview /></Guard>} />
           <Route path="/student/openings" element={<Guard role="student"><StudentShell><ComingSoon title="Openings">{later}</ComingSoon></StudentShell></Guard>} />
-          <Route path="/student/meetings" element={<Guard role="student"><StudentShell><ComingSoon title="Meetings">{later}</ComingSoon></StudentShell></Guard>} />
+          <Route path="/student/sessions" element={<Guard role="student"><StudentSessions /></Guard>} />
+          <Route path="/student/meetings" element={<Guard role="student"><StudentInterviews /></Guard>} />
           <Route path="/student/account" element={<Guard role="student"><StudentShell><ComingSoon title="Account">{later}</ComingSoon></StudentShell></Guard>} />
 
           <Route path="/company/candidates" element={<Guard role="company"><CompanyCandidates /></Guard>} />
           <Route path="/company/candidates/:id" element={<Guard role="company"><CompanyCandidateDetail /></Guard>} />
           <Route path="/company/shortlist" element={<Guard role="company"><CompanyShortlist /></Guard>} />
           <Route path="/company/openings" element={<Guard role="company"><CompanyShell><ComingSoon title="Openings">{later}</ComingSoon></CompanyShell></Guard>} />
-          <Route path="/company/meetings" element={<Guard role="company"><CompanyShell><ComingSoon title="Slots & meetings">{later}</ComingSoon></CompanyShell></Guard>} />
+          <Route path="/company/meetings" element={<Guard role="company"><CompanyMeetings /></Guard>} />
           <Route path="/company/dashboard" element={<Guard role="company"><CompanyShell><ComingSoon title="Dashboard">{later}</ComingSoon></CompanyShell></Guard>} />
 
           <Route path="/admin" element={<Guard role="admin"><Admin /></Guard>} />
@@ -61,6 +68,7 @@ export default function App() {
           <Route path="/admin/consents" element={<Guard role="admin"><AdminShell><ComingSoon title="Consents">{later}</ComingSoon></AdminShell></Guard>} />
           <Route path="/admin/dashboard" element={<Guard role="admin"><AdminDashboard /></Guard>} />
           <Route path="/admin/admins" element={<Guard role="admin"><AdminAdmins /></Guard>} />
+          <Route path="/admin/sessions" element={<Guard role="admin"><AdminSessions /></Guard>} />
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

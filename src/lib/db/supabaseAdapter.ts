@@ -1,7 +1,7 @@
 // Live implementation of NyotaDb on Supabase. Access rules are enforced by the database
 // (row-level security in supabase/schema.sql); this file only maps rows to the UI types.
 import { createClient, FunctionsHttpError, type EmailOtpType, type SupabaseClient } from '@supabase/supabase-js';
-import type { Candidate, Consent, InvitationStatus, NyotaDb, OAuthProvider, PositionType, Session } from './types';
+import type { Candidate, Consent, FairSession, InterviewSlot, InvitationStatus, NyotaDb, OAuthProvider, PositionType, Session, StudentInterview } from './types';
 import { CONSENT_VERSION, CV_LINK_TTL_SECONDS } from '../../config/constants';
 
 // Every candidate column except e-mail, which companies may not read (column privileges).
@@ -163,7 +163,7 @@ export function createSupabaseDb(url: string, key: string): NyotaDb {
       try {
         const res = await fetch(`${url}/auth/v1/settings`, { headers: { apikey: key } });
         const external = ((await res.json()).external ?? {}) as Record<string, boolean>;
-        return (['azure', 'google'] as OAuthProvider[]).filter((p) => external[p]);
+        return (['linkedin_oidc', 'azure', 'google'] as OAuthProvider[]).filter((p) => external[p]);
       } catch {
         return [];
       }
@@ -301,6 +301,82 @@ export function createSupabaseDb(url: string, key: string): NyotaDb {
       check(await sb.rpc('verify_candidates', { ids }));
       emit();
     },
+    async listSessions() {
+      const rows = check<{
+        id: string; company_id: string | null; company_name: string | null; title: string; kind: FairSession['kind'];
+        description: string; starts_at: string; duration_min: number; capacity: number | null; registered: number;
+        is_registered: boolean; is_organiser: boolean;
+      }[]>(await sb.rpc('list_sessions'));
+      return rows.map((r) => ({
+        id: r.id, companyId: r.company_id, companyName: r.company_name, title: r.title, kind: r.kind, description: r.description,
+        startsAt: r.starts_at, durationMin: r.duration_min, capacity: r.capacity, registered: r.registered,
+        isRegistered: r.is_registered, isOrganiser: r.is_organiser,
+      }));
+    },
+    async getSessionLink(sessionId) {
+      return maybe<string>(await sb.rpc('session_link', { sid: sessionId }));
+    },
+    async saveSession(sessionId, s) {
+      const row = {
+        company_id: s.companyId, title: s.title.trim(), kind: s.kind, description: s.description.trim(), starts_at: s.startsAt,
+        duration_min: s.durationMin, capacity: s.capacity, meeting_url: s.meetingUrl.trim(),
+      };
+      if (sessionId) check(await sb.from('sessions').update(row).eq('id', sessionId).select('id').single());
+      else check(await sb.from('sessions').insert(row).select('id').single());
+      emit();
+    },
+    async deleteSession(sessionId) {
+      check(await sb.from('sessions').delete().eq('id', sessionId).select('id'));
+      emit();
+    },
+    async registerSession(sessionId) {
+      maybe(await sb.rpc('register_session', { sid: sessionId }));
+      emit();
+    },
+    async unregisterSession(sessionId) {
+      maybe(await sb.rpc('unregister_session', { sid: sessionId }));
+      emit();
+    },
+    async listRegistrants(sessionId) {
+      const rows = check<{ candidate_id: string; name: string | null; school: string | null; visible: boolean }[]>(
+        await sb.rpc('session_registrants', { sid: sessionId }),
+      );
+      return rows.map((r) => ({ candidateId: r.candidate_id, name: r.name, school: r.school, visible: r.visible }));
+    },
+
+    async listSlots(companyId) {
+      const rows = check<{ id: string; company_id: string; starts_at: string; duration_min: number; meeting_url: string; candidate_id: string | null; booked_at: string | null }[]>(
+        await sb.from('interview_slots').select('id,company_id,starts_at,duration_min,meeting_url,candidate_id,booked_at').eq('company_id', companyId).order('starts_at'),
+      );
+      return rows.map((r): InterviewSlot => ({
+        id: r.id, companyId: r.company_id, startsAt: r.starts_at, durationMin: r.duration_min, meetingUrl: r.meeting_url,
+        candidateId: r.candidate_id, bookedAt: r.booked_at,
+      }));
+    },
+    async addSlot(companyId, slot) {
+      const res = await sb.from('interview_slots').insert({
+        company_id: companyId, starts_at: slot.startsAt, duration_min: slot.durationMin, meeting_url: slot.meetingUrl.trim(),
+      }).select('id').single();
+      if (res.error?.message.includes('one_slot_per_time')) throw new Error('You already have a slot at that time.');
+      check(res);
+      emit();
+    },
+    async deleteSlot(slotId) {
+      check(await sb.from('interview_slots').delete().eq('id', slotId).select('id'));
+      emit();
+    },
+    async listStudentInterviews() {
+      return check<StudentInterview[]>(await sb.rpc('student_interviews'));
+    },
+    async bookSlot(slotId) {
+      maybe(await sb.rpc('book_slot', { slot: slotId }));
+      emit();
+    },
+    async cancelBooking(slotId) {
+      maybe(await sb.rpc('cancel_slot_booking', { slot: slotId }));
+      emit();
+    },
+
     async listAdmins() {
       const rows = check<{ email: string; signed_in: boolean }[]>(await sb.rpc('list_admins'));
       return rows.map((r) => ({ email: r.email, signedIn: r.signed_in }));

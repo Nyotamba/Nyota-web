@@ -30,6 +30,12 @@ const clone = <T,>(v: T): T => JSON.parse(JSON.stringify(v));
 
 export function createDemoDb(): NyotaDb {
   let state: DemoState = read<DemoState>(STATE_KEY) ?? createSeed();
+  // Demo data saved by an older version: add what it lacks.
+  const seed = createSeed();
+  state.admins ??= seed.admins;
+  state.sessions ??= seed.sessions;
+  state.registrations ??= seed.registrations;
+  state.slots ??= seed.slots;
   let session: Session | null = read<Session>(SESSION_KEY);
   const listeners = new Set<() => void>();
 
@@ -162,6 +168,106 @@ export function createDemoDb(): NyotaDb {
       });
       commit();
     },
+    async listSessions() {
+      const regs = state.registrations ?? [];
+      const company = (id: string | null) => (id ? state.companies.find((c) => c.id === id)?.name ?? null : null);
+      const organiser = (s: { companyId: string | null }) =>
+        session?.role === 'admin' || (session?.role === 'company' && s.companyId === session.companyId);
+      return (state.sessions ?? [])
+        .map((s) => ({
+          id: s.id, companyId: s.companyId, companyName: company(s.companyId), title: s.title, kind: s.kind,
+          description: s.description, startsAt: s.startsAt, durationMin: s.durationMin, capacity: s.capacity,
+          registered: regs.filter((r) => r.sessionId === s.id).length,
+          isRegistered: regs.some((r) => r.sessionId === s.id && r.candidateId === session?.candidateId),
+          isOrganiser: organiser(s),
+        }))
+        .sort((a, b) => a.startsAt.localeCompare(b.startsAt));
+    },
+    async getSessionLink(sessionId) {
+      return (state.sessions ?? []).find((s) => s.id === sessionId)?.meetingUrl || null;
+    },
+    async saveSession(sessionId, input) {
+      state.sessions = state.sessions ?? [];
+      if (sessionId) Object.assign(state.sessions.find((s) => s.id === sessionId)!, input);
+      else state.sessions.push({ id: uid('s'), ...input });
+      commit();
+    },
+    async deleteSession(sessionId) {
+      state.sessions = (state.sessions ?? []).filter((s) => s.id !== sessionId);
+      state.registrations = (state.registrations ?? []).filter((r) => r.sessionId !== sessionId);
+      commit();
+    },
+    async registerSession(sessionId) {
+      const cid = session?.candidateId;
+      if (!cid) throw new Error('Only students can register for sessions');
+      const s = (state.sessions ?? []).find((x) => x.id === sessionId);
+      const regs = (state.registrations = state.registrations ?? []);
+      if (s?.capacity && regs.filter((r) => r.sessionId === sessionId).length >= s.capacity) throw new Error('This session is full');
+      if (!regs.some((r) => r.sessionId === sessionId && r.candidateId === cid)) regs.push({ sessionId, candidateId: cid });
+      commit();
+    },
+    async unregisterSession(sessionId) {
+      state.registrations = (state.registrations ?? []).filter((r) => !(r.sessionId === sessionId && r.candidateId === session?.candidateId));
+      commit();
+    },
+    async listRegistrants(sessionId) {
+      return (state.registrations ?? [])
+        .filter((r) => r.sessionId === sessionId)
+        .map((r) => {
+          const c = findCandidate(r.candidateId);
+          const show = session?.role === 'admin' || isVisible(c);
+          return { candidateId: c.id, name: show ? `${c.firstName} ${c.lastName}` : null, school: show ? c.school : null, visible: isVisible(c) };
+        });
+    },
+    async listSlots(companyId) {
+      return clone((state.slots ?? []).filter((s) => s.companyId === companyId).sort((a, b) => a.startsAt.localeCompare(b.startsAt)));
+    },
+    async addSlot(companyId, slot) {
+      if ((state.slots ?? []).some((s) => s.companyId === companyId && s.startsAt === slot.startsAt)) {
+        throw new Error('You already have a slot at that time.');
+      }
+      (state.slots = state.slots ?? []).push({ id: uid('sl'), companyId, ...slot, candidateId: null, bookedAt: null });
+      commit();
+    },
+    async deleteSlot(slotId) {
+      state.slots = (state.slots ?? []).filter((s) => s.id !== slotId);
+      commit();
+    },
+    async listStudentInterviews() {
+      const cid = session?.candidateId;
+      const slots = state.slots ?? [];
+      return state.interviewRequests
+        .filter((r) => r.candidateId === cid)
+        .map((r) => {
+          const b = slots.find((s) => s.companyId === r.companyId && s.candidateId === cid);
+          return {
+            companyId: r.companyId,
+            companyName: state.companies.find((c) => c.id === r.companyId)?.name ?? '',
+            requestedAt: r.createdAt,
+            booked: b ? { slotId: b.id, startsAt: b.startsAt, durationMin: b.durationMin, meetingUrl: b.meetingUrl } : null,
+            freeSlots: slots
+              .filter((s) => s.companyId === r.companyId && !s.candidateId && Date.parse(s.startsAt) > Date.now())
+              .map((s) => ({ id: s.id, startsAt: s.startsAt, durationMin: s.durationMin })),
+          };
+        });
+    },
+    async bookSlot(slotId) {
+      const cid = session?.candidateId;
+      const slot = (state.slots ?? []).find((s) => s.id === slotId);
+      if (!cid || !slot) throw new Error('This slot no longer exists');
+      if (slot.candidateId) throw new Error('This slot was just taken. Pick another one.');
+      (state.slots ?? []).forEach((s) => {
+        if (s.companyId === slot.companyId && s.candidateId === cid) Object.assign(s, { candidateId: null, bookedAt: null });
+      });
+      Object.assign(slot, { candidateId: cid, bookedAt: now() });
+      commit();
+    },
+    async cancelBooking(slotId) {
+      const slot = (state.slots ?? []).find((s) => s.id === slotId && s.candidateId === session?.candidateId);
+      if (slot) Object.assign(slot, { candidateId: null, bookedAt: null });
+      commit();
+    },
+
     async listAdmins() {
       return (state.admins ?? []).map((email) => ({ email, signedIn: email === DEMO_ACCOUNTS.admin.email }));
     },

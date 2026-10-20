@@ -74,7 +74,7 @@ export default function SignIn() {
             <div className="flex flex-col gap-3">
               {providers.map((p) => (
                 <button key={p} type="button" onClick={() => withProvider(p)} className="btn-secondary w-full text-[15px]">
-                  Continue with {p === 'azure' ? 'Microsoft' : 'Google'}
+                  Continue with {p === 'azure' ? 'Microsoft' : p === 'google' ? 'Google' : 'LinkedIn'}
                 </button>
               ))}
               <div className="flex items-center gap-3 text-[13px] text-muted">
