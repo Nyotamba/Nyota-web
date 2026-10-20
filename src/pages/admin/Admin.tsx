@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { AdminShell } from './AdminShell';
 import { Badge } from '../../components/Badge';
 import { Notice } from '../../components/Notice';
+import { CopyCode } from '../../components/CopyCode';
 import { db } from '../../lib/db';
 import { useDbQuery } from '../../lib/useDb';
 import { formatDate, formatKb, fullName, shortSchool } from '../../lib/candidate';
@@ -37,9 +38,11 @@ export default function Admin() {
     setEmail('');
     setNewCompany('');
     setNotice(
-      inv.emailSent
-        ? `Invitation e-mailed to ${inv.email}`
-        : `Invitation recorded for ${inv.email}. No e-mail was sent: tell them to sign in on the site with this address.`,
+      inv.accessCode
+        ? `Invitation ready. Send ${inv.email} their access code ${inv.accessCode} (shown under Recent invitations).`
+        : inv.emailSent
+          ? `Invitation e-mailed to ${inv.email}`
+          : `Invitation recorded for ${inv.email}. Tell them to create their account on the site with this address.`,
     );
   };
   const companyName = (id: string) => companies.find((c) => c.id === id)?.name ?? '—';
@@ -109,7 +112,7 @@ export default function Admin() {
             <button type="submit" className="btn rounded-xl bg-ink text-[15px] text-offwhite hover:bg-green">Send invitation</button>
             <p className="m-0 text-[13px] leading-normal text-muted">
               {db.mode === 'live'
-                ? 'They receive an e-mail with a sign-in link and land straight in their company space.'
+                ? 'An access code appears under Recent invitations: send it to them with the site address. They create their account with their invited e-mail and this code.'
                 : 'In this demo the invitation is recorded but no e-mail is sent.'}
             </p>
           </form>
@@ -117,9 +120,14 @@ export default function Admin() {
           <section className="flex flex-col gap-1 rounded-2xl border border-line bg-surface px-6 py-5">
             <h2 className="overline m-0 mb-2">Recent invitations</h2>
             {invitations.slice(0, 6).map((i) => (
-              <div key={i.id} className="flex items-center gap-3 border-b border-line-soft py-3 text-sm last:border-b-0">
-                <span className="flex min-w-0 flex-1 flex-col gap-0.5"><span className="truncate font-semibold">{i.email}</span><span className="text-muted">{companyName(i.companyId)}</span></span>
-                <Badge tone={i.status === 'Accepted' ? 'green' : 'orange'}>{i.status}</Badge>
+              <div key={i.id} className="flex flex-col gap-2 border-b border-line-soft py-3 text-sm last:border-b-0">
+                <div className="flex items-center gap-3">
+                  <span className="flex min-w-0 flex-1 flex-col gap-0.5"><span className="truncate font-semibold">{i.email}</span><span className="text-muted">{companyName(i.companyId)}</span></span>
+                  <Badge tone={i.status === 'Accepted' ? 'green' : 'orange'}>{i.status}</Badge>
+                </div>
+                {i.accessCode && i.status === 'Invited' && (
+                  <span className="flex flex-wrap items-center gap-2 text-[13px] text-muted">Access code <CopyCode code={i.accessCode} /></span>
+                )}
               </div>
             ))}
           </section>

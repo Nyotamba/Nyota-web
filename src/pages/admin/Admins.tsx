@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { AdminShell } from './AdminShell';
 import { Badge } from '../../components/Badge';
 import { Notice } from '../../components/Notice';
+import { CopyCode } from '../../components/CopyCode';
 import { db } from '../../lib/db';
 import { useDbQuery } from '../../lib/useDb';
 import { useSession } from '../../App';
@@ -51,6 +52,7 @@ export default function AdminAdmins() {
                   {a.email === me && <span className="ml-2 font-normal text-muted">(you)</span>}
                 </span>
                 {a.signedIn ? <Badge tone="green">Signed in</Badge> : <Badge tone="orange">Not signed in yet</Badge>}
+                {!a.signedIn && a.accessCode && <CopyCode code={a.accessCode} />}
                 {a.email !== me &&
                   (confirming === a.email ? (
                     <span className="flex gap-2">
@@ -77,8 +79,8 @@ export default function AdminAdmins() {
             </label>
             <button type="submit" disabled={busy} className="btn rounded-xl bg-ink text-[15px] text-offwhite hover:bg-green">Add admin</button>
             <p className="m-0 text-[13px] leading-normal text-muted">
-              They sign in on the site with this address and land in the admin space. If they already have an account, it becomes an admin
-              account right away.
+              Send them the access code that appears next to their address. They create their account with this e-mail and the code (or
+              sign in with an e-mail link). If they already have an account, it becomes an admin account right away.
             </p>
           </form>
         </aside>

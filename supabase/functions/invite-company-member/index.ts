@@ -43,7 +43,7 @@ Deno.serve(async (req) => {
     const { data: invitation, error: invError } = await admin
       .from('invitations')
       .upsert({ company_id: companyId, email, invited_by: user?.id ?? null }, { onConflict: 'company_id,email' })
-      .select('id,email,company_id,status,created_at')
+      .select('id,email,company_id,status,created_at,access_code')
       .single();
     if (invError) return json({ error: invError.message }, 400);
 

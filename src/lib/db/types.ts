@@ -50,6 +50,8 @@ export interface Invitation {
   companyId: string;
   status: InvitationStatus;
   createdAt: string;
+  /** Code to hand to the person: they create their account with it (live site). */
+  accessCode?: string | null;
 }
 
 export interface InterviewRequest {
@@ -138,6 +140,7 @@ export interface StudentInterview {
 export interface AdminEntry {
   email: string;
   signedIn: boolean; // has signed in at least once
+  accessCode?: string | null;
 }
 
 export interface CompanyActivity {
@@ -190,6 +193,12 @@ export interface NyotaDb {
   /** Why the last sign-in link failed (expired, already used…), once; null otherwise. */
   takeLinkError(): string | null;
   signInDemo(role: Role): Promise<Session>;
+  /** Live only: e-mail + password. */
+  signInWithPassword(email: string, password: string): Promise<void>;
+  /** Live only. Returns needsConfirmation when Supabase still requires an e-mail confirmation. */
+  signUpWithPassword(email: string, password: string, accessCode?: string): Promise<{ needsConfirmation: boolean }>;
+  /** Turns the signed-in account into a company or admin account. */
+  redeemAccessCode(code: string): Promise<Role>;
   signOut(): Promise<void>;
   resetDemo(): Promise<void>;
 

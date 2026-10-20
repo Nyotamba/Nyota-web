@@ -176,6 +176,39 @@ export function createSupabaseDb(url: string, key: string): NyotaDb {
         }),
       );
     },
+    async signInWithPassword(email, password) {
+      const { error } = await sb.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
+      if (error) {
+        throw new Error(/invalid login/i.test(error.message)
+          ? 'Wrong e-mail or password. New here? Choose “Create my account”.'
+          : /not confirmed/i.test(error.message) ? 'Confirm your e-mail address first (check your inbox), or ask the club.' : error.message);
+      }
+      session = undefined;
+      emit();
+    },
+    async signUpWithPassword(email, password, accessCode) {
+      const { data, error } = await sb.auth.signUp({ email: email.trim().toLowerCase(), password });
+      if (error) {
+        throw new Error(/already registered|exists/i.test(error.message)
+          ? 'An account already exists with this e-mail. Choose “I have an account”.' : error.message);
+      }
+      // Supabase returns a user with no identities when the address is already taken (anti-enumeration).
+      if (data.user && data.user.identities?.length === 0) throw new Error('An account already exists with this e-mail. Choose “I have an account”.');
+      if (!data.session) return { needsConfirmation: true };
+      if (accessCode?.trim()) {
+        session = undefined;
+        maybe(await sb.rpc('redeem_access_code', { code: accessCode }));
+      }
+      session = undefined;
+      emit();
+      return { needsConfirmation: false };
+    },
+    async redeemAccessCode(code) {
+      const role = check<Session['role']>(await sb.rpc('redeem_access_code', { code }));
+      session = undefined;
+      emit();
+      return role;
+    },
     async signInDemo() {
       throw new Error('Demo accounts are not available on the live site.');
     },
@@ -385,8 +418,8 @@ export function createSupabaseDb(url: string, key: string): NyotaDb {
     },
 
     async listAdmins() {
-      const rows = check<{ email: string; signed_in: boolean }[]>(await sb.rpc('list_admins'));
-      return rows.map((r) => ({ email: r.email, signedIn: r.signed_in }));
+      const rows = check<{ email: string; signed_in: boolean; access_code: string | null }[]>(await sb.rpc('list_admins'));
+      return rows.map((r) => ({ email: r.email, signedIn: r.signed_in, accessCode: r.access_code }));
     },
     async addAdmin(email) {
       check(await sb.rpc('add_admin', { new_email: email }).then((r) => ({ ...r, data: true })));
@@ -406,8 +439,10 @@ export function createSupabaseDb(url: string, key: string): NyotaDb {
       return maybe(await sb.from('companies').select('id,name').eq('id', id).maybeSingle());
     },
     async listInvitations() {
-      const rows = check<{ id: string; email: string; company_id: string; status: InvitationStatus; created_at: string }[]>(await sb.from('invitations').select('id,email,company_id,status,created_at').order('created_at', { ascending: false }));
-      return rows.map((r) => ({ id: r.id, email: r.email, companyId: r.company_id, status: r.status, createdAt: r.created_at }));
+      const rows = check<{ id: string; email: string; company_id: string; status: InvitationStatus; created_at: string; access_code: string | null }[]>(
+        await sb.from('invitations').select('id,email,company_id,status,created_at,access_code').order('created_at', { ascending: false }),
+      );
+      return rows.map((r) => ({ id: r.id, email: r.email, companyId: r.company_id, status: r.status, createdAt: r.created_at, accessCode: r.access_code }));
     },
     async inviteCompanyMember({ companyId, newCompanyName, email }) {
       // Preferred: the invite-company-member function records the invitation AND e-mails the link.
@@ -418,7 +453,7 @@ export function createSupabaseDb(url: string, key: string): NyotaDb {
         const r = data.invitation;
         return changed({
           id: r.id, email: r.email, companyId: r.company_id, status: r.status as InvitationStatus, createdAt: r.created_at,
-          emailSent: Boolean(data.emailSent),
+          accessCode: r.access_code, emailSent: Boolean(data.emailSent),
         });
       }
       const status = error instanceof FunctionsHttpError ? error.context.status : 0;
@@ -433,10 +468,10 @@ export function createSupabaseDb(url: string, key: string): NyotaDb {
         await sb
           .from('invitations')
           .insert({ company_id: id, email: email.trim().toLowerCase(), invited_by: (await sb.auth.getUser()).data.user?.id })
-          .select('id,email,company_id,status,created_at')
+          .select('id,email,company_id,status,created_at,access_code')
           .single(),
       );
-      return changed({ id: r.id, email: r.email, companyId: r.company_id, status: r.status, createdAt: r.created_at, emailSent: false });
+      return changed({ id: r.id, email: r.email, companyId: r.company_id, status: r.status, createdAt: r.created_at, accessCode: r.access_code, emailSent: false });
     },
   };
 }
