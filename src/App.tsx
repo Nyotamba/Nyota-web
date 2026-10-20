@@ -19,6 +19,7 @@ import AdminSessions from './pages/admin/Sessions';
 import AdminCompanies from './pages/admin/Companies';
 import AdminLists from './pages/admin/Lists';
 import AdminCandidates from './pages/admin/Candidates';
+import OwnerSettings from './pages/admin/Settings';
 import PublicSessions from './pages/Sessions';
 import StudentSessions from './pages/student/Sessions';
 import StudentInterviews from './pages/student/Interviews';
@@ -72,6 +73,7 @@ export default function App() {
           <Route path="/admin/lists" element={<Guard role="admin"><AdminLists /></Guard>} />
           <Route path="/admin/schools" element={<Navigate to="/admin/lists" replace />} />
           <Route path="/admin/candidates" element={<Guard role="admin"><AdminCandidates /></Guard>} />
+          <Route path="/admin/settings" element={<Guard role="admin"><OwnerSettings /></Guard>} />
           <Route path="/admin/consents" element={<Guard role="admin"><AdminShell><ComingSoon title="Consents">{later}</ComingSoon></AdminShell></Guard>} />
           <Route path="/admin/dashboard" element={<Guard role="admin"><AdminDashboard /></Guard>} />
           <Route path="/admin/admins" element={<Guard role="admin"><AdminAdmins /></Guard>} />

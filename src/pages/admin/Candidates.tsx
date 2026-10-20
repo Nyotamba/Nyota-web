@@ -1,4 +1,6 @@
 import { useMemo, useState } from 'react';
+import { Notice } from '../../components/Notice';
+import { useSession } from '../../App';
 import { Link } from 'react-router-dom';
 import { AdminShell } from './AdminShell';
 import { Badge } from '../../components/Badge';
@@ -21,6 +23,19 @@ export default function AdminCandidates() {
   const { data: all, error } = useDbQuery(() => db.listAllCandidates());
   const [q, setQ] = useState('');
   const [status, setStatus] = useState<Status | ''>('');
+  const isOwner = Boolean(useSession()?.isOwner);
+  const [confirm, setConfirm] = useState<string | null>(null);
+  const [notice, setNotice] = useState<{ msg: string; tone?: 'green' | 'danger' } | null>(null);
+  const remove = async (c: Candidate) => {
+    try {
+      await db.deleteCandidate(c.id);
+      setNotice({ msg: `${fullName(c) || 'The student'} and their CV were deleted` });
+    } catch (err) {
+      setNotice({ msg: (err as Error).message, tone: 'danger' });
+    } finally {
+      setConfirm(null);
+    }
+  };
   const counts = useMemo(() => {
     const m: Record<string, number> = {};
     (all ?? []).forEach((c) => (m[statusOf(c)] = (m[statusOf(c)] ?? 0) + 1));
@@ -80,7 +95,21 @@ export default function AdminCandidates() {
                     <td className="px-5 py-3.5 text-muted">{experienceLine(c) || '—'}</td>
                     <td className="px-5 py-3.5"><Badge tone={st.tone}>{st.label}</Badge></td>
                     <td className="px-5 py-3.5 tabular-nums text-muted">{formatDate(c.updatedAt, { day: 'numeric', month: 'short' })}</td>
-                    <td className="px-5 py-3.5 text-right"><Link to={`/admin/review/${c.id}`} className="btn-small text-[13px]">Open</Link></td>
+                    <td className="px-5 py-3.5 text-right">
+                      <span className="inline-flex flex-wrap justify-end gap-2">
+                        <Link to={`/admin/review/${c.id}`} className="btn-small text-[13px]">Open</Link>
+                        {isOwner && (confirm === c.id ? (
+                          <>
+                            <button type="button" className="btn-small border-danger text-[13px] text-danger hover:border-danger hover:text-danger" onClick={() => remove(c)}>
+                              Delete for good
+                            </button>
+                            <button type="button" className="btn-small text-[13px]" onClick={() => setConfirm(null)}>Keep</button>
+                          </>
+                        ) : (
+                          <button type="button" className="btn-small text-[13px] text-danger hover:text-danger" onClick={() => setConfirm(c.id)}>Delete…</button>
+                        ))}
+                      </span>
+                    </td>
                   </tr>
                 );
               })}
@@ -88,6 +117,7 @@ export default function AdminCandidates() {
           </table>
         </div>
       </div>
+      <Notice message={notice?.msg ?? null} tone={notice?.tone} onDone={() => setNotice(null)} />
     </AdminShell>
   );
 }

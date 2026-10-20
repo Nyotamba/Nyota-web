@@ -7,6 +7,7 @@ import { SendCodeButton } from '../../components/SendCodeButton';
 import { Notice } from '../../components/Notice';
 import { db, type Company, type Invitation } from '../../lib/db';
 import { useDbQuery } from '../../lib/useDb';
+import { useSession } from '../../App';
 
 export default function AdminCompanies() {
   const { data: companies } = useDbQuery(() => db.listCompanies());
@@ -69,6 +70,8 @@ function CompanyCard({ company, members, onNotice }: {
 }) {
   const [email, setEmail] = useState('');
   const [busy, setBusy] = useState(false);
+  const isOwner = Boolean(useSession()?.isOwner);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const invite = async (e: FormEvent) => {
     e.preventDefault();
     setBusy(true);
@@ -88,6 +91,17 @@ function CompanyCard({ company, members, onNotice }: {
       <div className="flex flex-wrap items-baseline gap-3">
         <h2 className="m-0 flex-1 text-lg font-bold">{company.name}</h2>
         <span className="text-sm tabular-nums text-muted">{accepted} of {members.length} members signed in</span>
+        {isOwner && (confirmDelete ? (
+          <span className="flex gap-2">
+            <button type="button" className="btn-small border-danger text-[13px] text-danger hover:border-danger hover:text-danger"
+              onClick={() => db.deleteCompany(company.id).then(() => onNotice(`${company.name} deleted`), (e: Error) => onNotice(e.message, 'danger'))}>
+              Delete company and its data
+            </button>
+            <button type="button" className="btn-small text-[13px]" onClick={() => setConfirmDelete(false)}>Keep</button>
+          </span>
+        ) : (
+          <button type="button" className="btn-small text-[13px] text-danger hover:text-danger" onClick={() => setConfirmDelete(true)}>Delete…</button>
+        ))}
       </div>
       <LogoEditor target={{ kind: 'company', id: company.id }} name={company.name} logoUrl={company.logoUrl}
         showOnSite={company.showOnSite} onNotice={onNotice} />

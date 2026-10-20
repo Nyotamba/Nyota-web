@@ -91,7 +91,7 @@ export function createDemoDb(): NyotaDb {
           ? { role, email: DEMO_ACCOUNTS.student.email, candidateId: DEMO_ACCOUNTS.student.candidateId }
           : role === 'company'
             ? { role, email: DEMO_ACCOUNTS.company.email, companyId: DEMO_ACCOUNTS.company.companyId }
-            : { role, email: DEMO_ACCOUNTS.admin.email };
+            : { role, email: DEMO_ACCOUNTS.admin.email, isOwner: true };
       commit();
       return session;
     },
@@ -120,8 +120,8 @@ export function createDemoDb(): NyotaDb {
       cand.updatedAt = now();
       commit();
     },
-    async giveConsent(candidateId) {
-      findCandidate(candidateId).consent = { version: CONSENT_VERSION, givenAt: now() };
+    async giveConsent(candidateId, version) {
+      findCandidate(candidateId).consent = { version: version || CONSENT_VERSION, givenAt: now() };
       commit();
     },
     async withdrawConsent(candidateId) {
@@ -292,7 +292,35 @@ export function createDemoDb(): NyotaDb {
       throw new Error('E-mails are not sent in the demo: copy the code instead.');
     },
     async listAdmins() {
-      return (state.admins ?? []).map((email) => ({ email, signedIn: email === DEMO_ACCOUNTS.admin.email }));
+      const owners = state.owners ?? [DEMO_ACCOUNTS.admin.email];
+      return (state.admins ?? []).map((email) => ({ email, signedIn: email === DEMO_ACCOUNTS.admin.email, isOwner: owners.includes(email), accessCode: 'DEMO-CODE' }));
+    },
+    async setOwner(email, owner) {
+      const owners = new Set(state.owners ?? [DEMO_ACCOUNTS.admin.email]);
+      if (!owner && owners.size <= 1 && owners.has(email)) throw new Error('The club needs at least one owner');
+      if (owner) owners.add(email);
+      else owners.delete(email);
+      state.owners = [...owners];
+      commit();
+    },
+    async deleteCandidate(candidateId) {
+      state.candidates = state.candidates.filter((c) => c.id !== candidateId);
+      state.shortlists = state.shortlists.filter((x) => x.candidateId !== candidateId);
+      state.registrations = (state.registrations ?? []).filter((x) => x.candidateId !== candidateId);
+      commit();
+    },
+    async deleteCompany(companyId) {
+      state.companies = state.companies.filter((c) => c.id !== companyId);
+      state.invitations = state.invitations.filter((i) => i.companyId !== companyId);
+      state.sessions = (state.sessions ?? []).filter((x) => x.companyId !== companyId);
+      commit();
+    },
+    async getSettings() {
+      return { ...(state.settings ?? {}) };
+    },
+    async saveSettings(values) {
+      state.settings = { ...(state.settings ?? {}), ...Object.fromEntries(Object.entries(values).map(([k, v]) => [k, String(v ?? '')])) };
+      commit();
     },
     async addAdmin(email) {
       const em = email.trim().toLowerCase();
@@ -301,7 +329,10 @@ export function createDemoDb(): NyotaDb {
       commit();
     },
     async removeAdmin(email) {
-      if (email === session?.email) throw new Error('You cannot remove yourself. Ask another admin.');
+      if (email === session?.email) throw new Error('You cannot remove yourself. Ask another owner.');
+      if ((state.owners ?? [DEMO_ACCOUNTS.admin.email]).includes(email) && (state.owners ?? [DEMO_ACCOUNTS.admin.email]).length <= 1) {
+        throw new Error('The club needs at least one owner');
+      }
       if ((state.admins ?? []).length <= 1) throw new Error('The club needs at least one admin');
       state.admins = (state.admins ?? []).filter((a) => a !== email);
       commit();

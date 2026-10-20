@@ -7,10 +7,11 @@ import { Check, FileIcon } from '../../components/icons';
 import { db, type Candidate, type CandidateProfileInput, type Gender, type PositionType } from '../../lib/db';
 import { useDbQuery } from '../../lib/useDb';
 import { useProfileOptions } from '../../lib/useOptions';
+import { useSettings } from '../../lib/useSettings';
 import { useSession } from '../../App';
 import { formatDate, formatKb, isProfileComplete, isVisible } from '../../lib/candidate';
 import {
-  ANY_COUNTRY, CONSENT_TEXT, CONSENT_VERSION, FORUM_NAME, CV_MAX_BYTES, FORUM_YEAR, POSITION_TYPES, SCHOOLS, STORY_MAX_CHARS,
+  ANY_COUNTRY, CV_MAX_BYTES, POSITION_TYPES, SCHOOLS, STORY_MAX_CHARS,
   EXPERIENCE_YEARS,
 } from '../../config/constants';
 
@@ -33,6 +34,7 @@ export default function StudentProfile() {
   const fileRef = useRef<HTMLInputElement>(null);
   const { data: schoolList = SCHOOLS as readonly string[] } = useDbQuery(() => db.listSchools());
   const { functions: FUNCTIONS, sectors: SECTORS, languages: LANGUAGES } = useProfileOptions();
+  const S = useSettings();
 
   useEffect(() => {
     if (cand && !form) setForm(toInput(cand));
@@ -196,12 +198,12 @@ export default function StudentProfile() {
 
           <fieldset className="m-0 flex flex-col gap-4 rounded-[18px] border-2 border-ink bg-surface p-6 md:p-8">
             <legend className="px-2 text-xl font-bold">Consent</legend>
-            <p className="m-0 text-[15px] leading-relaxed text-muted">{CONSENT_TEXT}</p>
+            <p className="m-0 text-[15px] leading-relaxed text-muted">{S.consent_text}</p>
             <label htmlFor="p-consent" className="flex cursor-pointer items-start gap-3 text-[15px] font-semibold leading-normal">
               <input id="p-consent" type="checkbox" className="m-0 size-[22px] shrink-0 accent-ink"
                 checked={Boolean(cand.consent)}
-                onChange={(e) => (e.target.checked ? db.giveConsent(id) : setConfirmWithdraw(true))} />
-              I agree to share my profile and CV with the companies invited to the {FORUM_NAME} {FORUM_YEAR}.
+                onChange={(e) => (e.target.checked ? db.giveConsent(id, S.consent_version) : setConfirmWithdraw(true))} />
+              I agree to share my profile and CV with the companies invited to the {S.forum_name} {S.forum_year}.
             </label>
             {cand.consent && !confirmWithdraw && (
               <div className="text-[13px] text-muted">
@@ -218,7 +220,7 @@ export default function StudentProfile() {
                 </div>
               </div>
             )}
-            {!cand.consent && <div className="text-[13px] text-muted">Version {CONSENT_VERSION}. You can withdraw at any time.</div>}
+            {!cand.consent && <div className="text-[13px] text-muted">Version {S.consent_version}. You can withdraw at any time.</div>}
           </fieldset>
 
           <div className="flex flex-wrap items-center justify-end gap-3">

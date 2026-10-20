@@ -135,14 +135,16 @@ export function createSupabaseDb(url: string, key: string): NyotaDb {
     const { data } = await sb.auth.getSession();
     const user = data.session?.user;
     if (!user) return (session = null);
-    const profile = maybe(await sb.from('profiles').select('role,email,company_id').eq('id', user.id).maybeSingle());
+    // is_owner arrives with migration 012; before that, read the profile without it.
+    let profile = maybe(await sb.from('profiles').select('role,email,company_id,is_owner').eq('id', user.id).maybeSingle().then((r) =>
+      missingColumn(r.error) ? sb.from('profiles').select('role,email,company_id').eq('id', user.id).maybeSingle() : r));
     if (!profile) return (session = null);
     let candidateId: string | undefined;
     if (profile.role === 'student') {
       const row = maybe(await sb.from('candidates').select('id').eq('user_id', user.id).maybeSingle());
       candidateId = row?.id;
     }
-    session = { role: profile.role, email: profile.email, companyId: profile.company_id ?? undefined, candidateId };
+    session = { role: profile.role, isOwner: Boolean(profile.is_owner), email: profile.email, companyId: profile.company_id ?? undefined, candidateId };
     return session;
   }
 
@@ -320,8 +322,8 @@ export function createSupabaseDb(url: string, key: string): NyotaDb {
       const { data, error } = await sb.storage.from('cvs').createSignedUrl(row.cv_path, CV_LINK_TTL_SECONDS);
       return error ? null : data.signedUrl;
     },
-    async giveConsent(candidateId) {
-      ok(await sb.from('consents').insert({ candidate_id: candidateId, version: CONSENT_VERSION }));
+    async giveConsent(candidateId, version) {
+      ok(await sb.from('consents').insert({ candidate_id: candidateId, version: version || CONSENT_VERSION }));
       emit();
     },
     async withdrawConsent(candidateId) {
@@ -473,8 +475,33 @@ export function createSupabaseDb(url: string, key: string): NyotaDb {
       throw new Error(body?.error ?? 'E-mail sending is not installed yet. Copy the code and send it yourself for now.');
     },
     async listAdmins() {
-      const rows = check<{ email: string; signed_in: boolean; access_code: string | null }[]>(await sb.rpc('list_admins'));
-      return rows.map((r) => ({ email: r.email, signedIn: r.signed_in, accessCode: r.access_code }));
+      const rows = check<{ email: string; signed_in: boolean; access_code: string | null; is_owner?: boolean }[]>(await sb.rpc('list_admins'));
+      return rows.map((r) => ({ email: r.email, signedIn: r.signed_in, accessCode: r.access_code, isOwner: Boolean(r.is_owner) }));
+    },
+    async setOwner(email, owner) {
+      ok(await sb.rpc('set_owner', { target_email: email, owner }));
+      emit();
+    },
+    async deleteCandidate(candidateId) {
+      await sb.storage.from('cvs').remove([`${candidateId}/cv.pdf`]); // no file is fine
+      ok(await sb.rpc('delete_candidate', { cid: candidateId }));
+      emit();
+    },
+    async deleteCompany(companyId) {
+      ok(await sb.rpc('delete_company', { co: companyId }));
+      emit();
+    },
+    async getSettings() {
+      const { data, error } = await sb.from('site_settings').select('key,value');
+      if (error || !data) return {};
+      return Object.fromEntries(data.map((r) => [r.key, r.value]));
+    },
+    async saveSettings(values) {
+      const rows = Object.entries(values).map(([key, value]) => ({ key, value: String(value ?? '').trim(), updated_at: new Date().toISOString() }));
+      const res = await sb.from('site_settings').upsert(rows);
+      if (res.error && /site_settings/.test(res.error.message)) throw new Error('Run the SQL update 012 in Supabase first (it creates the settings).');
+      ok(res);
+      emit();
     },
     async addAdmin(email) {
       check(await sb.rpc('add_admin', { new_email: email }).then((r) => ({ ...r, data: true })));

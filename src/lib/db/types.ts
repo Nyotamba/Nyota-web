@@ -98,6 +98,8 @@ export type OAuthProvider = 'linkedin_oidc' | 'azure' | 'google'; // azure = Mic
 
 export interface Session {
   role: Role;
+  /** Admins with extra powers (manage admins, delete data, edit site settings). */
+  isOwner?: boolean;
   email: string;
   candidateId?: string;
   companyId?: string;
@@ -182,7 +184,22 @@ export interface TalentRow {
   visible: boolean;
 }
 
+/** Editable on the site by owners (Owner → Settings); constants.ts keeps the defaults. */
+export interface SiteSettings {
+  forum_name: string;
+  forum_date: string;
+  forum_venue: string;
+  forum_year: string;
+  club_email: string;
+  retention_months: string;
+  consent_version: string;
+  consent_text: string;
+  hero_title: string;
+  hero_text: string;
+}
+
 export interface AdminEntry {
+  isOwner?: boolean;
   email: string;
   signedIn: boolean; // has signed in at least once
   accessCode?: string | null;
@@ -253,7 +270,7 @@ export interface NyotaDb {
   setCv(candidateId: string, file: File | null): Promise<void>;
   /** Short-lived link to the CV PDF (null in demo mode, or when the file is unavailable). */
   getCvUrl(candidateId: string): Promise<string | null>;
-  giveConsent(candidateId: string): Promise<void>;
+  giveConsent(candidateId: string, version?: string): Promise<void>;
   withdrawConsent(candidateId: string): Promise<void>;
 
   listVisibleCandidates(): Promise<Candidate[]>;
@@ -304,6 +321,12 @@ export interface NyotaDb {
   cancelBooking(slotId: string): Promise<void>;
 
   listAdmins(): Promise<AdminEntry[]>;
+  /** Owners only. */
+  setOwner(email: string, owner: boolean): Promise<void>;
+  deleteCandidate(candidateId: string): Promise<void>;
+  deleteCompany(companyId: string): Promise<void>;
+  getSettings(): Promise<Partial<SiteSettings>>;
+  saveSettings(values: Partial<SiteSettings>): Promise<void>;
   /** E-mails someone their access code (new admin or invited company member). */
   sendAccessCode(email: string, kind: 'admin' | 'company'): Promise<void>;
   addAdmin(email: string): Promise<void>;

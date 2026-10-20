@@ -5,10 +5,11 @@ import { Badge } from '../components/Badge';
 import { NyotaMark, AfricaOutline, Filter, Lock, Star, Calendar } from '../components/icons';
 import { RibbonPattern } from '../components/RibbonPattern';
 import { db } from '../lib/db';
+import { useSettings } from '../lib/useSettings';
 import { useDbQuery } from '../lib/useDb';
 import { fairDay, fairTimeRange } from '../lib/time';
 import {
-  CLUB_EMAIL, CLUB_INSTAGRAM, CLUB_LINKEDIN, CLUB_NAME, FORUM_DATE, FORUM_NAME, FORUM_VENUE, NYOTA_LINKEDIN, RETENTION_MONTHS,
+  CLUB_INSTAGRAM, CLUB_LINKEDIN, CLUB_NAME, NYOTA_LINKEDIN,
 } from '../config/constants';
 
 // Section anchors scroll in place (the router owns the URL hash).
@@ -16,9 +17,14 @@ const jump = (id: string) => (e: MouseEvent) => {
   e.preventDefault();
   document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 };
-const clubHref = CLUB_EMAIL.includes('@') ? `mailto:${CLUB_EMAIL}` : undefined;
 
 export default function Landing() {
+  const S = useSettings();
+  const FORUM_NAME = S.forum_name, CLUB_EMAIL = S.club_email;
+  const clubHref = CLUB_EMAIL.includes('@') ? `mailto:${CLUB_EMAIL}` : undefined;
+  // The last two words of the headline are highlighted (brand book T4: one highlight per headline).
+  const words = S.hero_title.trim().split(/\s+/);
+  const [lead, highlight] = [words.slice(0, -2).join(' '), words.slice(-2).join(' ')];
   return (
     <div className="mx-auto flex max-w-page flex-col">
       <header className="flex h-[72px] items-center gap-6 border-b border-line px-4 md:h-[88px] md:gap-12 md:px-10 xl:px-20">
@@ -40,16 +46,15 @@ export default function Landing() {
         <RibbonPattern className="-z-10 text-sand" />
         <div className="flex flex-col gap-7 lg:col-span-7">
           <div className="self-start bg-orange px-3.5 py-2 font-display text-[15px] tracking-[0.04em] text-ink sm:text-[17px]">
-            {FORUM_NAME} · {FORUM_DATE} · {FORUM_VENUE}
+            {S.forum_name} · {S.forum_date} · {S.forum_venue}
           </div>
           <h1 className="m-0 font-display text-[48px] leading-[0.95] tracking-display sm:text-[72px] xl:text-[96px]">
-            Europe’s MBA talent, meeting Africa’s{' '}
+            {lead}{' '}
             {/* Orange text only at display size (contrast rule); Ribbon Green on phones. */}
-            <span className="text-green sm:text-orange">next decade.</span>
+            <span className="text-green sm:text-orange">{highlight}</span>
           </h1>
           <p className="m-0 max-w-[620px] text-lg leading-[1.55] text-muted md:text-xl">
-            Nyota connects MBA students from European business schools with companies that operate in Africa or plan to.
-            Build one verified profile. Only invited companies can see it, and only once you say yes.
+            {S.hero_text}
           </p>
           <div className="mt-2 flex flex-wrap items-center gap-3.5">
             <Link to="/sign-in?as=student" className="btn-primary min-h-[56px] px-7 text-[17px]">Create your profile</Link>
@@ -149,7 +154,7 @@ export default function Landing() {
             ['Visible only with consent', 'Companies see your profile only after you opt in and the club has verified it.'],
             ['Withdraw in one click', 'Withdrawing consent hides your profile from every company, immediately.'],
             ['CVs never float around', 'Each CV opens through a link that expires after five minutes, and every view is recorded.'],
-            ['Deleted after the fair', `Profiles and CVs are erased ${RETENTION_MONTHS} months after the fair. You can delete your account sooner.`],
+            ['Deleted after the fair', `Profiles and CVs are erased ${S.retention_months} months after the fair. You can delete your account sooner.`],
           ].map(([t, d]) => (
             <div key={t} className="flex flex-col gap-2.5 border-t-2 border-ink pt-5">
               <h3 className="m-0 text-[19px] font-bold">{t}</h3>

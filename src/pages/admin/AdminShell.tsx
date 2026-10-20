@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { AppShell } from '../../components/AppShell';
+import { useSession } from '../../App';
 
 export function AdminShell({ children }: { children: ReactNode }) {
   const tabs = [
@@ -10,6 +11,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
     { to: '/admin/lists', label: 'Lists' },
     { to: '/admin/dashboard', label: 'Dashboard' },
     { to: '/admin/admins', label: 'Admins' },
+    ...(useSession()?.isOwner ? [{ to: '/admin/settings', label: 'Settings' }] : []),
   ];
-  return <AppShell variant="light" badge="Admin" tabs={tabs}>{children}</AppShell>;
+  return <AppShell variant="light" badge={useSession()?.isOwner ? 'Owner' : 'Admin'} tabs={tabs}>{children}</AppShell>;
 }

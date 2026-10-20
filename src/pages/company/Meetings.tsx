@@ -7,12 +7,13 @@ import { Badge } from '../../components/Badge';
 import { db } from '../../lib/db';
 import { useDbQuery } from '../../lib/useDb';
 import { useSession } from '../../App';
-import { CLUB_EMAIL } from '../../config/constants';
+import { useSettings } from '../../lib/useSettings';
 import { fairDay, fairInputToIso, fairTimeRange, tzLabel } from '../../lib/time';
 import { fullName } from '../../lib/candidate';
 
 export default function CompanyMeetings() {
   const companyId = useSession()!.companyId!;
+  const CLUB_EMAIL = useSettings().club_email;
   const { data: sessions } = useDbQuery(() => db.listSessions());
   const [notice, setNotice] = useState<{ msg: string; tone?: 'green' | 'danger' } | null>(null);
   const say = (msg: string, tone?: 'green' | 'danger') => msg && setNotice({ msg, tone });
