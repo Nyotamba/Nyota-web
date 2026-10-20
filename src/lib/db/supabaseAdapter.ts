@@ -5,10 +5,23 @@ import type { Candidate, Consent, FairSession, InterviewSlot, InvitationStatus, 
 import { CONSENT_VERSION, CV_LINK_TTL_SECONDS } from '../../config/constants';
 
 // Every candidate column except e-mail, which companies may not read (column privileges).
-const CANDIDATE_COLS =
+const BASE_COLS =
   'id,user_id,first_name,last_name,school,programme,graduation_year,linkedin_url,functions,sectors,regions,countries,' +
-  'languages,position_type,available_from,story,cv_path,cv_size_bytes,cv_uploaded_at,verified_at,updated_at,' +
-  'job_title,employer,years_experience,past_sectors,worked_countries';
+  'languages,position_type,available_from,story,cv_path,cv_size_bytes,cv_uploaded_at,verified_at,updated_at';
+const BACKGROUND_COLS = 'job_title,employer,years_experience,past_sectors,worked_countries';
+// Background columns come with migration 007; until it has run, profiles load without them instead of failing.
+let hasBackground = true;
+const candidateCols = () => (hasBackground ? `${BASE_COLS},${BACKGROUND_COLS}` : BASE_COLS);
+const missingColumn = (err: { code?: string; message?: string } | null) => err?.code === '42703' || /does not exist/.test(err?.message ?? '');
+/** Runs a candidates query; retries once without the background columns if the database does not have them yet. */
+async function withCols<T extends { error: { code?: string; message: string } | null }>(run: (cols: string) => PromiseLike<T>): Promise<T> {
+  let res = await run(candidateCols());
+  if (hasBackground && missingColumn(res.error)) {
+    hasBackground = false;
+    res = await run(candidateCols());
+  }
+  return res;
+}
 
 interface CandidateRow {
   id: string;
@@ -237,41 +250,41 @@ export function createSupabaseDb(url: string, key: string): NyotaDb {
     },
 
     async getCandidate(id) {
-      const row = maybe(await sb.from('candidates').select(CANDIDATE_COLS).eq('id', id).maybeSingle()) as unknown as CandidateRow | null;
+      const row = maybe(await withCols((cols) => sb.from('candidates').select(cols).eq('id', id).maybeSingle())) as unknown as CandidateRow | null;
       if (!row) return null;
       const s = await loadSession();
       const consent = s?.role === 'company' ? IMPLIED_CONSENT : await activeConsent(id);
       return toCandidate(row, consent, s?.candidateId === id ? s.email : '');
     },
     async saveProfile(candidateId, input) {
+      const base = {
+        first_name: input.firstName.trim(),
+        last_name: input.lastName.trim(),
+        school: input.school.trim(),
+        programme: input.programme.trim(),
+        graduation_year: input.graduationYear || null,
+        linkedin_url: input.linkedinUrl.trim(),
+        functions: input.functions,
+        sectors: input.sectors,
+        regions: input.regions,
+        countries: input.countries.trim(),
+        languages: input.languages,
+        position_type: input.positionType,
+        available_from: input.availableFrom ? `${input.availableFrom}-01` : null,
+        story: input.story,
+        updated_at: new Date().toISOString(),
+      };
+      const background = {
+        job_title: input.jobTitle.trim(),
+        employer: input.employer.trim(),
+        years_experience: input.yearsExperience,
+        past_sectors: input.pastSectors,
+        worked_countries: input.workedCountries.trim(),
+      };
       const row = check(
-        await sb
-          .from('candidates')
-          .update({
-            first_name: input.firstName.trim(),
-            last_name: input.lastName.trim(),
-            school: input.school,
-            programme: input.programme.trim(),
-            graduation_year: input.graduationYear || null,
-            linkedin_url: input.linkedinUrl.trim(),
-            functions: input.functions,
-            sectors: input.sectors,
-            regions: input.regions,
-            countries: input.countries.trim(),
-            languages: input.languages,
-            position_type: input.positionType,
-            available_from: input.availableFrom ? `${input.availableFrom}-01` : null,
-            story: input.story,
-            job_title: input.jobTitle.trim(),
-            employer: input.employer.trim(),
-            years_experience: input.yearsExperience,
-            past_sectors: input.pastSectors,
-            worked_countries: input.workedCountries.trim(),
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', candidateId)
-          .select(CANDIDATE_COLS)
-          .single(),
+        await withCols((cols) =>
+          sb.from('candidates').update(hasBackground ? { ...base, ...background } : base).eq('id', candidateId).select(cols).single(),
+        ),
       ) as unknown as CandidateRow;
       return changed(toCandidate(row, await activeConsent(candidateId), session?.email ?? ''));
     },
@@ -310,7 +323,7 @@ export function createSupabaseDb(url: string, key: string): NyotaDb {
 
     async listVisibleCandidates() {
       // Row-level security returns only consented, verified profiles with a CV.
-      const rows = check(await sb.from('candidates').select(CANDIDATE_COLS)) as unknown as CandidateRow[];
+      const rows = check(await withCols((cols) => sb.from('candidates').select(cols))) as unknown as CandidateRow[];
       return rows.filter((r) => r.verified_at && r.cv_path).map((r) => toCandidate(r, IMPLIED_CONSENT));
     },
     async listShortlist(companyId) {
@@ -344,7 +357,7 @@ export function createSupabaseDb(url: string, key: string): NyotaDb {
         id: string; email: string; consent_version: string; consent_given_at: string;
       }[];
       if (!queue.length) return [];
-      const rows = check(await sb.from('candidates').select(CANDIDATE_COLS).in('id', queue.map((q) => q.id))) as unknown as CandidateRow[];
+      const rows = check(await withCols((cols) => sb.from('candidates').select(cols).in('id', queue.map((q) => q.id)))) as unknown as CandidateRow[];
       const byId = new Map(rows.map((r) => [r.id, r]));
       return queue
         .filter((q) => byId.has(q.id))
