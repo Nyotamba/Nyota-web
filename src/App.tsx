@@ -76,6 +76,8 @@ function AfterSignIn({ session }: { session: Session | null }) {
   const navigate = useNavigate();
   useEffect(() => {
     if (session && db.consumeSignInRedirect()) navigate(HOME[session.role], { replace: true });
+    const linkError = !session ? db.takeLinkError() : null;
+    if (linkError) navigate('/sign-in', { replace: true, state: { linkError } });
   }, [session, navigate]);
   return null;
 }

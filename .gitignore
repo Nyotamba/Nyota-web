@@ -3,3 +3,6 @@ dist
 dist-artifact
 .env.local
 .DS_Store
+.vercel
+.env*
+!.env.example

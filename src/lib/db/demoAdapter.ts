@@ -60,6 +60,15 @@ export function createDemoDb(): NyotaDb {
     consumeSignInRedirect() {
       return false;
     },
+    takeLinkError() {
+      return null;
+    },
+    async enabledProviders() {
+      return [];
+    },
+    async signInWithProvider() {
+      throw new Error('Google and Microsoft sign-in are not available in the demo.');
+    },
     async signInDemo(role) {
       session =
         role === 'student'
@@ -171,7 +180,7 @@ export function createDemoDb(): NyotaDb {
       const inv = { id: uid('i'), email: email.trim().toLowerCase(), companyId: id, status: 'Invited' as const, createdAt: now() };
       state.invitations.push(inv);
       commit();
-      return inv;
+      return { ...inv, emailSent: false };
     },
   };
 }

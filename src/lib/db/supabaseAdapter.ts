@@ -1,7 +1,7 @@
 // Live implementation of NyotaDb on Supabase. Access rules are enforced by the database
 // (row-level security in supabase/schema.sql); this file only maps rows to the UI types.
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import type { Candidate, Consent, InvitationStatus, NyotaDb, PositionType, Session } from './types';
+import { createClient, FunctionsHttpError, type EmailOtpType, type SupabaseClient } from '@supabase/supabase-js';
+import type { Candidate, Consent, InvitationStatus, NyotaDb, OAuthProvider, PositionType, Session } from './types';
 import { CONSENT_VERSION, CV_LINK_TTL_SECONDS } from '../../config/constants';
 
 // Every candidate column except e-mail, which companies may not read (column privileges).
@@ -77,9 +77,21 @@ function maybe<T = any>(res: { data: unknown; error: { message: string } | null 
 }
 
 export function createSupabaseDb(url: string, key: string): NyotaDb {
-  // A sign-in link brings the visitor back with ?code=… (PKCE flow); remember it before the client consumes it.
-  let cameFromLink = new URLSearchParams(window.location.search).has('code');
+  // Visitors come back signed in from two kinds of links:
+  //  - ?token_hash=…&type=… : e-mail links (magic link, invitation). Work on any device or browser.
+  //  - ?code=…              : Google / Microsoft (PKCE), exchanged by the client automatically.
+  const params = new URLSearchParams(window.location.search);
+  const tokenHash = params.get('token_hash');
+  const otpType = params.get('type') as EmailOtpType | null;
+  let cameFromLink = params.has('code') || Boolean(tokenHash);
   const sb: SupabaseClient = createClient(url, key, { auth: { flowType: 'pkce', detectSessionInUrl: true, persistSession: true } });
+  let linkError: string | null = params.get('error_description');
+  const linkReady: Promise<void> =
+    tokenHash && otpType
+      ? sb.auth.verifyOtp({ token_hash: tokenHash, type: otpType }).then(({ error }) => {
+          if (error) linkError = 'This sign-in link has expired or was already used. Ask for a new one.';
+        })
+      : Promise.resolve();
   const listeners = new Set<() => void>();
   const emit = () => listeners.forEach((l) => l());
   let session: Session | null | undefined; // undefined = not loaded yet
@@ -89,6 +101,7 @@ export function createSupabaseDb(url: string, key: string): NyotaDb {
   });
 
   async function loadSession(): Promise<Session | null> {
+    await linkReady;
     if (session !== undefined) return session;
     const { data } = await sb.auth.getSession();
     const user = data.session?.user;
@@ -126,6 +139,15 @@ export function createSupabaseDb(url: string, key: string): NyotaDb {
     },
 
     getSession: loadSession,
+    takeLinkError() {
+      const e = linkError;
+      linkError = null;
+      if (e) {
+        cameFromLink = false;
+        window.history.replaceState(null, '', window.location.pathname + window.location.hash);
+      }
+      return e;
+    },
     async sendMagicLink(email) {
       const redirect = window.location.origin + window.location.pathname;
       check(await sb.auth.signInWithOtp({ email: email.trim().toLowerCase(), options: { emailRedirectTo: redirect } }));
@@ -133,9 +155,26 @@ export function createSupabaseDb(url: string, key: string): NyotaDb {
     consumeSignInRedirect() {
       if (!cameFromLink) return false;
       cameFromLink = false;
-      // Drop ?code=… from the address bar, keep the hash route.
+      // Drop ?code=… / ?token_hash=… from the address bar, keep the hash route.
       window.history.replaceState(null, '', window.location.pathname + window.location.hash);
       return true;
+    },
+    async enabledProviders() {
+      try {
+        const res = await fetch(`${url}/auth/v1/settings`, { headers: { apikey: key } });
+        const external = ((await res.json()).external ?? {}) as Record<string, boolean>;
+        return (['azure', 'google'] as OAuthProvider[]).filter((p) => external[p]);
+      } catch {
+        return [];
+      }
+    },
+    async signInWithProvider(provider) {
+      check(
+        await sb.auth.signInWithOAuth({
+          provider,
+          options: { redirectTo: window.location.origin + window.location.pathname, scopes: provider === 'azure' ? 'email' : undefined },
+        }),
+      );
     },
     async signInDemo() {
       throw new Error('Demo accounts are not available on the live site.');
@@ -273,6 +312,23 @@ export function createSupabaseDb(url: string, key: string): NyotaDb {
       return rows.map((r) => ({ id: r.id, email: r.email, companyId: r.company_id, status: r.status, createdAt: r.created_at }));
     },
     async inviteCompanyMember({ companyId, newCompanyName, email }) {
+      // Preferred: the invite-company-member function records the invitation AND e-mails the link.
+      const { data, error } = await sb.functions.invoke('invite-company-member', {
+        body: { companyId, newCompanyName, email, redirectTo: window.location.origin + window.location.pathname },
+      });
+      if (!error) {
+        const r = data.invitation;
+        return changed({
+          id: r.id, email: r.email, companyId: r.company_id, status: r.status as InvitationStatus, createdAt: r.created_at,
+          emailSent: Boolean(data.emailSent),
+        });
+      }
+      const status = error instanceof FunctionsHttpError ? error.context.status : 0;
+      if (status !== 404) {
+        const body = error instanceof FunctionsHttpError ? await error.context.json().catch(() => null) : null;
+        throw new Error(body?.error ?? error.message);
+      }
+      // Function not deployed yet: record the invitation only (no e-mail).
       let id = companyId;
       if (!id) id = check(await sb.from('companies').insert({ name: newCompanyName!.trim() }).select('id').single()).id as string;
       const r = check(
@@ -282,7 +338,7 @@ export function createSupabaseDb(url: string, key: string): NyotaDb {
           .select('id,email,company_id,status,created_at')
           .single(),
       );
-      return changed({ id: r.id, email: r.email, companyId: r.company_id, status: r.status, createdAt: r.created_at });
+      return changed({ id: r.id, email: r.email, companyId: r.company_id, status: r.status, createdAt: r.created_at, emailSent: false });
     },
   };
 }

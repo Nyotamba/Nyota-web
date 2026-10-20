@@ -1,7 +1,8 @@
 import { useState, type FormEvent } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { Logo } from '../components/Logo';
-import { db, type Role } from '../lib/db';
+import { db, type OAuthProvider, type Role } from '../lib/db';
+import { useDbQuery } from '../lib/useDb';
 
 const HOME: Record<Role, string> = { student: '/student/profile', company: '/company/candidates', admin: '/admin' };
 
@@ -10,7 +11,9 @@ export default function SignIn() {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [sent, setSent] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const location = useLocation();
+  const [error, setError] = useState<string | null>((location.state as { linkError?: string } | null)?.linkError ?? null);
+  const { data: providers = [] } = useDbQuery(() => db.enabledProviders());
   const [sending, setSending] = useState(false);
   const as = params.get('as');
   const live = db.mode === 'live';
@@ -24,9 +27,17 @@ export default function SignIn() {
       await db.sendMagicLink(email);
       setSent(true);
     } catch (err) {
-      setError((err as Error).message);
+      setError(`The link could not be sent: ${(err as Error).message}`);
     } finally {
       setSending(false);
+    }
+  };
+  const withProvider = async (p: OAuthProvider) => {
+    setError(null);
+    try {
+      await db.signInWithProvider(p);
+    } catch (err) {
+      setError((err as Error).message);
     }
   };
   const enter = async (role: Role) => {
@@ -54,6 +65,19 @@ export default function SignIn() {
             </p>
           </div>
 
+          {providers.length > 0 && (
+            <div className="flex flex-col gap-3">
+              {providers.map((p) => (
+                <button key={p} type="button" onClick={() => withProvider(p)} className="btn-secondary w-full text-[15px]">
+                  Continue with {p === 'azure' ? 'Microsoft' : 'Google'}
+                </button>
+              ))}
+              <div className="flex items-center gap-3 text-[13px] text-muted">
+                <span className="h-px flex-1 bg-line" />or get a sign-in link by e-mail<span className="h-px flex-1 bg-line" />
+              </div>
+            </div>
+          )}
+
           <form onSubmit={submit} className="card flex flex-col gap-4 p-7">
             <label className="label" htmlFor="signin-email">E-mail
               <input id="signin-email" type="email" required autoComplete="email" className="field" placeholder="name@school.edu"
@@ -63,13 +87,13 @@ export default function SignIn() {
             {sent && (
               <p role="status" className="m-0 rounded-field bg-sand px-4 py-3 text-sm leading-relaxed text-ink">
                 {live
-                  ? `Check your inbox: we sent a sign-in link to ${email}. Open it in this browser. It may take a minute; check your spam folder too.`
+                  ? `Check your inbox: we sent a sign-in link to ${email}. It can take a minute; check your spam folder too.`
                   : 'This is the demo: no e-mail is sent. Use a demo account below.'}
               </p>
             )}
             {error && (
               <p role="alert" className="m-0 rounded-field bg-sand px-4 py-3 text-sm leading-relaxed text-danger">
-                The link could not be sent: {error}
+                {error}
               </p>
             )}
           </form>

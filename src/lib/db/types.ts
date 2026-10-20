@@ -66,6 +66,8 @@ export interface CvView {
   viewedAt: string;
 }
 
+export type OAuthProvider = 'google' | 'azure'; // azure = Microsoft (work and personal accounts)
+
 export interface Session {
   role: Role;
   email: string;
@@ -97,8 +99,14 @@ export interface NyotaDb {
   getSession(): Promise<Session | null>;
   /** Live only: e-mails a one-time sign-in link. */
   sendMagicLink(email: string): Promise<void>;
+  /** Live only: providers switched on in Supabase (the sign-in page shows only these). */
+  enabledProviders(): Promise<OAuthProvider[]>;
+  /** Live only: leaves for Google / Microsoft and comes back signed in. */
+  signInWithProvider(provider: OAuthProvider): Promise<void>;
   /** True once, right after the visitor came back from a sign-in link. */
   consumeSignInRedirect(): boolean;
+  /** Why the last sign-in link failed (expired, already used…), once; null otherwise. */
+  takeLinkError(): string | null;
   signInDemo(role: Role): Promise<Session>;
   signOut(): Promise<void>;
   resetDemo(): Promise<void>;
@@ -123,5 +131,6 @@ export interface NyotaDb {
   listCompanies(): Promise<Company[]>;
   getCompany(id: string): Promise<Company | null>;
   listInvitations(): Promise<Invitation[]>;
-  inviteCompanyMember(input: { companyId?: string; newCompanyName?: string; email: string }): Promise<Invitation>;
+  /** Records the invitation and, on the live site, e-mails the person a sign-in link. */
+  inviteCompanyMember(input: { companyId?: string; newCompanyName?: string; email: string }): Promise<Invitation & { emailSent: boolean }>;
 }

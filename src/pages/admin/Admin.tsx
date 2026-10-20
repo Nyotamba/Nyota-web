@@ -36,7 +36,11 @@ export default function Admin() {
     if (isNew) setCompanyId(inv.companyId);
     setEmail('');
     setNewCompany('');
-    setNotice(`Invitation recorded for ${inv.email}`);
+    setNotice(
+      inv.emailSent
+        ? `Invitation e-mailed to ${inv.email}`
+        : `Invitation recorded for ${inv.email}. No e-mail was sent: tell them to sign in on the site with this address.`,
+    );
   };
   const companyName = (id: string) => companies.find((c) => c.id === id)?.name ?? '—';
 
@@ -103,7 +107,11 @@ export default function Admin() {
               <input id="inv-email" type="email" required placeholder="name@company.com" className="field text-[15px]" value={email} onChange={(e) => setEmail(e.target.value)} />
             </label>
             <button type="submit" className="btn rounded-xl bg-ink text-[15px] text-offwhite hover:bg-green">Send invitation</button>
-            <p className="m-0 text-[13px] leading-normal text-muted">In this demo the invitation is recorded but no e-mail is sent.</p>
+            <p className="m-0 text-[13px] leading-normal text-muted">
+              {db.mode === 'live'
+                ? 'They receive an e-mail with a sign-in link and land straight in their company space.'
+                : 'In this demo the invitation is recorded but no e-mail is sent.'}
+            </p>
           </form>
 
           <section className="flex flex-col gap-1 rounded-2xl border border-line bg-surface px-6 py-5">

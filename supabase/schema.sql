@@ -1,5 +1,6 @@
 -- Nyota — database schema (PostgreSQL / Supabase).
 -- Run once on a fresh project: Supabase → SQL Editor → paste this file → Run.
+-- Existing projects: run the files in supabase/migrations/ instead, in order.
 -- Mirrors src/lib/db/types.ts (snake_case here).
 
 create extension if not exists "pgcrypto";
@@ -138,7 +139,6 @@ begin
     select * into inv from invitations where lower(email) = em order by created_at desc limit 1;
     if found then
       insert into profiles (id, role, email, company_id) values (new.id, 'company', em, inv.company_id);
-      update invitations set status = 'Accepted' where id = inv.id;
     else
       insert into profiles (id, role, email) values (new.id, 'student', em);
       insert into candidates (user_id, email) values (new.id, em)
@@ -148,6 +148,18 @@ begin
   return new;
 end $$;
 create trigger on_auth_user_created after insert on auth.users for each row execute function handle_new_user();
+
+-- An invitation counts as accepted at the person's first real sign-in
+-- (the invitation e-mail creates the account before they click).
+create function mark_invitation_accepted() returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  if new.last_sign_in_at is not null and old.last_sign_in_at is null then
+    update invitations set status = 'Accepted' where lower(email) = lower(new.email) and status = 'Invited';
+  end if;
+  return new;
+end $$;
+create trigger on_auth_user_signed_in after update of last_sign_in_at on auth.users
+  for each row execute function mark_invitation_accepted();
 
 -- Withdrawing consent hides the profile and requires a new verification.
 create function on_consent_withdrawn() returns trigger language plpgsql security definer set search_path = public as $$
