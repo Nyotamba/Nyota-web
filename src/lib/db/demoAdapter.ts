@@ -340,6 +340,14 @@ export function createDemoDb(): NyotaDb {
           .sort((a, b) => a.name.localeCompare(b.name)),
       };
     },
+    async addCompany(name) {
+      const n = name.trim();
+      if (state.companies.some((c) => c.name.toLowerCase() === n.toLowerCase())) throw new Error('This company already exists.');
+      const co = { id: uid('co'), name: n };
+      state.companies.push(co);
+      commit();
+      return clone(co);
+    },
     async listCompanies() {
       return clone(state.companies);
     },

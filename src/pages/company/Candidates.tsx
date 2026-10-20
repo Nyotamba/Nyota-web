@@ -7,7 +7,7 @@ import { db, type CandidateFilters } from '../../lib/db';
 import { useDbQuery } from '../../lib/useDb';
 import { useSession } from '../../App';
 import { applyFilters, emptyFilters } from '../../lib/candidate';
-import { FUNCTIONS, LANGUAGES, PAGE_SIZE, REGIONS, SECTORS } from '../../config/constants';
+import { FUNCTIONS, LANGUAGES, PAGE_SIZE, SECTORS } from '../../config/constants';
 
 export default function CompanyCandidates() {
   const companyId = useSession()!.companyId!;
@@ -22,7 +22,7 @@ export default function CompanyCandidates() {
   const pages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
   const current = Math.min(page, pages);
   const visible = rows.slice((current - 1) * PAGE_SIZE, current * PAGE_SIZE);
-  const activeCount = f.functions.length + f.regions.length + [f.search, f.sector, f.language, f.availableBy].filter(Boolean).length + (f.positionType !== 'Any' ? 1 : 0);
+  const activeCount = f.functions.length + (f.minYears ? 1 : 0) + [f.search, f.sector, f.language, f.availableBy].filter(Boolean).length + (f.positionType !== 'Any' ? 1 : 0);
 
   return (
     <CompanyShell>
@@ -40,7 +40,15 @@ export default function CompanyCandidates() {
             </span>
           </label>
           <ChipGroup size="sm" label="Function" options={FUNCTIONS} value={f.functions} onChange={(v) => update({ functions: v })} />
-          <ChipGroup size="sm" label="African region" options={REGIONS} value={f.regions} onChange={(v) => update({ regions: v })} />
+          <div role="group" aria-label="Work experience" className="flex flex-col gap-2.5">
+            <div className="text-sm font-semibold">Work experience</div>
+            <div className="grid grid-cols-4 overflow-hidden rounded-field border border-line-strong">
+              {([[0, 'Any'], [3, '3+'], [5, '5+'], [8, '8+']] as const).map(([y, label]) => (
+                <button key={y} type="button" aria-pressed={f.minYears === y} onClick={() => update({ minYears: y })}
+                  className={`min-h-[44px] text-[13px] font-semibold ${f.minYears === y ? 'bg-ink text-offwhite' : 'bg-surface text-ink hover:bg-offwhite'}`}>{label}</button>
+              ))}
+            </div>
+          </div>
           <label className="label" htmlFor="f-sector">Sector
             <select id="f-sector" className="field text-[15px]" value={f.sector} onChange={(e) => update({ sector: e.target.value })}>
               <option value="">Any sector</option>{SECTORS.map((s) => <option key={s}>{s}</option>)}

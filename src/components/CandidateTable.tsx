@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import type { Candidate } from '../lib/db';
-import { formatMonth, fullName, initials, shortSchool } from '../lib/candidate';
+import { experienceLine, formatMonth, fullName, initials, shortSchool } from '../lib/candidate';
 import { Star } from './icons';
 
 const cols = 'xl:grid-cols-[2.2fr_1.8fr_1.3fr_1fr_1fr_150px]';
@@ -11,7 +11,7 @@ export function CandidateTable({ rows, shortlisted, onToggle }: {
   return (
     <div className="overflow-hidden rounded-2xl border border-line bg-surface" role="table" aria-label="Candidates">
       <div role="row" className={`hidden gap-4 border-b border-line px-6 py-3.5 text-xs font-bold uppercase tracking-[0.06em] text-muted xl:grid ${cols}`}>
-        <span role="columnheader">Candidate</span><span role="columnheader">Targets</span><span role="columnheader">Regions · languages</span>
+        <span role="columnheader">Candidate</span><span role="columnheader">Targets</span><span role="columnheader">Experience · languages</span>
         <span role="columnheader">Type</span><span role="columnheader">Available</span><span role="columnheader"><span className="sr-only">Actions</span></span>
       </div>
       {rows.length === 0 && <p className="m-0 px-6 py-10 text-center text-[15px] text-muted">No candidate matches these filters.</p>}
@@ -31,7 +31,7 @@ export function CandidateTable({ rows, shortlisted, onToggle }: {
               <span className="font-semibold">{c.functions.join(', ')}</span><span className="text-muted">{c.sectors.join(', ')}</span>
             </span>
             <span role="cell" className="col-span-2 flex flex-col gap-0.5 xl:col-span-1">
-              <span className="font-semibold">{c.regions.join(', ')}</span><span className="text-muted">{c.languages.join(', ')}</span>
+              <span className="font-semibold">{experienceLine(c) || '—'}</span><span className="text-muted">{c.languages.join(', ')}</span>
             </span>
             <span role="cell" className="hidden xl:block">{c.positionType}</span>
             <span role="cell" className="hidden xl:block">{formatMonth(c.availableFrom, true)}</span>

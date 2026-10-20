@@ -76,7 +76,7 @@ export default function Landing() {
               ))}
             </div>
             <dl className="m-0 grid grid-cols-2 gap-3.5 text-sm">
-              {[['Regions', 'West, Central'], ['Languages', 'English, French'], ['Looking for', 'Full-time'], ['Available', 'July 2027']].map(([k, v]) => (
+              {[['Experience', '6 years'], ['Languages', 'English, French'], ['Looking for', 'Full-time'], ['Available', 'July 2027']].map(([k, v]) => (
                 <div key={k} className="flex flex-col gap-0.5"><dt className="text-muted">{k}</dt><dd className="m-0 font-semibold">{v}</dd></div>
               ))}
             </dl>
@@ -106,7 +106,7 @@ export default function Landing() {
         </div>
         <ol className="m-0 grid list-none gap-6 p-0 md:grid-cols-3">
           {[
-            ['Build your profile', 'The functions, sectors, African regions and languages you target, a short story in your own words, and your CV as a PDF.'],
+            ['Build your profile', 'Your background, the roles, sectors and countries you target, a short story in your own words, and your CV as a PDF.'],
             ['Consent, then verification', 'You choose to share your profile. The club checks it before any company can see it. You can withdraw at any time.'],
             ['Meet at the fair', 'Companies shortlist you and request interviews. You pick a slot during the fair, and the confirmation lands in your inbox.'],
           ].map(([t, d], i) => (

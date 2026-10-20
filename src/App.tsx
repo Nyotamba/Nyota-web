@@ -16,6 +16,7 @@ import AdminReview from './pages/admin/Review';
 import AdminDashboard from './pages/admin/Dashboard';
 import AdminAdmins from './pages/admin/Admins';
 import AdminSessions from './pages/admin/Sessions';
+import AdminCompanies from './pages/admin/Companies';
 import PublicSessions from './pages/Sessions';
 import StudentSessions from './pages/student/Sessions';
 import StudentInterviews from './pages/student/Interviews';
@@ -65,7 +66,7 @@ export default function App() {
 
           <Route path="/admin" element={<Guard role="admin"><Admin /></Guard>} />
           <Route path="/admin/review/:id" element={<Guard role="admin"><AdminReview /></Guard>} />
-          <Route path="/admin/companies" element={<Guard role="admin"><AdminShell><ComingSoon title="Companies">{later}</ComingSoon></AdminShell></Guard>} />
+          <Route path="/admin/companies" element={<Guard role="admin"><AdminCompanies /></Guard>} />
           <Route path="/admin/consents" element={<Guard role="admin"><AdminShell><ComingSoon title="Consents">{later}</ComingSoon></AdminShell></Guard>} />
           <Route path="/admin/dashboard" element={<Guard role="admin"><AdminDashboard /></Guard>} />
           <Route path="/admin/admins" element={<Guard role="admin"><AdminAdmins /></Guard>} />

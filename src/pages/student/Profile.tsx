@@ -9,14 +9,17 @@ import { useDbQuery } from '../../lib/useDb';
 import { useSession } from '../../App';
 import { formatDate, formatKb, isProfileComplete, isVisible } from '../../lib/candidate';
 import {
-  CONSENT_TEXT, CONSENT_VERSION, FORUM_NAME, CV_MAX_BYTES, FORUM_YEAR, FUNCTIONS, LANGUAGES, POSITION_TYPES, REGIONS, SCHOOLS, SECTORS, STORY_MAX_CHARS,
+  CONSENT_TEXT, CONSENT_VERSION, FORUM_NAME, CV_MAX_BYTES, FORUM_YEAR, FUNCTIONS, LANGUAGES, POSITION_TYPES, SCHOOLS, SECTORS, STORY_MAX_CHARS,
+  EXPERIENCE_YEARS,
 } from '../../config/constants';
 
 const toInput = (c: Candidate): CandidateProfileInput => ({
   firstName: c.firstName, lastName: c.lastName, school: c.school, programme: c.programme, graduationYear: c.graduationYear,
   linkedinUrl: c.linkedinUrl, functions: c.functions, sectors: c.sectors, regions: c.regions, countries: c.countries,
   languages: c.languages, positionType: c.positionType, availableFrom: c.availableFrom, story: c.story,
+  jobTitle: c.jobTitle, employer: c.employer, yearsExperience: c.yearsExperience, pastSectors: c.pastSectors, workedCountries: c.workedCountries,
 });
+const OTHER_SCHOOL = '__other__';
 
 export default function StudentProfile() {
   const session = useSession();
@@ -85,11 +88,20 @@ export default function StudentProfile() {
           <Fieldset legend="About you" className="grid gap-5 sm:grid-cols-2">
             <label className="label" htmlFor="p-first">First name<input id="p-first" className="field" required value={form.firstName} onChange={(e) => set('firstName', e.target.value)} /></label>
             <label className="label" htmlFor="p-last">Last name<input id="p-last" className="field" required value={form.lastName} onChange={(e) => set('lastName', e.target.value)} /></label>
-            <label className="label" htmlFor="p-school">School
-              <select id="p-school" className="field" value={form.school} onChange={(e) => set('school', e.target.value)}>
-                {SCHOOLS.map((s) => <option key={s}>{s}</option>)}
-              </select>
-            </label>
+            <div className="flex flex-col gap-2">
+              <label className="label" htmlFor="p-school">School
+                <select id="p-school" className="field"
+                  value={(SCHOOLS as readonly string[]).includes(form.school) ? form.school : OTHER_SCHOOL}
+                  onChange={(e) => set('school', e.target.value === OTHER_SCHOOL ? '' : e.target.value)}>
+                  {SCHOOLS.map((s) => <option key={s}>{s}</option>)}
+                  <option value={OTHER_SCHOOL}>Other (type it)</option>
+                </select>
+              </label>
+              {!(SCHOOLS as readonly string[]).includes(form.school) && (
+                <input id="p-school-other" aria-label="School name" required className="field" placeholder="Your business school"
+                  value={form.school} onChange={(e) => set('school', e.target.value)} />
+              )}
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <label className="label" htmlFor="p-prog">Program<input id="p-prog" className="field" value={form.programme} onChange={(e) => set('programme', e.target.value)} /></label>
               <label className="label" htmlFor="p-grad">Graduation<input id="p-grad" className="field" type="number" min={2025} max={2032} value={form.graduationYear} onChange={(e) => set('graduationYear', Number(e.target.value))} /></label>
@@ -97,10 +109,32 @@ export default function StudentProfile() {
             <label className="label sm:col-span-2" htmlFor="p-li">LinkedIn URL<input id="p-li" className="field" type="url" placeholder="https://www.linkedin.com/in/…" value={form.linkedinUrl} onChange={(e) => set('linkedinUrl', e.target.value)} /></label>
           </Fieldset>
 
+          <Fieldset legend="Your background" className="flex flex-col gap-6">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="label" htmlFor="p-job">Current or last role
+                <input id="p-job" className="field" placeholder="Project manager" value={form.jobTitle} onChange={(e) => set('jobTitle', e.target.value)} />
+              </label>
+              <label className="label" htmlFor="p-employer">Employer
+                <input id="p-employer" className="field" placeholder="Company name" value={form.employer} onChange={(e) => set('employer', e.target.value)} />
+              </label>
+              <label className="label" htmlFor="p-years">Years of work experience
+                <select id="p-years" className="field" value={form.yearsExperience ?? ''}
+                  onChange={(e) => set('yearsExperience', e.target.value === '' ? null : Number(e.target.value))}>
+                  <option value="">Select</option>
+                  {EXPERIENCE_YEARS.map((y) => <option key={y} value={y}>{y === 20 ? '20+' : y} {y === 1 ? 'year' : 'years'}</option>)}
+                </select>
+              </label>
+              <label className="label" htmlFor="p-worked">Countries you have worked in
+                <input id="p-worked" className="field" placeholder="Senegal, France" value={form.workedCountries} onChange={(e) => set('workedCountries', e.target.value)} />
+              </label>
+            </div>
+            <ChipGroup label="Sectors you have worked in" options={SECTORS} value={form.pastSectors} onChange={(v) => set('pastSectors', v)} />
+            <p className="m-0 text-[13px] text-muted">Your professional background only. We never ask where you are from.</p>
+          </Fieldset>
+
           <Fieldset legend="What you are looking for" className="flex flex-col gap-6">
             <ChipGroup label="Target functions" options={FUNCTIONS} value={form.functions} onChange={(v) => set('functions', v)} />
-            <ChipGroup label="Sectors" options={SECTORS} value={form.sectors} onChange={(v) => set('sectors', v)} />
-            <ChipGroup label="African regions" options={REGIONS} value={form.regions} onChange={(v) => set('regions', v)} />
+            <ChipGroup label="Target sectors" options={SECTORS} value={form.sectors} onChange={(v) => set('sectors', v)} />
             <div className="grid gap-4 md:grid-cols-3">
               <label className="label" htmlFor="p-countries">Target countries<input id="p-countries" className="field" value={form.countries} onChange={(e) => set('countries', e.target.value)} /></label>
               <label className="label" htmlFor="p-type">Position type

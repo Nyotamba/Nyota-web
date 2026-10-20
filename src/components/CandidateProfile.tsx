@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import type { Candidate } from '../lib/db';
-import { fullName, initials, formatMonth } from '../lib/candidate';
+import { experienceLine, fullName, initials, formatMonth } from '../lib/candidate';
 import { Badge } from './Badge';
 import { CvViewer } from './CvViewer';
 import { db } from '../lib/db';
@@ -11,10 +11,12 @@ export function CandidateProfile({ c, top, actions, onOpenCv }: {
 }) {
   const name = fullName(c);
   const facts: [string, string][] = [
+    ['Experience', experienceLine(c) || '—'],
+    ['Sectors worked in', c.pastSectors.join(', ') || '—'],
+    ['Countries worked in', c.workedCountries || '—'],
     ['Target functions', c.functions.join(', ')],
-    ['Sectors', c.sectors.join(', ')],
-    ['Regions', c.regions.join(', ')],
-    ['Countries', c.countries || '—'],
+    ['Target sectors', c.sectors.join(', ')],
+    ['Target countries', c.countries || '—'],
     ['Languages', c.languages.join(', ')],
     ['Position · availability', `${c.positionType} · ${formatMonth(c.availableFrom)}`],
   ];

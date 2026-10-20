@@ -24,7 +24,14 @@ export const FUNCTIONS = ['Strategy', 'Business development', 'Finance', 'Invest
 export const SECTORS = ['Energy', 'Infrastructure', 'Financial services', 'Consumer goods', 'Healthcare', 'Agriculture'] as const;
 export const REGIONS = ['North', 'West', 'Central', 'East', 'Southern'] as const;
 export const LANGUAGES = ['English', 'French', 'Portuguese', 'Arabic', 'Spanish', 'Swahili'] as const;
-export const SCHOOLS = ['IESE Business School', 'INSEAD', 'HEC Paris', 'London Business School', 'ESADE', 'IE Business School'] as const;
+// Students can also type a school that is not listed ("Other").
+export const SCHOOLS = [
+  'IESE Business School', 'INSEAD', 'HEC Paris', 'London Business School', 'ESADE', 'IE Business School',
+  'Oxford Saïd Business School', 'Cambridge Judge Business School', 'SDA Bocconi', 'ESSEC Business School', 'ESCP Business School',
+  'IMD', 'Imperial College Business School', 'Rotterdam School of Management', 'University of St. Gallen', 'WHU – Otto Beisheim',
+  'Mannheim Business School', 'Warwick Business School', 'Vlerick Business School', 'EDHEC Business School',
+] as const;
+export const EXPERIENCE_YEARS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 20] as const;
 export const POSITION_TYPES = ['Full-time', 'Internship', 'Both'] as const;
 
 export const SCHOOL_SHORT: Record<string, string> = {

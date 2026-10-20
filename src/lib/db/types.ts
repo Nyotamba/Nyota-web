@@ -30,6 +30,12 @@ export interface Candidate {
   positionType: PositionType;
   availableFrom: string; // YYYY-MM
   story: string;
+  // Professional background (never nationality or origin)
+  jobTitle: string; // current or most recent role
+  employer: string;
+  yearsExperience: number | null;
+  pastSectors: string[];
+  workedCountries: string;
   cv: CvFile | null;
   consent: Consent | null;
   verifiedAt: string | null;
@@ -168,6 +174,7 @@ export interface CandidateFilters {
   language: string; // '' = any
   positionType: 'Internship' | 'Full-time' | 'Any';
   availableBy: string; // YYYY-MM or ''
+  minYears: number; // 0 = any experience
   sort: 'updated' | 'graduation' | 'availability';
 }
 
@@ -220,6 +227,7 @@ export interface NyotaDb {
   listVerificationQueue(): Promise<Candidate[]>;
   verifyCandidates(ids: string[]): Promise<void>;
   listCompanies(): Promise<Company[]>;
+  addCompany(name: string): Promise<Company>;
   // Sessions (group events)
   listSessions(): Promise<FairSession[]>;
   /** Video link: organisers always; registered students from 15 min before to 30 min after. */

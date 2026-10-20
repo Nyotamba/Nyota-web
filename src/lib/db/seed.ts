@@ -21,8 +21,11 @@ export interface DemoState {
 const cv = (sizeKb: number, uploadedAt: string) => ({ name: 'cv.pdf', sizeBytes: sizeKb * 1024, uploadedAt });
 const consent = (givenAt: string) => ({ version: 'v1', givenAt });
 
-type Seed = Omit<Candidate, 'programme' | 'linkedinUrl'> & Partial<Pick<Candidate, 'programme' | 'linkedinUrl'>>;
-const c = (s: Seed): Candidate => ({ programme: 'Full-time MBA', linkedinUrl: '', ...s });
+type Background = 'jobTitle' | 'employer' | 'yearsExperience' | 'pastSectors' | 'workedCountries';
+type Seed = Omit<Candidate, 'programme' | 'linkedinUrl' | Background> & Partial<Pick<Candidate, 'programme' | 'linkedinUrl' | Background>>;
+const c = (s: Seed): Candidate => ({
+  programme: 'Full-time MBA', linkedinUrl: '', jobTitle: '', employer: '', yearsExperience: null, pastSectors: [], workedCountries: '', ...s,
+});
 
 export function createSeed(): DemoState {
   return {
@@ -40,7 +43,7 @@ export function createSeed(): DemoState {
     ],
     candidates: [
       c({
-        id: 'c1', email: 'amara.diallo@iese.net', firstName: 'Amara', lastName: 'Diallo', school: 'IESE Business School',
+        id: 'c1', jobTitle: 'Project manager', employer: 'Energy developer (demo)', yearsExperience: 6, pastSectors: ['Energy', 'Infrastructure'], workedCountries: 'Senegal, France', email: 'amara.diallo@iese.net', firstName: 'Amara', lastName: 'Diallo', school: 'IESE Business School',
         graduationYear: 2027, linkedinUrl: 'https://www.linkedin.com/in/amara-diallo',
         functions: ['Strategy', 'Business development'], sectors: ['Energy', 'Infrastructure'], regions: ['West', 'Central'],
         countries: 'Senegal, Côte d’Ivoire, Cameroon', languages: ['English', 'French'], positionType: 'Full-time', availableFrom: '2027-07',
@@ -48,35 +51,35 @@ export function createSeed(): DemoState {
         cv: cv(204, '2026-09-28T10:00:00Z'), consent: consent('2026-09-29T09:12:00Z'), verifiedAt: null, updatedAt: '2026-09-29T09:12:00Z',
       }),
       c({
-        id: 'c2', email: 'k.mensah@insead.example', firstName: 'Kwame', lastName: 'Mensah', school: 'INSEAD', graduationYear: 2027,
+        id: 'c2', jobTitle: 'Investment banking associate', employer: 'Regional bank (demo)', yearsExperience: 5, pastSectors: ['Financial services'], workedCountries: 'Ghana, United Kingdom', email: 'k.mensah@insead.example', firstName: 'Kwame', lastName: 'Mensah', school: 'INSEAD', graduationYear: 2027,
         functions: ['Finance', 'Investment'], sectors: ['Financial services'], regions: ['West', 'East'], countries: 'Ghana, Kenya',
         languages: ['English'], positionType: 'Full-time', availableFrom: '2027-01',
         story: 'Former investment banker in Accra. Looking to join a growth-stage investor focused on West and East Africa.',
         cv: cv(176, '2026-09-20T10:00:00Z'), consent: consent('2026-09-20T10:00:00Z'), verifiedAt: '2026-09-22T10:00:00Z', updatedAt: '2026-10-02T08:00:00Z',
       }),
       c({
-        id: 'c3', email: 'l.benali@hec.example', firstName: 'Leila', lastName: 'Benali', school: 'HEC Paris', graduationYear: 2027,
+        id: 'c3', jobTitle: 'Supply-chain lead', employer: 'Consumer brand (demo)', yearsExperience: 7, pastSectors: ['Consumer goods'], workedCountries: 'Senegal, Morocco, France', email: 'l.benali@hec.example', firstName: 'Leila', lastName: 'Benali', school: 'HEC Paris', graduationYear: 2027,
         functions: ['Strategy', 'Operations'], sectors: ['Consumer goods'], regions: ['West'], countries: 'Senegal, Morocco',
         languages: ['French', 'Arabic', 'English'], positionType: 'Both', availableFrom: '2027-06',
         story: 'Supply-chain lead for a consumer brand across francophone West Africa. Interested in operations roles with P&L ownership.',
         cv: cv(198, '2026-09-18T10:00:00Z'), consent: consent('2026-09-18T10:00:00Z'), verifiedAt: '2026-09-21T10:00:00Z', updatedAt: '2026-10-01T08:00:00Z',
       }),
       c({
-        id: 'c4', email: 't.moyo@lbs.example', firstName: 'Tendai', lastName: 'Moyo', school: 'London Business School', graduationYear: 2027,
+        id: 'c4', jobTitle: 'Product manager', employer: 'Mobile-money start-up (demo)', yearsExperience: 4, pastSectors: ['Financial services'], workedCountries: 'Zimbabwe, South Africa', email: 't.moyo@lbs.example', firstName: 'Tendai', lastName: 'Moyo', school: 'London Business School', graduationYear: 2027,
         functions: ['Finance', 'Product'], sectors: ['Financial services'], regions: ['East', 'Southern'], countries: 'Zimbabwe, South Africa, Kenya',
         languages: ['English', 'French'], positionType: 'Full-time', availableFrom: '2027-08',
         story: 'Product manager at a mobile-money start-up in Harare. Wants to build payment products for the next 100 million users.',
         cv: cv(221, '2026-09-15T10:00:00Z'), consent: consent('2026-09-15T10:00:00Z'), verifiedAt: '2026-09-19T10:00:00Z', updatedAt: '2026-09-30T08:00:00Z',
       }),
       c({
-        id: 'c5', email: 's.okafor@esade.example', firstName: 'Sofia', lastName: 'Okafor', school: 'ESADE', graduationYear: 2027,
+        id: 'c5', jobTitle: 'Marketing manager', employer: 'Pharmaceutical group (demo)', yearsExperience: 6, pastSectors: ['Healthcare'], workedCountries: 'Nigeria, Spain', email: 's.okafor@esade.example', firstName: 'Sofia', lastName: 'Okafor', school: 'ESADE', graduationYear: 2027,
         functions: ['Strategy', 'Marketing'], sectors: ['Healthcare'], regions: ['West'], countries: 'Nigeria, Ghana',
         languages: ['English', 'French', 'Spanish'], positionType: 'Full-time', availableFrom: '2027-09',
         story: 'Marketing manager in pharmaceuticals in Lagos and Madrid. Focused on access to healthcare in West Africa.',
         cv: cv(189, '2026-09-12T10:00:00Z'), consent: consent('2026-09-12T10:00:00Z'), verifiedAt: '2026-09-16T10:00:00Z', updatedAt: '2026-09-28T08:00:00Z',
       }),
       c({
-        id: 'c6', email: 'y.tesfaye@ie.example', firstName: 'Yohannes', lastName: 'Tesfaye', school: 'IE Business School', graduationYear: 2027,
+        id: 'c6', jobTitle: 'Consultant', employer: 'Development consultancy (demo)', yearsExperience: 5, pastSectors: ['Agriculture'], workedCountries: 'Ethiopia, Kenya', email: 'y.tesfaye@ie.example', firstName: 'Yohannes', lastName: 'Tesfaye', school: 'IE Business School', graduationYear: 2027,
         functions: ['Strategy', 'Consulting'], sectors: ['Agriculture'], regions: ['East'], countries: 'Ethiopia, Kenya, Tanzania',
         languages: ['English', 'French'], positionType: 'Both', availableFrom: '2027-07',
         story: 'Consultant on agricultural value chains in the Horn of Africa. Looking for strategy roles in agribusiness.',

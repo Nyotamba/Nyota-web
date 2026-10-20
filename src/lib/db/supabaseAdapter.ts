@@ -7,7 +7,8 @@ import { CONSENT_VERSION, CV_LINK_TTL_SECONDS } from '../../config/constants';
 // Every candidate column except e-mail, which companies may not read (column privileges).
 const CANDIDATE_COLS =
   'id,user_id,first_name,last_name,school,programme,graduation_year,linkedin_url,functions,sectors,regions,countries,' +
-  'languages,position_type,available_from,story,cv_path,cv_size_bytes,cv_uploaded_at,verified_at,updated_at';
+  'languages,position_type,available_from,story,cv_path,cv_size_bytes,cv_uploaded_at,verified_at,updated_at,' +
+  'job_title,employer,years_experience,past_sectors,worked_countries';
 
 interface CandidateRow {
   id: string;
@@ -31,6 +32,11 @@ interface CandidateRow {
   cv_uploaded_at: string | null;
   verified_at: string | null;
   updated_at: string;
+  job_title: string;
+  employer: string;
+  years_experience: number | null;
+  past_sectors: string[];
+  worked_countries: string;
 }
 
 function toCandidate(r: CandidateRow, consent: Consent | null, email = ''): Candidate {
@@ -51,6 +57,11 @@ function toCandidate(r: CandidateRow, consent: Consent | null, email = ''): Cand
     positionType: r.position_type,
     availableFrom: r.available_from ? r.available_from.slice(0, 7) : '',
     story: r.story,
+    jobTitle: r.job_title ?? '',
+    employer: r.employer ?? '',
+    yearsExperience: r.years_experience ?? null,
+    pastSectors: r.past_sectors ?? [],
+    workedCountries: r.worked_countries ?? '',
     cv: r.cv_path ? { name: 'cv.pdf', sizeBytes: r.cv_size_bytes ?? 0, uploadedAt: r.cv_uploaded_at ?? '' } : null,
     consent,
     verifiedAt: r.verified_at,
@@ -68,6 +79,10 @@ function check<T = any>(res: { data: unknown; error: { message: string } | null 
   if (res.error) throw new Error(res.error.message);
   if (res.data === null) throw new Error('No data returned');
   return res.data as T;
+}
+/** Writes that return nothing (insert / update / delete without .select()): only errors matter. */
+function ok(res: { error: { message: string } | null }): void {
+  if (res.error) throw new Error(res.error.message);
 }
 /** Result of a lookup that may find nothing (.maybeSingle()). */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -247,6 +262,11 @@ export function createSupabaseDb(url: string, key: string): NyotaDb {
             position_type: input.positionType,
             available_from: input.availableFrom ? `${input.availableFrom}-01` : null,
             story: input.story,
+            job_title: input.jobTitle.trim(),
+            employer: input.employer.trim(),
+            years_experience: input.yearsExperience,
+            past_sectors: input.pastSectors,
+            worked_countries: input.workedCountries.trim(),
             updated_at: new Date().toISOString(),
           })
           .eq('id', candidateId)
@@ -263,7 +283,7 @@ export function createSupabaseDb(url: string, key: string): NyotaDb {
         check(await sb.storage.from('cvs').remove([path]));
       }
       const now = new Date().toISOString();
-      check(
+      ok(
         await sb
           .from('candidates')
           .update({ cv_path: file ? path : null, cv_size_bytes: file?.size ?? null, cv_uploaded_at: file ? now : null, updated_at: now })
@@ -278,11 +298,11 @@ export function createSupabaseDb(url: string, key: string): NyotaDb {
       return error ? null : data.signedUrl;
     },
     async giveConsent(candidateId) {
-      check(await sb.from('consents').insert({ candidate_id: candidateId, version: CONSENT_VERSION }));
+      ok(await sb.from('consents').insert({ candidate_id: candidateId, version: CONSENT_VERSION }));
       emit();
     },
     async withdrawConsent(candidateId) {
-      check(
+      ok(
         await sb.from('consents').update({ withdrawn_at: new Date().toISOString() }).eq('candidate_id', candidateId).is('withdrawn_at', null),
       );
       emit();
@@ -301,8 +321,8 @@ export function createSupabaseDb(url: string, key: string): NyotaDb {
       const existing = maybe(
         await sb.from('shortlists').select('candidate_id').eq('company_id', companyId).eq('candidate_id', candidateId).maybeSingle(),
       );
-      if (existing) check(await sb.from('shortlists').delete().eq('company_id', companyId).eq('candidate_id', candidateId));
-      else check(await sb.from('shortlists').insert({ company_id: companyId, candidate_id: candidateId }));
+      if (existing) ok(await sb.from('shortlists').delete().eq('company_id', companyId).eq('candidate_id', candidateId));
+      else ok(await sb.from('shortlists').insert({ company_id: companyId, candidate_id: candidateId }));
       return changed(!existing);
     },
     async requestInterview(companyId, candidateId) {
@@ -316,7 +336,7 @@ export function createSupabaseDb(url: string, key: string): NyotaDb {
       return rows.map((r) => ({ id: r.id, companyId, candidateId: r.candidate_id, createdAt: r.created_at }));
     },
     async logCvView(companyId, candidateId) {
-      check(await sb.from('cv_views').insert({ company_id: companyId, candidate_id: candidateId }));
+      ok(await sb.from('cv_views').insert({ company_id: companyId, candidate_id: candidateId }));
     },
 
     async listVerificationQueue() {
@@ -431,6 +451,11 @@ export function createSupabaseDb(url: string, key: string): NyotaDb {
     },
     async getDashboard() {
       return check(await sb.rpc('admin_dashboard'));
+    },
+    async addCompany(name) {
+      const res = await sb.from('companies').insert({ name: name.trim() }).select('id,name').single();
+      if (res.error?.message.includes('duplicate')) throw new Error('This company already exists.');
+      return changed(check(res));
     },
     async listCompanies() {
       return check(await sb.from('companies').select('id,name').order('name'));
