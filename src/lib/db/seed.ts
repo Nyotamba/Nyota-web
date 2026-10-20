@@ -8,6 +8,7 @@ export interface DemoSession extends SessionInput {
 export interface DemoState {
   admins: string[];
   schools?: string[];
+  options?: Partial<Record<'function' | 'sector' | 'language', string[]>>;
   schoolLogos?: Record<string, { logoUrl: string | null; showOnSite: boolean }>;
   sessions?: DemoSession[];
   registrations?: { sessionId: string; candidateId: string; createdAt?: string; joinedAt?: string | null }[];

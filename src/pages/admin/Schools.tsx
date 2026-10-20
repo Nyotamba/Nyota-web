@@ -1,11 +1,11 @@
 import { useState, type FormEvent } from 'react';
-import { AdminShell } from './AdminShell';
 import { Notice } from '../../components/Notice';
 import { LogoEditor } from '../../components/LogoEditor';
 import { db } from '../../lib/db';
 import { useDbQuery } from '../../lib/useDb';
 
-export default function AdminSchools() {
+/** Schools list with logos (rendered inside Admin → Lists). */
+export function SchoolsPanel() {
   const { data: schools } = useDbQuery(() => db.listSchoolEntries());
   const [name, setName] = useState('');
   const [confirm, setConfirm] = useState<string | null>(null);
@@ -28,8 +28,8 @@ export default function AdminSchools() {
   };
 
   return (
-    <AdminShell>
-      <div className="mx-auto grid max-w-page items-start gap-7 px-4 py-10 md:px-10 xl:grid-cols-12">
+    <>
+      <div className="grid items-start gap-7 xl:grid-cols-12">
         <section className="flex min-w-0 flex-col gap-5 xl:col-span-8">
           <div className="flex flex-col gap-1">
             <h1 className="m-0 font-display text-[34px] tracking-display md:text-[40px]">Schools</h1>
@@ -72,6 +72,6 @@ export default function AdminSchools() {
         </aside>
       </div>
       <Notice message={notice?.msg ?? null} tone={notice?.tone} onDone={() => setNotice(null)} />
-    </AdminShell>
+    </>
   );
 }

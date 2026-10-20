@@ -3,6 +3,7 @@ import { AdminShell } from './AdminShell';
 import { Badge } from '../../components/Badge';
 import { Notice } from '../../components/Notice';
 import { CopyCode } from '../../components/CopyCode';
+import { SendCodeButton } from '../../components/SendCodeButton';
 import { db } from '../../lib/db';
 import { useDbQuery } from '../../lib/useDb';
 import { useSession } from '../../App';
@@ -53,6 +54,7 @@ export default function AdminAdmins() {
                 </span>
                 {a.signedIn ? <Badge tone="green">Signed in</Badge> : <Badge tone="orange">Not signed in yet</Badge>}
                 {!a.signedIn && a.accessCode && <CopyCode code={a.accessCode} />}
+                {!a.signedIn && a.accessCode && <SendCodeButton email={a.email} kind="admin" onNotice={(msg, tone) => setNotice({ msg, tone: tone ?? 'green' })} />}
                 {a.email !== me &&
                   (confirming === a.email ? (
                     <span className="flex gap-2">

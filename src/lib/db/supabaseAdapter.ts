@@ -2,7 +2,7 @@
 // (row-level security in supabase/schema.sql); this file only maps rows to the UI types.
 import { createClient, FunctionsHttpError, type EmailOtpType, type SupabaseClient } from '@supabase/supabase-js';
 import type { Candidate, Consent, FairSession, Gender, TalentRow, InterviewSlot, InvitationStatus, NyotaDb, OAuthProvider, PositionType, Session, StudentInterview } from './types';
-import { CONSENT_VERSION, CV_LINK_TTL_SECONDS, SCHOOLS } from '../../config/constants';
+import { BUILTIN_OPTIONS, CONSENT_VERSION, CV_LINK_TTL_SECONDS, SCHOOLS } from '../../config/constants';
 
 // Every candidate column except e-mail, which companies may not read (column privileges).
 const BASE_COLS =
@@ -460,6 +460,18 @@ export function createSupabaseDb(url: string, key: string): NyotaDb {
       emit();
     },
 
+    async sendAccessCode(email, kind) {
+      const { error } = await sb.functions.invoke('send-access-code', {
+        body: { email, kind, siteUrl: window.location.origin + window.location.pathname },
+      });
+      if (!error) return;
+      const status = error instanceof FunctionsHttpError ? error.context.status : 0;
+      if (status === 404 && !(error instanceof FunctionsHttpError && (await error.context.clone().json().catch(() => null))?.error)) {
+        throw new Error('E-mail sending is not installed yet. Copy the code and send it yourself for now.');
+      }
+      const body = error instanceof FunctionsHttpError ? await error.context.json().catch(() => null) : null;
+      throw new Error(body?.error ?? 'E-mail sending is not installed yet. Copy the code and send it yourself for now.');
+    },
     async listAdmins() {
       const rows = check<{ email: string; signed_in: boolean; access_code: string | null }[]>(await sb.rpc('list_admins'));
       return rows.map((r) => ({ email: r.email, signedIn: r.signed_in, accessCode: r.access_code }));
@@ -506,6 +518,31 @@ export function createSupabaseDb(url: string, key: string): NyotaDb {
     async removeSchool(name) {
       ok(await sb.from('schools').delete().eq('name', name));
       emit();
+    },
+    async listOptions(kind) {
+      const { data, error } = await sb.from('profile_options').select('name').eq('kind', kind).order('name');
+      // Until migration 011 has run (no table yet), keep the built-in lists.
+      if (error || !data?.length) return [...BUILTIN_OPTIONS[kind]];
+      return data.map((r) => r.name as string);
+    },
+    async addOption(kind, name) {
+      const res = await sb.from('profile_options').insert({ kind, name: name.trim() });
+      if (res.error?.code === '23505') throw new Error('Already in the list.');
+      if (res.error && /profile_options/.test(res.error.message)) throw new Error('Run the SQL update 011 in Supabase first (it creates these lists).');
+      ok(res);
+      emit();
+    },
+    async removeOption(kind, name) {
+      ok(await sb.from('profile_options').delete().eq('kind', kind).eq('name', name));
+      emit();
+    },
+    async listAllCandidates() {
+      const rows = check(await withCols((cols) => sb.from('candidates').select(cols).order('updated_at', { ascending: false }))) as unknown as CandidateRow[];
+      const consents = check<{ candidate_id: string; version: string; given_at: string }[]>(
+        await sb.from('consents').select('candidate_id,version,given_at').is('withdrawn_at', null),
+      );
+      const byId = new Map(consents.map((k) => [k.candidate_id, { version: k.version, givenAt: k.given_at }]));
+      return rows.map((r) => toCandidate(r, byId.get(r.id) ?? null));
     },
     async listSchoolEntries() {
       const full = await sb.from('schools').select('name,logo_url,show_on_site').order('name');

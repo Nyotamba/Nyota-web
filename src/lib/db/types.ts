@@ -65,6 +65,8 @@ export interface Partner {
   logoUrl: string;
 }
 
+export type OptionKind = 'function' | 'sector' | 'language';
+
 export type LogoTarget = { kind: 'company'; id: string } | { kind: 'school'; name: string };
 
 export type InvitationStatus = 'Invited' | 'Accepted';
@@ -267,6 +269,12 @@ export interface NyotaDb {
   listSchools(): Promise<string[]>;
   addSchool(name: string): Promise<void>;
   listSchoolEntries(): Promise<SchoolEntry[]>;
+  /** Roles (functions), sectors and languages offered in profiles and filters (managed by admins). */
+  listOptions(kind: OptionKind): Promise<string[]>;
+  addOption(kind: OptionKind, name: string): Promise<void>;
+  removeOption(kind: OptionKind, name: string): Promise<void>;
+  /** Admin: every student, whatever their status. */
+  listAllCandidates(): Promise<Candidate[]>;
   /** PNG, JPEG or WebP, 1 MB max. */
   uploadLogo(target: LogoTarget, file: File): Promise<void>;
   setShowOnSite(target: LogoTarget, show: boolean): Promise<void>;
@@ -296,6 +304,8 @@ export interface NyotaDb {
   cancelBooking(slotId: string): Promise<void>;
 
   listAdmins(): Promise<AdminEntry[]>;
+  /** E-mails someone their access code (new admin or invited company member). */
+  sendAccessCode(email: string, kind: 'admin' | 'company'): Promise<void>;
   addAdmin(email: string): Promise<void>;
   removeAdmin(email: string): Promise<void>;
   getDashboard(): Promise<Dashboard>;

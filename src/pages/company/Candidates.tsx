@@ -7,12 +7,14 @@ import { db, type CandidateFilters } from '../../lib/db';
 import { useDbQuery } from '../../lib/useDb';
 import { useSession } from '../../App';
 import { applyFilters, emptyFilters } from '../../lib/candidate';
-import { FUNCTIONS, LANGUAGES, PAGE_SIZE, SECTORS } from '../../config/constants';
+import { PAGE_SIZE } from '../../config/constants';
+import { useProfileOptions } from '../../lib/useOptions';
 
 export default function CompanyCandidates() {
   const companyId = useSession()!.companyId!;
   const { data: all } = useDbQuery(() => db.listVisibleCandidates());
   const { data: shortlist = [] } = useDbQuery(() => db.listShortlist(companyId), [companyId]);
+  const { functions: FUNCTIONS, sectors: SECTORS, languages: LANGUAGES } = useProfileOptions();
   const [f, setF] = useState<CandidateFilters>(emptyFilters);
   const [page, setPage] = useState(1);
   const [showFilters, setShowFilters] = useState(false);

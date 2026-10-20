@@ -1,7 +1,7 @@
 // Browser-storage implementation of NyotaDb, used until the real database is connected.
 import type { Candidate, NyotaDb, Session } from './types';
 import { createSeed, DEMO_ACCOUNTS, type DemoState } from './seed';
-import { CONSENT_VERSION, SCHOOLS } from '../../config/constants';
+import { BUILTIN_OPTIONS, CONSENT_VERSION, SCHOOLS } from '../../config/constants';
 import { isProfileComplete, isVisible } from '../candidate';
 
 const STATE_KEY = 'nyota-demo-state-v1';
@@ -288,6 +288,9 @@ export function createDemoDb(): NyotaDb {
       commit();
     },
 
+    async sendAccessCode() {
+      throw new Error('E-mails are not sent in the demo: copy the code instead.');
+    },
     async listAdmins() {
       return (state.admins ?? []).map((email) => ({ email, signedIn: email === DEMO_ACCOUNTS.admin.email }));
     },
@@ -348,6 +351,24 @@ export function createDemoDb(): NyotaDb {
           }))
           .sort((a, b) => a.name.localeCompare(b.name)),
       };
+    },
+    async listOptions(kind) {
+      return [...(state.options?.[kind] ?? BUILTIN_OPTIONS[kind])];
+    },
+    async addOption(kind, name) {
+      const n = name.trim();
+      const list = [...(state.options?.[kind] ?? BUILTIN_OPTIONS[kind])];
+      if (n.length < 2) throw new Error('Enter a name.');
+      if (list.some((x) => x.toLowerCase() === n.toLowerCase())) throw new Error('Already in the list.');
+      state.options = { ...state.options, [kind]: [...list, n] };
+      commit();
+    },
+    async removeOption(kind, name) {
+      state.options = { ...state.options, [kind]: (state.options?.[kind] ?? BUILTIN_OPTIONS[kind]).filter((x) => x !== name) };
+      commit();
+    },
+    async listAllCandidates() {
+      return clone([...state.candidates].sort((a, b) => (b.updatedAt > a.updatedAt ? 1 : -1)));
     },
     async listSchoolEntries() {
       const logos = state.schoolLogos ?? {};

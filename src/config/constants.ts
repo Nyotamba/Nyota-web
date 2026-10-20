@@ -31,6 +31,13 @@ export const SCHOOLS = [
   'IMD', 'Imperial College Business School', 'Rotterdam School of Management', 'University of St. Gallen', 'WHU – Otto Beisheim',
   'Mannheim Business School', 'Warwick Business School', 'Vlerick Business School', 'EDHEC Business School',
 ] as const;
+/** Stored in "Target countries" when a student has no preference. */
+export const ANY_COUNTRY = 'Open to any country';
+export const BUILTIN_OPTIONS = {
+  function: FUNCTIONS as readonly string[],
+  sector: SECTORS as readonly string[],
+  language: LANGUAGES as readonly string[],
+};
 export const EXPERIENCE_YEARS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 20] as const;
 export const POSITION_TYPES = ['Full-time', 'Internship', 'Both'] as const;
 

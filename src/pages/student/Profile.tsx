@@ -6,10 +6,11 @@ import { Notice } from '../../components/Notice';
 import { Check, FileIcon } from '../../components/icons';
 import { db, type Candidate, type CandidateProfileInput, type Gender, type PositionType } from '../../lib/db';
 import { useDbQuery } from '../../lib/useDb';
+import { useProfileOptions } from '../../lib/useOptions';
 import { useSession } from '../../App';
 import { formatDate, formatKb, isProfileComplete, isVisible } from '../../lib/candidate';
 import {
-  CONSENT_TEXT, CONSENT_VERSION, FORUM_NAME, CV_MAX_BYTES, FORUM_YEAR, FUNCTIONS, LANGUAGES, POSITION_TYPES, SCHOOLS, SECTORS, STORY_MAX_CHARS,
+  ANY_COUNTRY, CONSENT_TEXT, CONSENT_VERSION, FORUM_NAME, CV_MAX_BYTES, FORUM_YEAR, POSITION_TYPES, SCHOOLS, STORY_MAX_CHARS,
   EXPERIENCE_YEARS,
 } from '../../config/constants';
 
@@ -31,6 +32,7 @@ export default function StudentProfile() {
   const [confirmWithdraw, setConfirmWithdraw] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const { data: schoolList = SCHOOLS as readonly string[] } = useDbQuery(() => db.listSchools());
+  const { functions: FUNCTIONS, sectors: SECTORS, languages: LANGUAGES } = useProfileOptions();
 
   useEffect(() => {
     if (cand && !form) setForm(toInput(cand));
@@ -148,7 +150,18 @@ export default function StudentProfile() {
             <ChipGroup label="Target functions" options={FUNCTIONS} value={form.functions} onChange={(v) => set('functions', v)} />
             <ChipGroup label="Target sectors" options={SECTORS} value={form.sectors} onChange={(v) => set('sectors', v)} />
             <div className="grid gap-4 md:grid-cols-3">
-              <label className="label" htmlFor="p-countries">Target countries<input id="p-countries" className="field" value={form.countries} onChange={(e) => set('countries', e.target.value)} /></label>
+              <div className="flex flex-col gap-2">
+                <label className="label" htmlFor="p-countries">Target countries
+                  <input id="p-countries" className="field disabled:bg-offwhite disabled:text-muted" placeholder="Senegal, Kenya"
+                    disabled={form.countries === ANY_COUNTRY}
+                    value={form.countries === ANY_COUNTRY ? '' : form.countries} onChange={(e) => set('countries', e.target.value)} />
+                </label>
+                <label htmlFor="p-any-country" className="flex min-h-[44px] items-center gap-2 text-sm">
+                  <input id="p-any-country" type="checkbox" className="size-[18px] accent-ink" checked={form.countries === ANY_COUNTRY}
+                    onChange={(e) => set('countries', e.target.checked ? ANY_COUNTRY : '')} />
+                  No preference: open to any country
+                </label>
+              </div>
               <label className="label" htmlFor="p-type">Position type
                 <select id="p-type" className="field" value={form.positionType} onChange={(e) => set('positionType', e.target.value as PositionType)}>
                   {POSITION_TYPES.map((t) => <option key={t}>{t}</option>)}

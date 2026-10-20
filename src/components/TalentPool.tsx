@@ -30,7 +30,7 @@ export function parseCountries(text: string) {
   return text
     .split(/,|;|\/|\band\b|&/i)
     .map((s) => s.trim())
-    .filter(Boolean)
+    .filter((s) => s && !/^open to any country$/i.test(s))
     .map((s) => ALIASES[fold(s)] ?? MAP_NAMES.get(fold(s)) ?? s.replace(/\b\w/g, (m) => m.toUpperCase()));
 }
 
