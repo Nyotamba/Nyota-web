@@ -79,6 +79,15 @@ export function createDemoDb(): NyotaDb {
     async signUpWithPassword() {
       throw new Error('Passwords are not available in the demo. Use a demo account.');
     },
+    async sendPasswordReset() {
+      throw new Error('Passwords are not available in the demo.');
+    },
+    takePasswordReset() {
+      return false;
+    },
+    async updatePassword() {
+      throw new Error('Passwords are not available in the demo.');
+    },
     async redeemAccessCode() {
       throw new Error('Access codes are not available in the demo.');
     },

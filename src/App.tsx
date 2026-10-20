@@ -20,6 +20,7 @@ import AdminCompanies from './pages/admin/Companies';
 import AdminLists from './pages/admin/Lists';
 import AdminCandidates from './pages/admin/Candidates';
 import OwnerSettings from './pages/admin/Settings';
+import SetPassword from './pages/SetPassword';
 import PublicSessions from './pages/Sessions';
 import StudentSessions from './pages/student/Sessions';
 import StudentInterviews from './pages/student/Interviews';
@@ -52,6 +53,7 @@ export default function App() {
           <Route path="/" element={<Landing />} />
           <Route path="/sign-in" element={<SignIn />} />
           <Route path="/sessions" element={<PublicSessions />} />
+          <Route path="/set-password" element={<SetPassword />} />
 
           <Route path="/student/profile" element={<Guard role="student"><StudentProfile /></Guard>} />
           <Route path="/student/preview" element={<Guard role="student"><StudentPreview /></Guard>} />
@@ -95,7 +97,9 @@ const HOME: Record<Role, string> = { student: '/student/profile', company: '/com
 function AfterSignIn({ session }: { session: Session | null }) {
   const navigate = useNavigate();
   useEffect(() => {
-    if (session && db.consumeSignInRedirect()) navigate(HOME[session.role], { replace: true });
+    if (session && db.consumeSignInRedirect()) {
+      navigate(db.takePasswordReset() ? '/set-password' : HOME[session.role], { replace: true });
+    }
     const linkError = !session ? db.takeLinkError() : null;
     if (linkError) navigate('/sign-in', { replace: true, state: { linkError } });
   }, [session, navigate]);

@@ -260,6 +260,12 @@ export interface NyotaDb {
   signInWithPassword(email: string, password: string): Promise<void>;
   /** Live only. Returns needsConfirmation when Supabase still requires an e-mail confirmation. */
   signUpWithPassword(email: string, password: string, accessCode?: string): Promise<{ needsConfirmation: boolean }>;
+  /** Live only: e-mails a link that signs the person in and lets them choose a new password. */
+  sendPasswordReset(email: string): Promise<void>;
+  /** True once, right after the visitor came back from a password-reset link. */
+  takePasswordReset(): boolean;
+  /** Sets a new password for the signed-in account. */
+  updatePassword(password: string): Promise<void>;
   /** Turns the signed-in account into a company or admin account. */
   redeemAccessCode(code: string): Promise<Role>;
   signOut(): Promise<void>;

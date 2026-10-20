@@ -1,9 +1,12 @@
 // Supabase Edge Function: an admin e-mails someone their Nyota access code (new admin or invited company member).
-// Sends through Brevo's transactional e-mail API.
-// Secrets to set once (Supabase → Edge Functions → Secrets): BREVO_API_KEY, SENDER_EMAIL (a sender verified in Brevo),
-// and optionally SITE_URL (defaults to the address the admin is using).
+// Sends with Gmail (SMTP over port 465) or, if configured instead, Brevo's e-mail API.
+// Secrets to set once (Supabase → Edge Functions → Secrets):
+//   Gmail:  GMAIL_USER (the Gmail address) + GMAIL_APP_PASSWORD (a Google "app password", 16 letters)
+//   Brevo:  BREVO_API_KEY + SENDER_EMAIL (a sender verified in Brevo)
+//   Optional: SITE_URL (defaults to the address the admin is using).
 // Deploy: npx supabase functions deploy send-access-code --project-ref <ref>
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import nodemailer from 'npm:nodemailer@6';
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
@@ -24,9 +27,13 @@ Deno.serve(async (req) => {
     const { data: role } = await caller.rpc('my_role');
     if (role !== 'admin') return json({ error: 'Only club admins can send access codes.' }, 403);
 
+    const gmailUser = Deno.env.get('GMAIL_USER');
+    const gmailPass = Deno.env.get('GMAIL_APP_PASSWORD')?.replace(/\s+/g, '');
     const apiKey = Deno.env.get('BREVO_API_KEY');
     const sender = Deno.env.get('SENDER_EMAIL');
-    if (!apiKey || !sender) return json({ error: 'E-mail sending is not set up yet (BREVO_API_KEY and SENDER_EMAIL secrets).' }, 501);
+    if (!(gmailUser && gmailPass) && !(apiKey && sender)) {
+      return json({ error: 'E-mail sending is not set up yet: add GMAIL_USER and GMAIL_APP_PASSWORD in Supabase → Edge Functions → Secrets.' }, 501);
+    }
 
     const { email, kind, siteUrl } = await req.json();
     const to = String(email ?? '').trim().toLowerCase();
@@ -60,6 +67,16 @@ Deno.serve(async (req) => {
     <p style="font-size:13px;color:#4E6C65">On the sign-in page, choose “Create my account”. The code only works with this e-mail address.</p>
   </div>
 </div>`;
+    if (gmailUser && gmailPass) {
+      // Port 465 (TLS): Supabase Edge Functions block ports 25 and 587.
+      const transport = nodemailer.createTransport({ host: 'smtp.gmail.com', port: 465, secure: true, auth: { user: gmailUser, pass: gmailPass } });
+      try {
+        await transport.sendMail({ from: `"Nyota Africa Career Fair" <${gmailUser}>`, to, subject: 'Your Nyota access code', html });
+      } catch (e) {
+        return json({ error: `Gmail refused the e-mail: ${(e as Error).message}` }, 502);
+      }
+      return json({ sent: true });
+    }
     const res = await fetch('https://api.brevo.com/v3/smtp/email', {
       method: 'POST',
       headers: { 'api-key': apiKey, 'Content-Type': 'application/json', accept: 'application/json' },

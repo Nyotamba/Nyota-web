@@ -51,15 +51,8 @@ export default function SignIn() {
       });
     }
     return run(async () => {
-      try {
-        await db.sendMagicLink(email);
-        setInfo(`Check your inbox: we sent a sign-in link to ${email}. It can take a minute; check your spam folder too.`);
-      } catch (err) {
-        const msg = (err as Error).message;
-        throw new Error(/rate limit/i.test(msg)
-          ? 'Too many sign-in e-mails were sent in the last hour. Sign in with your password instead.'
-          : `The link could not be sent: ${msg}`);
-      }
+      await db.sendPasswordReset(email);
+      setInfo(`Check your inbox: we sent ${email} a link to choose a new password. It can take a minute; check your spam folder too.`);
     });
   };
   const withProvider = (p: OAuthProvider) => run(() => db.signInWithProvider(p));
@@ -133,13 +126,13 @@ export default function SignIn() {
                   </label>
                 )}
                 <button type="submit" className="btn-primary" disabled={busy}>
-                  {busy ? 'Please wait…' : mode === 'signin' ? 'Sign in' : mode === 'create' ? 'Create my account' : 'Send me a sign-in link'}
+                  {busy ? 'Please wait…' : mode === 'signin' ? 'Sign in' : mode === 'create' ? 'Create my account' : 'Send me a reset link'}
                 </button>
                 {info && <p role="status" className="m-0 rounded-field bg-sand px-4 py-3 text-sm leading-relaxed text-ink">{info}</p>}
                 {error && <p role="alert" className="m-0 rounded-field bg-sand px-4 py-3 text-sm leading-relaxed text-danger">{error}</p>}
                 <button type="button" className="self-start text-sm font-semibold text-accent underline hover:text-accent-hover"
                   onClick={() => { setMode(mode === 'link' ? 'signin' : 'link'); setError(null); setInfo(null); }}>
-                  {mode === 'link' ? 'Use my password instead' : 'Forgot your password? Get a sign-in link by e-mail'}
+                  {mode === 'link' ? 'Back to sign in' : 'Forgot your password?'}
                 </button>
               </form>
             </>

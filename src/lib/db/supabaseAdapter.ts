@@ -113,6 +113,7 @@ export function createSupabaseDb(url: string, key: string): NyotaDb {
   const tokenHash = params.get('token_hash');
   const otpType = params.get('type') as EmailOtpType | null;
   let cameFromLink = params.has('code') || Boolean(tokenHash);
+  let resetPending = params.has('reset') && cameFromLink;
   const sb: SupabaseClient = createClient(url, key, { auth: { flowType: 'pkce', detectSessionInUrl: true, persistSession: true } });
   let linkError: string | null = params.get('error_description');
   const linkReady: Promise<void> =
@@ -233,6 +234,26 @@ export function createSupabaseDb(url: string, key: string): NyotaDb {
       session = undefined;
       emit();
       return { needsConfirmation: false };
+    },
+    async sendPasswordReset(email) {
+      const { error } = await sb.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
+        redirectTo: `${window.location.origin}${window.location.pathname}?reset=1`,
+      });
+      if (error) {
+        throw new Error(/rate limit/i.test(error.message)
+          ? 'Too many e-mails were sent in the last hour. Try again later.' : `The e-mail could not be sent: ${error.message}`);
+      }
+    },
+    takePasswordReset() {
+      const r = resetPending;
+      resetPending = false;
+      return r;
+    },
+    async updatePassword(password) {
+      const { error } = await sb.auth.updateUser({ password });
+      if (error) {
+        throw new Error(/different from the old/i.test(error.message) ? 'Choose a password different from your current one.' : error.message);
+      }
     },
     async redeemAccessCode(code) {
       const role = check<Session['role']>(await sb.rpc('redeem_access_code', { code }));
