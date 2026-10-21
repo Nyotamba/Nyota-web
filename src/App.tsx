@@ -29,6 +29,8 @@ import SessionRoom from './pages/student/SessionRoom';
 import CompanyMeetings from './pages/company/Meetings';
 import CompanyOpenings from './pages/company/Openings';
 import StudentOpenings from './pages/student/Openings';
+import StudentCompanies from './pages/student/Companies';
+import CompanyPageEditor from './pages/company/CompanyPage';
 import { AdminShell } from './pages/admin/AdminShell';
 import { ComingSoon } from './pages/ComingSoon';
 
@@ -60,6 +62,7 @@ export default function App() {
 
           <Route path="/student/profile" element={<Guard role="student"><StudentProfile /></Guard>} />
           <Route path="/student/preview" element={<Guard role="student"><StudentPreview /></Guard>} />
+          <Route path="/student/companies" element={<Guard role="student"><StudentCompanies /></Guard>} />
           <Route path="/student/openings" element={<Guard role="student"><StudentOpenings /></Guard>} />
           <Route path="/student/sessions" element={<Guard role="student"><StudentSessions /></Guard>} />
           <Route path="/student/sessions/:id/live" element={<Guard role="student"><SessionRoom /></Guard>} />
@@ -69,6 +72,7 @@ export default function App() {
           <Route path="/company/candidates" element={<Guard role="company"><CompanyCandidates /></Guard>} />
           <Route path="/company/candidates/:id" element={<Guard role="company"><CompanyCandidateDetail /></Guard>} />
           <Route path="/company/shortlist" element={<Guard role="company"><CompanyShortlist /></Guard>} />
+          <Route path="/company/page" element={<Guard role="company"><CompanyPageEditor /></Guard>} />
           <Route path="/company/openings" element={<Guard role="company"><CompanyOpenings /></Guard>} />
           <Route path="/company/meetings" element={<Guard role="company"><CompanyMeetings /></Guard>} />
           <Route path="/company/dashboard" element={<Guard role="company"><CompanyShell><ComingSoon title="Dashboard">{later}</ComingSoon></CompanyShell></Guard>} />

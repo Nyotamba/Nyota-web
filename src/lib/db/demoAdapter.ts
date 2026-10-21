@@ -3,6 +3,7 @@ import type { Candidate, NyotaDb, Session } from './types';
 import { createSeed, DEMO_ACCOUNTS, type DemoState } from './seed';
 import { BUILTIN_OPTIONS, CONSENT_VERSION, SCHOOLS } from '../../config/constants';
 import { isProfileComplete, isVisible } from '../candidate';
+import { fairDayKey } from '../time';
 
 const BASE_STATE_KEY = 'nyota-demo-state-v1';
 const BASE_SESSION_KEY = 'nyota-demo-session-v1';
@@ -40,6 +41,7 @@ export function createDemoDb(space = ''): NyotaDb {
   state.registrations ??= seed.registrations;
   state.slots ??= seed.slots;
   state.openings ??= seed.openings;
+  for (const co of state.companies) if (co.about === undefined) Object.assign(co, seed.companies.find((x) => x.id === co.id) ?? {}, { name: co.name });
   state.openingInterests ??= seed.openingInterests;
   for (const o of state.openings ?? []) o.skills ??= seed.openings?.find((x) => x.id === o.id)?.skills ?? [];
   state.schools ??= [...SCHOOLS];
@@ -70,6 +72,10 @@ export function createDemoDb(space = ''): NyotaDb {
     if (!c) return 0;
     const have = new Set([...c.functions, ...c.sectors, ...c.pastSectors, ...c.languages].map((x) => x.toLowerCase()));
     return wanted.filter((w) => have.has(w.toLowerCase())).length;
+  };
+  const matchedSkills = (c: Candidate, wanted: string[]) => {
+    const have = new Set([...c.functions, ...c.sectors, ...c.pastSectors, ...c.languages].map((x) => x.toLowerCase()));
+    return wanted.filter((w) => have.has(w.toLowerCase()));
   };
   const findCandidate = (id: string) => {
     const cand = state.candidates.find((x) => x.id === id);
@@ -411,7 +417,7 @@ export function createDemoDb(space = ''): NyotaDb {
         .filter(({ c }) => isVisible(c))
         .map(({ i, c }) => ({
           candidateId: c.id, name: `${c.firstName} ${c.lastName}`.trim(), school: c.school, programme: c.programme,
-          graduationYear: c.graduationYear ?? null, interestedAt: i.createdAt, matched: skillMatch(c, wanted),
+          graduationYear: c.graduationYear ?? null, interestedAt: i.createdAt, matched: skillMatch(c, wanted), matchedSkills: matchedSkills(c, wanted),
         }))
         .sort((a, b) => b.matched - a.matched);
     },
@@ -607,6 +613,40 @@ export function createDemoDb(space = ''): NyotaDb {
     },
     async getCompany(id) {
       return clone(state.companies.find((x) => x.id === id) ?? null);
+    },
+    async listFairCompanies() {
+      const t = Date.now();
+      return state.companies.map((co) => {
+        const slots = (state.slots ?? []).filter((s) => s.companyId === co.id && Date.parse(s.startsAt) > t);
+        const byDay = new Map<string, { day: string; from: string; to: string }>();
+        for (const s of slots) {
+          const day = fairDayKey(s.startsAt);
+          const to = new Date(Date.parse(s.startsAt) + s.durationMin * 60_000).toISOString();
+          const d = byDay.get(day);
+          if (!d) byDay.set(day, { day, from: s.startsAt, to });
+          else {
+            if (s.startsAt < d.from) d.from = s.startsAt;
+            if (to > d.to) d.to = to;
+          }
+        }
+        return {
+          id: co.id, name: co.name, logoUrl: co.logoUrl ?? null,
+          about: co.about ?? '', website: co.website ?? '', sector: co.sector ?? '', locations: co.locations ?? '',
+          sessions: (state.sessions ?? []).filter((s) => s.companyId === co.id && s.id !== 'slive')
+            .sort((a, b) => a.startsAt.localeCompare(b.startsAt))
+            .map((s) => ({ id: s.id, title: s.title, kind: s.kind, startsAt: s.startsAt, durationMin: s.durationMin })),
+          interviewSlots: slots.length,
+          freeSlots: slots.filter((s) => !s.candidateId).length,
+          interviewDays: [...byDay.values()].sort((a, b) => a.day.localeCompare(b.day)),
+          openings: (state.openings ?? []).filter((o) => o.companyId === co.id && o.published).length,
+        };
+      }).sort((a, b) => a.name.localeCompare(b.name));
+    },
+    async saveCompanyPage(companyId, page) {
+      const co = state.companies.find((x) => x.id === companyId);
+      if (!co) throw new Error('Company not found');
+      Object.assign(co, { about: page.about.trim(), website: page.website.trim(), sector: page.sector.trim(), locations: page.locations.trim() });
+      commit();
     },
     async listInvitations() {
       return clone([...state.invitations].sort((a, b) => (b.createdAt > a.createdAt ? 1 : -1)));

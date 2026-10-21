@@ -52,6 +52,29 @@ export interface Company {
   name: string;
   logoUrl?: string | null;
   showOnSite?: boolean; // logo on the homepage (brand book K7: only once confirmed in writing)
+  about?: string;
+  website?: string;
+  sector?: string;
+  locations?: string;
+}
+
+/** The company's presentation for students. */
+export interface CompanyPage {
+  about: string;
+  website: string;
+  sector: string;
+  locations: string;
+}
+/** A company of the fair as students see it: presentation, sessions, interviews, openings. */
+export interface FairCompany extends CompanyPage {
+  id: string;
+  name: string;
+  logoUrl: string | null;
+  sessions: { id: string; title: string; kind: string; startsAt: string; durationMin: number }[];
+  interviewSlots: number; // upcoming slots
+  freeSlots: number;
+  interviewDays: { day: string; from: string; to: string }[]; // Barcelona day, first start, last end
+  openings: number;
 }
 
 export interface SchoolEntry {
@@ -195,6 +218,7 @@ export interface InterestedCandidate {
   graduationYear: number | null;
   interestedAt: string;
   matched: number;
+  matchedSkills: string[]; // the wanted skills this student has
 }
 
 export interface StudentInterview {
@@ -396,6 +420,8 @@ export interface NyotaDb {
   getDashboard(): Promise<Dashboard>;
   getTalentPool(): Promise<TalentRow[]>;
   getCompany(id: string): Promise<Company | null>;
+  listFairCompanies(): Promise<FairCompany[]>;
+  saveCompanyPage(companyId: string, page: CompanyPage): Promise<void>;
   listInvitations(): Promise<Invitation[]>;
   /** Records the invitation and, on the live site, e-mails the person a sign-in link. */
   inviteCompanyMember(input: { companyId?: string; newCompanyName?: string; email: string }): Promise<Invitation & { emailSent: boolean }>;

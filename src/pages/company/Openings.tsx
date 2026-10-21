@@ -155,15 +155,29 @@ function OpeningRow({ o, busy, onEdit, onToggle, onDelete }: { o: Opening; busy:
           {!people && <li className="px-4 py-3 text-sm text-muted">Loading…</li>}
           {people?.length === 0 && <li className="px-4 py-3 text-sm text-muted">No student has shown interest yet.</li>}
           {people?.map((p) => (
-            <li key={p.candidateId} className="flex flex-wrap items-center gap-3 border-b border-line-soft px-4 py-3 text-sm last:border-b-0">
-              <Link to={`/company/candidates/${p.candidateId}`} className="font-semibold">{p.name}</Link>
-              <span className="text-muted">{[p.school, p.programme, p.graduationYear].filter(Boolean).join(' · ')}</span>
+            <li key={p.candidateId} className="flex flex-col gap-2 border-b border-line-soft px-4 py-3 text-sm last:border-b-0">
+              <div className="flex flex-wrap items-center gap-3">
+                <Link to={`/company/candidates/${p.candidateId}`} className="font-semibold">{p.name}</Link>
+                <span className="text-muted">{[p.school, p.programme, p.graduationYear].filter(Boolean).join(' · ')}</span>
+                {o.skills.length > 0 && (
+                  <span className={`rounded-full px-2.5 py-0.5 text-[12px] font-bold ${p.matched === o.skills.length ? 'bg-green text-white' : 'bg-offwhite text-ink'}`}>
+                    {p.matched}/{o.skills.length} skills
+                  </span>
+                )}
+                <span className="ml-auto text-[12px] text-muted">{formatDate(p.interestedAt)}</span>
+              </div>
               {o.skills.length > 0 && (
-                <span className={`rounded-full px-2.5 py-0.5 text-[12px] font-bold ${p.matched === o.skills.length ? 'bg-green text-white' : 'bg-offwhite text-ink'}`}>
-                  {p.matched}/{o.skills.length} skills
-                </span>
+                <div className="flex flex-wrap gap-1.5" aria-label="Skills">
+                  {o.skills.map((s) => {
+                    const ok = p.matchedSkills.some((m) => m.toLowerCase() === s.toLowerCase());
+                    return (
+                      <span key={s} className={`rounded-full px-2.5 py-0.5 text-[12px] font-semibold ${ok ? 'bg-green text-white' : 'border border-line-strong text-muted line-through decoration-1'}`}>
+                        {ok ? '✓ ' : ''}{s}<span className="sr-only">{ok ? ' (has it)' : ' (missing)'}</span>
+                      </span>
+                    );
+                  })}
+                </div>
               )}
-              <span className="ml-auto text-[12px] text-muted">{formatDate(p.interestedAt)}</span>
             </li>
           ))}
         </ul>

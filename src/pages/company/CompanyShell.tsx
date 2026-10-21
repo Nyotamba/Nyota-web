@@ -14,6 +14,7 @@ export function CompanyShell({ children }: { children: ReactNode }) {
     { to: '/company/shortlist', label: `Shortlist · ${shortlist?.length ?? 0}` },
     { to: '/company/meetings', label: 'Sessions & interviews' },
     { to: '/company/openings', label: 'Openings' },
+    { to: '/company/page', label: 'Your page' },
     { to: '/company/dashboard', label: 'Dashboard' },
   ];
   return <AppShell variant="ink" tabs={tabs} who={company?.name}>{children}</AppShell>;

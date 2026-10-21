@@ -1,7 +1,7 @@
 // Live implementation of NyotaDb on Supabase. Access rules are enforced by the database
 // (row-level security in supabase/schema.sql); this file only maps rows to the UI types.
 import { createClient, FunctionsHttpError, type EmailOtpType, type SupabaseClient } from '@supabase/supabase-js';
-import type { Candidate, Consent, Contract, FairSession, Gender, TalentRow, InterviewSlot, InvitationStatus, NyotaDb, OAuthProvider, PositionType, Session, StudentInterview } from './types';
+import type { Candidate, Consent, Contract, FairCompany, FairSession, Gender, TalentRow, InterviewSlot, InvitationStatus, NyotaDb, OAuthProvider, PositionType, Session, StudentInterview } from './types';
 import { BUILTIN_OPTIONS, CONSENT_VERSION, CV_LINK_TTL_SECONDS, SCHOOLS } from '../../config/constants';
 
 // Every candidate column except e-mail, which companies may not read (column privileges).
@@ -540,10 +540,10 @@ export function createSupabaseDb(url: string, key: string): NyotaDb {
       emit();
     },
     async listOpeningInterest(id) {
-      const rows = check<{ candidate_id: string; name: string; school: string; programme: string; graduation_year: number | null; interested_at: string; matched: number }[]>(
+      const rows = check<{ candidate_id: string; name: string; school: string; programme: string; graduation_year: number | null; interested_at: string; matched: number; matched_skills: string[] | null }[]>(
         await sb.rpc('opening_interested', { oid: id }));
       return rows.map((r) => ({
-        candidateId: r.candidate_id, name: r.name, school: r.school, programme: r.programme, graduationYear: r.graduation_year, interestedAt: r.interested_at, matched: r.matched ?? 0,
+        candidateId: r.candidate_id, name: r.name, school: r.school, programme: r.programme, graduationYear: r.graduation_year, interestedAt: r.interested_at, matched: r.matched ?? 0, matchedSkills: r.matched_skills ?? [],
       }));
     },
     async bookSlot(slotId) {
@@ -711,7 +711,26 @@ export function createSupabaseDb(url: string, key: string): NyotaDb {
       return check(await sb.from('companies').select('id,name').order('name'));
     },
     async getCompany(id) {
+      const full = await sb.from('companies').select('id,name,logo_url,about,website,sector,locations').eq('id', id).maybeSingle();
+      if (!full.error) {
+        const r = full.data;
+        return r ? { id: r.id, name: r.name, logoUrl: r.logo_url ?? null, about: r.about, website: r.website, sector: r.sector, locations: r.locations } : null;
+      }
       return maybe(await sb.from('companies').select('id,name').eq('id', id).maybeSingle());
+    },
+    async listFairCompanies() {
+      const rows = check<{
+        id: string; name: string; logo_url: string | null; about: string; website: string; sector: string; locations: string;
+        sessions: FairCompany['sessions']; interview_slots: number; free_slots: number; interview_days: FairCompany['interviewDays']; openings: number;
+      }[]>(await sb.rpc('list_fair_companies'));
+      return rows.map((r) => ({
+        id: r.id, name: r.name, logoUrl: r.logo_url, about: r.about, website: r.website, sector: r.sector, locations: r.locations,
+        sessions: r.sessions ?? [], interviewSlots: r.interview_slots, freeSlots: r.free_slots, interviewDays: r.interview_days ?? [], openings: r.openings,
+      }));
+    },
+    async saveCompanyPage(companyId, p) {
+      maybe(await sb.rpc('save_company_page', { cid: companyId, p_about: p.about, p_website: p.website, p_sector: p.sector, p_locations: p.locations }));
+      emit();
     },
     async listInvitations() {
       const rows = check<{ id: string; email: string; company_id: string; status: InvitationStatus; created_at: string; access_code: string | null }[]>(

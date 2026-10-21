@@ -142,8 +142,10 @@ export function createSeed(): DemoState {
       }),
     ],
     companies: [
-      { id: 'co1', name: 'Kora Capital (demo)' },
-      { id: 'co2', name: 'Sahel Grid Energy (demo)' },
+      { id: 'co1', name: 'Kora Capital (demo)', sector: 'Financial services', locations: 'Dakar · Lagos · Abidjan', website: 'https://example.com/kora',
+        about: 'Pan-African venture and growth investor backing fintech and payments companies in West Africa. We hire MBAs into our investment team every year.' },
+      { id: 'co2', name: 'Sahel Grid Energy (demo)', sector: 'Energy', locations: 'Nairobi · Niamey · Ouagadougou', website: 'https://example.com/sahel',
+        about: 'Developer and operator of solar mini-grids serving 400,000 people across the Sahel and East Africa.' },
     ],
     invitations: [
       { id: 'i1', email: 'j.ndiaye@kora.example', companyId: 'co1', status: 'Accepted', createdAt: '2026-09-20T10:00:00Z' },

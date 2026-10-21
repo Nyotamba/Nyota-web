@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { StudentShell } from './StudentShell';
 import { Badge } from '../../components/Badge';
 import { Notice } from '../../components/Notice';
@@ -17,7 +17,8 @@ export default function StudentOpenings() {
   const { data: openings, error } = useDbQuery(() => db.listOpenings());
   const { data: me } = useDbQuery(() => (cid ? db.getCandidate(cid) : Promise.resolve(null)), [cid]);
   const [contract, setContract] = useState<Contract | ''>('');
-  const [q, setQ] = useState('');
+  const [params] = useSearchParams();
+  const [q, setQ] = useState(params.get('company') ?? '');
   const [mine, setMine] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState<{ msg: string; tone?: 'green' | 'danger' } | null>(null);
