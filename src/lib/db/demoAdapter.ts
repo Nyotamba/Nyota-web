@@ -49,9 +49,8 @@ export function createDemoDb(): NyotaDb {
   if (live) live.startsAt = liveStart;
   else {
     state.sessions!.push({ id: 'slive', companyId: 'co1', title: 'Live now: try the session room', kind: 'Presentation',
-      description: 'A demo session that is always live. Click “Join now” to see the Nyota room that counts attendance.',
+      description: 'A demo session that is always live. Register, then click “Join now” to see the Nyota room that counts attendance.',
       startsAt: liveStart, durationMin: 45, capacity: null, meetingUrl: 'https://example.com/demo-live' });
-    state.registrations!.push({ sessionId: 'slive', candidateId: 'c1' });
   }
   let session: Session | null = read<Session>(SESSION_KEY);
   const listeners = new Set<() => void>();
