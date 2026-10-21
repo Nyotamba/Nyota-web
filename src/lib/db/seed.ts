@@ -156,7 +156,7 @@ export function createSeed(): DemoState {
       }),
     ],
     companies: [
-      { id: 'co1', name: 'Kora Capital (demo)', size: '50–200', hiringFor: ['Investment', 'Finance'], hiringCountries: 'Senegal, Nigeria, Côte d’Ivoire', sector: 'Financial services', locations: 'Dakar · Lagos · Abidjan', website: 'https://example.com/kora',
+      { id: 'co1', name: 'Kora Capital (demo)', premium: true, size: '50–200', hiringFor: ['Investment', 'Finance'], hiringCountries: 'Senegal, Nigeria, Côte d’Ivoire', sector: 'Financial services', locations: 'Dakar · Lagos · Abidjan', website: 'https://example.com/kora',
         about: 'Pan-African venture and growth investor backing fintech and payments companies in West Africa. We hire MBAs into our investment team every year.' },
       { id: 'co2', name: 'Sahel Grid Energy (demo)', size: '200–1,000', hiringFor: ['Strategy', 'Operations', 'Business development'], hiringCountries: 'Kenya, Niger, Burkina Faso', sector: 'Energy', locations: 'Nairobi · Niamey · Ouagadougou', website: 'https://example.com/sahel',
         about: 'Developer and operator of solar mini-grids serving 400,000 people across the Sahel and East Africa.' },

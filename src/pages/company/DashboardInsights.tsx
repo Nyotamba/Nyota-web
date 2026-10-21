@@ -64,8 +64,8 @@ function Benchmark({ b }: { b: CompanyBenchmark }) {
                 <td className="py-2 text-right">
                   <span className="mr-2 font-bold tabular-nums">{you}</span>
                   {ratio !== null && (
-                    <span className={`rounded-full px-2 py-0.5 text-[12px] font-bold ${ratio >= 1.2 ? 'bg-green text-white' : ratio <= 0.8 ? 'bg-sand text-ink' : 'bg-offwhite text-muted'}`}>
-                      {ratio >= 1 ? `×${ratio.toFixed(1)}` : `−${Math.round((1 - ratio) * 100)}%`}
+                    <span className={`rounded-full px-2 py-0.5 text-[12px] font-bold tabular-nums ${ratio >= 1.2 ? 'bg-green text-white' : ratio <= 0.8 ? 'bg-sand text-ink' : 'bg-offwhite text-muted'}`}>
+                      {Math.abs(ratio - 1) < 0.05 ? '≈ average' : `${ratio > 1 ? '+' : '−'}${Math.round(Math.abs(ratio - 1) * 100)}%`}
                     </span>
                   )}
                 </td>
@@ -76,7 +76,10 @@ function Benchmark({ b }: { b: CompanyBenchmark }) {
           })}
         </tbody>
       </table>
-      <p className="m-0 text-[13px] text-muted">Below average? A full profile, a logo and openings with skills get more students.</p>
+      <p className="m-0 text-[13px] text-muted">
+        +33% = a third more than the average company. Green: well above average; beige: well below. Below average? A full
+        profile, a logo and openings with skills get more students.
+      </p>
     </Card>
   );
 }

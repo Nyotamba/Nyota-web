@@ -12,7 +12,9 @@ const pct = (part: number, whole: number) => (whole ? Math.round((part / whole) 
 /** The company's own activity at the fair, then the anonymous talent pool it can recruit from. */
 export function CompanyDashboardBody({ companyId }: { companyId: string }) {
   const { data: d, error } = useDbQuery(() => db.getCompanyDashboard(companyId), [companyId]);
-  const { data: pool } = useDbQuery(() => db.getCompanyTalentPool());
+  const { data: company } = useDbQuery(() => db.getCompany(companyId), [companyId]);
+  const admin = useSession()?.role === 'admin';
+  const { data: pool } = useDbQuery(() => (company?.premium || admin ? db.getCompanyTalentPool() : Promise.resolve(null)), [company?.premium, admin]);
 
   return (
     <>
@@ -63,8 +65,12 @@ export function CompanyDashboardBody({ companyId }: { companyId: string }) {
             </section>
           </>
         )}
-        <CompanyInsights companyId={companyId} />
-        {pool && <TalentPool rows={pool} forCompany />}
+        {company?.premium || admin ? (
+          <>
+            <CompanyInsights companyId={companyId} />
+            {pool && <TalentPool rows={pool} forCompany />}
+          </>
+        ) : company && <PremiumTeaser />}
       </div>
     </>
   );
@@ -111,4 +117,32 @@ function Funnel({ steps }: { steps: [string, number][] }) {
 export default function CompanyDashboard() {
   const companyId = useSession()!.companyId!;
   return <CompanyShell><CompanyDashboardBody companyId={companyId} /></CompanyShell>;
+}
+
+/** What Nyota Premium adds, shown to companies that do not have it. */
+function PremiumTeaser() {
+  const items = [
+    ['How you compare', 'Your figures against the average company and your sector.'],
+    ['Matching profiles you missed', 'Verified students with the skills of your openings that you have not opened yet.'],
+    ['Who is interested in you', 'The roles, experience, countries and schools of the students who like your offers.'],
+    ['Your response time', 'How fast you answer interested students, and who is still waiting.'],
+    ['Talent pool', 'The whole verified pool in charts and on the map: backgrounds, countries, target roles.'],
+  ];
+  return (
+    <section className="card flex flex-col gap-5 border-2 border-dashed border-line-strong p-6 md:p-8">
+      <div className="flex flex-col gap-1">
+        <span className="overline">Nyota Premium</span>
+        <h2 className="m-0 font-display text-[30px] tracking-display">Recruit faster with your insights</h2>
+        <p className="m-0 max-w-[70ch] text-[15px] text-muted">Available for partner companies of the fair. Ask the club to switch it on for your team.</p>
+      </div>
+      <ul className="m-0 grid list-none gap-3 p-0 md:grid-cols-2">
+        {items.map(([t, d]) => (
+          <li key={t} className="flex flex-col gap-1 rounded-xl bg-offwhite p-4">
+            <span className="flex items-center gap-2 font-bold"><span aria-hidden="true">🔒</span>{t}</span>
+            <span className="text-sm text-muted">{d}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
 }

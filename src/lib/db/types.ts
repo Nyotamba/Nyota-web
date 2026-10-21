@@ -59,6 +59,7 @@ export interface Company {
   hiringFor?: string[];
   hiringCountries?: string;
   size?: string;
+  premium?: boolean; // Nyota Premium: advanced insights, switched on by the club
 }
 
 /** Something a company or a student did, logged for the admin Insights page (12 months, aggregates only). */
@@ -432,6 +433,7 @@ export interface NyotaDb {
   /** PNG, JPEG or WebP, 1 MB max. */
   uploadLogo(target: LogoTarget, file: File): Promise<void>;
   setShowOnSite(target: LogoTarget, show: boolean): Promise<void>;
+  setPremium(companyId: string, premium: boolean): Promise<void>; // admins
   /** Logos chosen for the homepage (public). */
   getPartners(): Promise<{ companies: Partner[]; schools: Partner[] }>;
   removeSchool(name: string): Promise<void>;

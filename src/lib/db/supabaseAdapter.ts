@@ -705,19 +705,19 @@ export function createSupabaseDb(url: string, key: string): NyotaDb {
       return changed(check(res));
     },
     async listCompanies() {
-      const full = await sb.from('companies').select('id,name,logo_url,show_on_site').order('name');
+      const full = await sb.from('companies').select('id,name,logo_url,show_on_site,premium').order('name');
       if (!full.error) {
-        return (full.data ?? []).map((r) => ({ id: r.id as string, name: r.name as string, logoUrl: (r.logo_url as string | null) ?? null, showOnSite: Boolean(r.show_on_site) }));
+        return (full.data ?? []).map((r) => ({ id: r.id as string, name: r.name as string, logoUrl: (r.logo_url as string | null) ?? null, showOnSite: Boolean(r.show_on_site), premium: Boolean(r.premium) }));
       }
       // Before migration 010: no logo columns yet.
       return check(await sb.from('companies').select('id,name').order('name'));
     },
     async getCompany(id) {
-      const full = await sb.from('companies').select('id,name,logo_url,about,website,sector,locations,hiring_for,hiring_countries,size').eq('id', id).maybeSingle();
+      const full = await sb.from('companies').select('id,name,logo_url,about,website,sector,locations,hiring_for,hiring_countries,size,premium').eq('id', id).maybeSingle();
       if (!full.error) {
         const r = full.data;
         return r ? { id: r.id, name: r.name, logoUrl: r.logo_url ?? null, about: r.about, website: r.website, sector: r.sector, locations: r.locations,
-          hiringFor: r.hiring_for ?? [], hiringCountries: r.hiring_countries ?? '', size: r.size ?? '' } : null;
+          hiringFor: r.hiring_for ?? [], hiringCountries: r.hiring_countries ?? '', size: r.size ?? '', premium: Boolean(r.premium) } : null;
       }
       return maybe(await sb.from('companies').select('id,name').eq('id', id).maybeSingle());
     },
@@ -773,6 +773,10 @@ export function createSupabaseDb(url: string, key: string): NyotaDb {
         requests: r.requests, openings: r.openings, slots: r.slots, sessions: r.sessions, interested: r.interested, offers: r.offers, hires: r.hires,
         lastActivity: r.last_activity,
       }));
+    },
+    async setPremium(companyId, premium) {
+      ok(await sb.from('companies').update({ premium }).eq('id', companyId));
+      emit();
     },
     async getCompanyBenchmark(companyId) {
       return check<CompanyBenchmark>(await sb.rpc('company_benchmark', { cid: companyId }));

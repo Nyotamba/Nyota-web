@@ -91,6 +91,13 @@ function CompanyCard({ company, members, onNotice }: {
     <article className="card flex flex-col gap-4 p-6">
       <div className="flex flex-wrap items-baseline gap-3">
         <h2 className="m-0 flex-1 text-lg font-bold">{company.name}</h2>
+        <label className="flex min-h-[36px] cursor-pointer items-center gap-2 rounded-full border border-line-strong px-3 text-[13px] font-semibold">
+          <input type="checkbox" className="size-4 accent-ink" checked={Boolean(company.premium)}
+            onChange={(e) => db.setPremium(company.id, e.target.checked).then(
+              () => onNotice(e.target.checked ? `${company.name} now has Nyota Premium` : `${company.name} is back to the free plan`),
+              (err: Error) => onNotice(err.message, 'danger'))} />
+          Premium
+        </label>
         <Link to={`/admin/companies/${company.id}`} className="btn-small text-[13px]">Open company space</Link>
         <span className="text-sm tabular-nums text-muted">{accepted} of {members.length} members signed in</span>
         {isOwner && (confirmDelete ? (

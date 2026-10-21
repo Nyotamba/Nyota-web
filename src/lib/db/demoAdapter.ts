@@ -45,6 +45,7 @@ export function createDemoDb(space = ''): NyotaDb {
   state.openingInterests ??= seed.openingInterests;
   state.events ??= seed.events;
   state.outcomes ??= seed.outcomes;
+  for (const co of state.companies) co.premium ??= seed.companies.find((x) => x.id === co.id)?.premium ?? false;
   for (const o of state.openings ?? []) o.skills ??= seed.openings?.find((x) => x.id === o.id)?.skills ?? [];
   state.schools ??= [...SCHOOLS];
   // Sessions added to the seed later (several on one day, one clash), with Amara's registrations.
@@ -735,7 +736,12 @@ export function createDemoDb(space = ''): NyotaDb {
         };
       });
     },
+    async setPremium(companyId, premium) {
+      Object.assign(state.companies.find((c) => c.id === companyId) ?? {}, { premium });
+      commit();
+    },
     async getCompanyBenchmark(companyId) {
+      if (session?.role === 'company' && !state.companies.find((c) => c.id === companyId)?.premium) throw new Error('premium');
       const ev = state.events ?? [];
       const fig = (id: string) => {
         const opens = (state.openings ?? []).filter((o) => o.companyId === id);
@@ -761,6 +767,7 @@ export function createDemoDb(space = ''): NyotaDb {
     },
     async listSeenCandidates() {
       const id = session?.companyId;
+      if (!state.companies.find((c) => c.id === id)?.premium) return [];
       return [...new Set([
         ...(state.events ?? []).filter((e) => e.kind === 'profile_view' && e.companyId === id).map((e) => e.candidateId!),
         ...state.cvViews.filter((v) => v.companyId === id).map((v) => v.candidateId),
@@ -812,6 +819,7 @@ export function createDemoDb(space = ''): NyotaDb {
       ];
     },
     async getCompanyTalentPool() {
+      if (session?.role === 'company' && !state.companies.find((c) => c.id === session?.companyId)?.premium) throw new Error('premium');
       return state.candidates.filter(isVisible).map((c) => ({
         school: c.school, programme: c.programme, graduationYear: c.graduationYear, gender: 'Not answered' as const,
         yearsExperience: c.yearsExperience, pastSectors: c.pastSectors, functions: c.functions, sectors: c.sectors,
