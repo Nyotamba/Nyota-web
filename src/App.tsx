@@ -9,7 +9,6 @@ import StudentProfile from './pages/student/Profile';
 import StudentPreview from './pages/student/Preview';
 import CompanyCandidates from './pages/company/Candidates';
 import CompanyCandidateDetail from './pages/company/CandidateDetail';
-import CompanyShortlist from './pages/company/Shortlist';
 import { CompanyShell } from './pages/company/CompanyShell';
 import Admin from './pages/admin/Admin';
 import AdminReview from './pages/admin/Review';
@@ -71,7 +70,7 @@ export default function App() {
 
           <Route path="/company/candidates" element={<Guard role="company"><CompanyCandidates /></Guard>} />
           <Route path="/company/candidates/:id" element={<Guard role="company"><CompanyCandidateDetail /></Guard>} />
-          <Route path="/company/shortlist" element={<Guard role="company"><CompanyShortlist /></Guard>} />
+          <Route path="/company/shortlist" element={<Navigate to="/company/candidates?view=shortlist" replace />} />
           <Route path="/company/page" element={<Guard role="company"><CompanyPageEditor /></Guard>} />
           <Route path="/company/openings" element={<Guard role="company"><CompanyOpenings /></Guard>} />
           <Route path="/company/meetings" element={<Guard role="company"><CompanyMeetings /></Guard>} />

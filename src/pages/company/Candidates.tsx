@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { CompanyShell } from './CompanyShell';
 import { CandidateTable } from '../../components/CandidateTable';
 import { ChipGroup } from '../../components/Chip';
@@ -15,12 +16,16 @@ export default function CompanyCandidates() {
   const { data: all } = useDbQuery(() => db.listVisibleCandidates());
   const { data: shortlist = [] } = useDbQuery(() => db.listShortlist(companyId), [companyId]);
   const { functions: FUNCTIONS, sectors: SECTORS, languages: LANGUAGES } = useProfileOptions();
+  const [params, setParams] = useSearchParams();
+  const starred = params.get('view') === 'shortlist';
+  const setStarred = (on: boolean) => { setParams(on ? { view: 'shortlist' } : {}, { replace: true }); setPage(1); };
   const [f, setF] = useState<CandidateFilters>(emptyFilters);
   const [page, setPage] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
 
   const update = (patch: Partial<CandidateFilters>) => { setF({ ...f, ...patch }); setPage(1); };
-  const rows = useMemo(() => applyFilters(all ?? [], f), [all, f]);
+  const pool = useMemo(() => (starred ? (all ?? []).filter((c) => shortlist.includes(c.id)) : all ?? []), [all, shortlist, starred]);
+  const rows = useMemo(() => applyFilters(pool, f), [pool, f]);
   const pages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
   const current = Math.min(page, pages);
   const visible = rows.slice((current - 1) * PAGE_SIZE, current * PAGE_SIZE);
@@ -79,8 +84,19 @@ export default function CompanyCandidates() {
         <div className="flex min-w-0 flex-1 flex-col gap-5 px-4 py-9 md:px-10">
           <div className="flex flex-wrap items-end gap-4">
             <div className="flex flex-1 flex-col gap-1">
-              <h1 className="m-0 font-display text-[40px] font-normal tracking-display">Candidates</h1>
-              <div className="text-[15px] text-muted" aria-live="polite">Showing {visible.length} of {rows.length} verified profiles{rows.length !== (all?.length ?? 0) ? ` (${all?.length} in total)` : ''}</div>
+              <h1 className="m-0 font-display text-[40px] font-normal tracking-display">{starred ? 'Shortlist' : 'Candidates'}</h1>
+              <div className="text-[15px] text-muted" aria-live="polite">
+                {starred ? 'Shared with everyone on your company’s team. ' : ''}
+                Showing {visible.length} of {rows.length} {starred ? 'shortlisted' : 'verified'} profiles{rows.length !== pool.length ? ` (${pool.length} in total)` : ''}
+              </div>
+            </div>
+            <div role="group" aria-label="Show" className="grid grid-cols-2 overflow-hidden rounded-field border border-line-strong">
+              {([[false, `All · ${all?.length ?? 0}`], [true, `★ Shortlist · ${shortlist.length}`]] as const).map(([v, label]) => (
+                <button key={String(v)} type="button" aria-pressed={starred === v} onClick={() => setStarred(v)}
+                  className={`min-h-[44px] px-4 text-sm font-semibold ${starred === v ? 'bg-ink text-offwhite' : 'bg-surface text-ink hover:bg-offwhite'}`}>
+                  {label}
+                </button>
+              ))}
             </div>
             <button type="button" className="btn-small lg:hidden" aria-expanded={showFilters} onClick={() => setShowFilters((s) => !s)}>
               <Filter />Filters{activeCount ? ` · ${activeCount}` : ''}
@@ -92,8 +108,13 @@ export default function CompanyCandidates() {
             </label>
           </div>
 
-          {all ? <CandidateTable rows={visible} shortlisted={shortlist} onToggle={(id) => db.toggleShortlist(companyId, id)} />
-            : <p className="text-muted">Loading candidates…</p>}
+          {!all ? <p className="text-muted">Loading candidates…</p>
+            : starred && shortlist.length === 0 ? (
+              <div className="card flex flex-col items-start gap-3 p-7">
+                <p className="m-0 text-base text-muted">Your shortlist is empty. Use the star on a candidate to add them here.</p>
+                <button type="button" className="btn-primary" onClick={() => setStarred(false)}>Browse all candidates</button>
+              </div>
+            ) : <CandidateTable rows={visible} shortlisted={shortlist} onToggle={(id) => db.toggleShortlist(companyId, id)} />}
 
           <nav aria-label="Pagination" className="flex items-center justify-between text-sm text-muted">
             <span>Page {current} of {pages}</span>
