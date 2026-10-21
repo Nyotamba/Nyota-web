@@ -40,23 +40,30 @@ export function outlookCalendarUrl(e: CalendarEvent) {
 
 const icsText = (s: string) => s.replace(/\\/g, '\\\\').replace(/\n/g, '\\n').replace(/[,;]/g, (m) => `\\${m}`);
 
-export function downloadIcs(e: CalendarEvent) {
+const vevent = (e: CalendarEvent) => [
+  'BEGIN:VEVENT',
+  `UID:${Date.parse(e.startsAt)}-${e.title.replace(/\W+/g, '-').toLowerCase()}@nyota.mba`,
+  `DTSTAMP:${stamp(new Date())}`,
+  `DTSTART:${stamp(new Date(e.startsAt))}`,
+  `DTEND:${stamp(endOf(e))}`,
+  `SUMMARY:${icsText(e.title)}`,
+  `DESCRIPTION:${icsText(body(e))}`,
+  `URL:${pageUrl(e.pagePath)}`,
+  'BEGIN:VALARM', 'TRIGGER:-PT15M', 'ACTION:DISPLAY', `DESCRIPTION:${icsText(e.title)}`, 'END:VALARM',
+  'END:VEVENT',
+];
+
+/** One event, or a whole agenda in one file (same UID per event, so importing again updates instead of duplicating). */
+export function downloadIcs(e: CalendarEvent | CalendarEvent[], fileName?: string) {
+  const list = Array.isArray(e) ? e : [e];
   const ics = [
     'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Nyota Africa Career Fair//EN', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH',
-    'BEGIN:VEVENT',
-    `UID:${Date.parse(e.startsAt)}-${e.title.replace(/\W+/g, '-').toLowerCase()}@nyota.mba`,
-    `DTSTAMP:${stamp(new Date())}`,
-    `DTSTART:${stamp(new Date(e.startsAt))}`,
-    `DTEND:${stamp(endOf(e))}`,
-    `SUMMARY:${icsText(e.title)}`,
-    `DESCRIPTION:${icsText(body(e))}`,
-    `URL:${pageUrl(e.pagePath)}`,
-    'BEGIN:VALARM', 'TRIGGER:-PT15M', 'ACTION:DISPLAY', `DESCRIPTION:${icsText(e.title)}`, 'END:VALARM',
-    'END:VEVENT', 'END:VCALENDAR',
+    ...list.flatMap(vevent),
+    'END:VCALENDAR',
   ].join('\r\n');
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([ics], { type: 'text/calendar;charset=utf-8' }));
-  a.download = `${e.title.replace(/[^\w -]+/g, '').slice(0, 60) || 'nyota-session'}.ics`;
+  a.download = fileName ?? `${list[0].title.replace(/[^\w -]+/g, '').slice(0, 60) || 'nyota-session'}.ics`;
   document.body.appendChild(a);
   a.click();
   a.remove();

@@ -2,11 +2,13 @@ import { useState } from 'react';
 import { StudentShell } from './StudentShell';
 import { SessionList } from '../../components/SessionList';
 import { Notice } from '../../components/Notice';
+import { MyAgenda } from '../../components/MyAgenda';
 import { db } from '../../lib/db';
 import { useDbQuery } from '../../lib/useDb';
 
 export default function StudentSessions() {
   const { data: sessions } = useDbQuery(() => db.listSessions());
+  const { data: interviews = [] } = useDbQuery(() => db.listStudentInterviews());
   const [mine, setMine] = useState(false);
   const [notice, setNotice] = useState<{ msg: string; tone?: 'green' | 'danger' } | null>(null);
   const list = (sessions ?? []).filter((s) => !mine || s.isRegistered);
@@ -28,6 +30,7 @@ export default function StudentSessions() {
             ))}
           </div>
         </div>
+        {sessions && <MyAgenda sessions={sessions} interviews={interviews} />}
         {sessions ? (
           <SessionList sessions={list} viewer="student" onNotice={(msg, tone) => setNotice({ msg, tone })}
             empty={mine ? 'You have not registered for a session yet.' : 'The programme will be published here soon.'} />
