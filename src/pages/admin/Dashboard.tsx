@@ -1,3 +1,4 @@
+import { Fragment } from 'react';
 import { Link } from 'react-router-dom';
 import { AdminShell } from './AdminShell';
 import { db, type Dashboard } from '../../lib/db';
@@ -6,11 +7,12 @@ import { TalentPool } from '../../components/TalentPool';
 
 const pct = (part: number, whole: number) => (whole ? Math.round((part / whole) * 100) : 0);
 
-export default function AdminDashboard() {
+export default function AdminDashboard({ embedded = false }: { embedded?: boolean }) {
+  const Wrap = embedded ? Fragment : AdminShell;
   const { data: d, error } = useDbQuery(() => db.getDashboard());
   const { data: pool, error: poolError } = useDbQuery(() => db.getTalentPool());
   return (
-    <AdminShell>
+    <Wrap>
       <div className="mx-auto flex max-w-page flex-col gap-8 px-4 py-10 md:px-10">
         <div className="flex flex-col gap-1">
           <h1 className="m-0 font-display text-[34px] tracking-display md:text-[40px]">Dashboard</h1>
@@ -26,7 +28,7 @@ export default function AdminDashboard() {
           </p>
         )}
       </div>
-    </AdminShell>
+    </Wrap>
   );
 }
 

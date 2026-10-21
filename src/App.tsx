@@ -11,15 +11,12 @@ import CompanyCandidates from './pages/company/Candidates';
 import CompanyCandidateDetail from './pages/company/CandidateDetail';
 import Admin from './pages/admin/Admin';
 import AdminReview from './pages/admin/Review';
-import AdminDashboard from './pages/admin/Dashboard';
 import AdminAdmins from './pages/admin/Admins';
 import AdminSessions from './pages/admin/Sessions';
 import AdminCompanies from './pages/admin/Companies';
-import AdminLists from './pages/admin/Lists';
 import AdminCandidates from './pages/admin/Candidates';
-import OwnerSettings from './pages/admin/Settings';
 import AdminCompanySpace from './pages/admin/CompanySpace';
-import AdminInsights from './pages/admin/Insights';
+import { AdminDashboardTabs, AdminSettingsTabs } from './pages/admin/Tabbed';
 import { ProfileEditor } from './pages/student/Profile';
 import SetPassword from './pages/SetPassword';
 import PublicSessions from './pages/Sessions';
@@ -87,15 +84,15 @@ export default function App() {
           <Route path="/admin" element={<Guard role="admin"><Admin /></Guard>} />
           <Route path="/admin/review/:id" element={<Guard role="admin"><AdminReview /></Guard>} />
           <Route path="/admin/companies" element={<Guard role="admin"><AdminCompanies /></Guard>} />
-          <Route path="/admin/lists" element={<Guard role="admin"><AdminLists /></Guard>} />
-          <Route path="/admin/schools" element={<Navigate to="/admin/lists" replace />} />
+          <Route path="/admin/lists" element={<Navigate to="/admin/settings" replace />} />
+          <Route path="/admin/schools" element={<Navigate to="/admin/settings" replace />} />
           <Route path="/admin/candidates/:id/edit" element={<Guard role="admin"><AdminEditCandidate /></Guard>} />
           <Route path="/admin/companies/:id" element={<Guard role="admin"><AdminCompanySpace /></Guard>} />
-          <Route path="/admin/insights" element={<Guard role="admin"><AdminInsights /></Guard>} />
+          <Route path="/admin/insights" element={<Navigate to="/admin/dashboard?view=insights" replace />} />
           <Route path="/admin/candidates" element={<Guard role="admin"><AdminCandidates /></Guard>} />
-          <Route path="/admin/settings" element={<Guard role="admin"><OwnerSettings /></Guard>} />
+          <Route path="/admin/settings" element={<Guard role="admin"><AdminSettingsTabs /></Guard>} />
           <Route path="/admin/consents" element={<Guard role="admin"><AdminShell><ComingSoon title="Consents">{later}</ComingSoon></AdminShell></Guard>} />
-          <Route path="/admin/dashboard" element={<Guard role="admin"><AdminDashboard /></Guard>} />
+          <Route path="/admin/dashboard" element={<Guard role="admin"><AdminDashboardTabs /></Guard>} />
           <Route path="/admin/admins" element={<Guard role="admin"><AdminAdmins /></Guard>} />
           <Route path="/admin/sessions" element={<Guard role="admin"><AdminSessions /></Guard>} />
 

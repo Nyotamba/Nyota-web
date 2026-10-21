@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useState, type FormEvent, Fragment } from 'react';
 import { AdminShell } from './AdminShell';
 import { SchoolsPanel } from './Schools';
 import { Notice } from '../../components/Notice';
@@ -14,10 +14,11 @@ const HELP: Record<OptionKind, string> = {
 };
 
 /** Admin-managed lists that feed the student profile and the company filters. */
-export default function AdminLists() {
+export default function AdminLists({ embedded = false }: { embedded?: boolean }) {
+  const Wrap = embedded ? Fragment : AdminShell;
   const [tab, setTab] = useState<Tab>('school');
   return (
-    <AdminShell>
+    <Wrap>
       <div className="mx-auto flex max-w-page flex-col gap-6 px-4 py-10 md:px-10">
         <div className="flex flex-wrap items-end gap-4">
           <div className="flex flex-1 flex-col gap-1">
@@ -33,7 +34,7 @@ export default function AdminLists() {
         </div>
         {tab === 'school' ? <SchoolsPanel /> : <OptionsPanel key={tab} kind={tab} />}
       </div>
-    </AdminShell>
+    </Wrap>
   );
 }
 

@@ -749,11 +749,14 @@ export function createSupabaseDb(url: string, key: string): NyotaDb {
     async getInsightSignals() {
       const rows = check<{
         direction: InsightSignal['direction']; kind: InsightSignal['kind']; at: string; company_name: string | null; company_sector: string | null;
+        company_hiring_for: string[] | null; company_countries: string | null; company_size: string | null; worked_countries: string | null; target_countries: string | null;
         school: string | null; functions: string[] | null; past_sectors: string[] | null; sectors: string[] | null; languages: string[] | null;
         years_experience: number | null; detail: Record<string, unknown> | null;
       }[]>(await sb.rpc('admin_insight_signals'));
       return rows.map((r) => ({
         direction: r.direction, kind: r.kind, at: r.at, companyName: r.company_name, companySector: r.company_sector, school: r.school,
+        companyHiringFor: r.company_hiring_for ?? [], companyCountries: r.company_countries ?? '', companySize: r.company_size,
+        workedCountries: r.worked_countries ?? '', targetCountries: r.target_countries ?? '',
         functions: r.functions ?? [], pastSectors: r.past_sectors ?? [], sectors: r.sectors ?? [], languages: r.languages ?? [],
         yearsExperience: r.years_experience, detail: r.detail ?? {},
       }));

@@ -697,6 +697,8 @@ export function createDemoDb(space = ''): NyotaDb {
         const k = co(companyId);
         return {
           direction, kind, at, companyName: k?.name ?? null, companySector: k?.sector ?? null, school: c?.school ?? null,
+          companyHiringFor: k?.hiringFor ?? [], companyCountries: k?.hiringCountries ?? '', companySize: k?.size ?? null,
+          workedCountries: c?.workedCountries ?? '', targetCountries: c?.countries ?? '',
           functions: c?.functions ?? [], pastSectors: c?.pastSectors ?? [], sectors: c?.sectors ?? [], languages: c?.languages ?? [],
           yearsExperience: c?.yearsExperience ?? null, detail,
         };

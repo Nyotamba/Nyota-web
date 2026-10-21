@@ -70,12 +70,17 @@ export interface InsightSignal {
   at: string;
   companyName: string | null;
   companySector: string | null;
+  companyHiringFor: string[];
+  companyCountries: string; // countries the company hires for
+  companySize: string | null;
   school: string | null;
   functions: string[];
   pastSectors: string[];
   sectors: string[];
   languages: string[];
   yearsExperience: number | null;
+  workedCountries: string;
+  targetCountries: string;
   detail: Record<string, unknown>;
 }
 

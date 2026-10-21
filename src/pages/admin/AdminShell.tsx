@@ -9,11 +9,9 @@ export function AdminShell({ children }: { children: ReactNode }) {
     { to: '/admin/candidates', label: 'Candidates' },
     { to: '/admin/sessions', label: 'Sessions' },
     { to: '/admin/companies', label: 'Companies' },
-    { to: '/admin/lists', label: 'Lists' },
     { to: '/admin/dashboard', label: 'Dashboard' },
-    { to: '/admin/insights', label: 'Insights' },
     { to: '/admin/admins', label: 'Admins' },
-    ...(useSession()?.isOwner ? [{ to: '/admin/settings', label: 'Settings' }] : []),
+    { to: '/admin/settings', label: 'Settings' },
   ];
   return (
     <AppShell variant="light" badge={useSession()?.isOwner ? 'Owner' : 'Admin'} tabs={tabs}>

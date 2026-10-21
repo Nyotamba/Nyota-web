@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent, Fragment } from 'react';
 import { AdminShell } from './AdminShell';
 import { Notice } from '../../components/Notice';
 import { db, type SiteSettings } from '../../lib/db';
@@ -16,7 +16,8 @@ const FIELDS: { key: keyof SiteSettings; label: string; help?: string; long?: bo
 ];
 
 /** Owners only: fair details, homepage texts and the consent text students accept. */
-export default function OwnerSettings() {
+export default function OwnerSettings({ embedded = false }: { embedded?: boolean }) {
+  const Wrap = embedded ? Fragment : AdminShell;
   const { settings: current, loaded: ready } = useSettingsQuery();
   const [form, setForm] = useState<SiteSettings>(current);
   const [loaded, setLoaded] = useState(false);
@@ -47,7 +48,7 @@ export default function OwnerSettings() {
   };
 
   return (
-    <AdminShell>
+    <Wrap>
       <form onSubmit={save} className="mx-auto flex max-w-[860px] flex-col gap-6 px-4 py-10 md:px-10">
         <div className="flex flex-col gap-1">
           <h1 className="m-0 font-display text-[34px] tracking-display md:text-[40px]">Settings</h1>
@@ -94,6 +95,6 @@ export default function OwnerSettings() {
         </div>
       </form>
       <Notice message={notice?.msg ?? null} tone={notice?.tone} onDone={() => setNotice(null)} />
-    </AdminShell>
+    </Wrap>
   );
 }
