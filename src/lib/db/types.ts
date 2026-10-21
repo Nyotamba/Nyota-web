@@ -175,6 +175,7 @@ export interface OpeningInput {
   applyUrl: string;
   applyBy: string | null; // YYYY-MM-DD
   published: boolean;
+  skills: string[]; // what the company wants to see: roles, sectors, languages or free text
 }
 export interface Opening extends OpeningInput {
   id: string;
@@ -184,6 +185,7 @@ export interface Opening extends OpeningInput {
   interested: number | null; // only for the company that posted it (and admins)
   isInterested: boolean;
   isMine: boolean;
+  myMatch: number | null; // for a student: how many of the skills are in their profile
 }
 export interface InterestedCandidate {
   candidateId: string;
@@ -192,6 +194,7 @@ export interface InterestedCandidate {
   programme: string;
   graduationYear: number | null;
   interestedAt: string;
+  matched: number;
 }
 
 export interface StudentInterview {

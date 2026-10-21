@@ -8,8 +8,9 @@ import { useDbQuery } from '../../lib/useDb';
 import { useSession } from '../../App';
 import { applyByLabel } from '../student/Openings';
 import { formatDate } from '../../lib/candidate';
+import { useProfileOptions } from '../../lib/useOptions';
 
-const EMPTY: OpeningInput = { title: '', contract: 'Full-time', function: '', location: '', description: '', applyUrl: '', applyBy: null, published: true };
+const EMPTY: OpeningInput = { title: '', contract: 'Full-time', function: '', location: '', description: '', applyUrl: '', applyBy: null, published: true, skills: [] };
 
 export default function CompanyOpenings() {
   const companyId = useSession()!.companyId!;
@@ -42,7 +43,7 @@ export default function CompanyOpenings() {
   };
   const edit = (o: Opening) => {
     setEditing(o.id);
-    setF({ title: o.title, contract: o.contract, function: o.function, location: o.location, description: o.description, applyUrl: o.applyUrl, applyBy: o.applyBy, published: o.published });
+    setF({ title: o.title, contract: o.contract, function: o.function, location: o.location, description: o.description, applyUrl: o.applyUrl, applyBy: o.applyBy, published: o.published, skills: o.skills });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -89,6 +90,7 @@ export default function CompanyOpenings() {
             <label className="label" htmlFor="op-desc">Description
               <textarea id="op-desc" rows={5} maxLength={2000} className="field text-[15px]" value={f.description} onChange={(e) => set('description', e.target.value)} />
             </label>
+            <SkillPicker value={f.skills} onChange={(v) => set('skills', v)} />
             <div className="grid grid-cols-2 gap-3">
               <label className="label" htmlFor="op-by">Apply by <span className="font-normal text-muted">(optional)</span>
                 <input id="op-by" type="date" className="field text-[15px]" value={f.applyBy ?? ''} onChange={(e) => set('applyBy', e.target.value || null)} />
@@ -127,6 +129,11 @@ function OpeningRow({ o, busy, onEdit, onToggle, onDelete }: { o: Opening; busy:
         <span className="text-sm text-muted">{[o.function, o.location, o.applyBy && `apply by ${applyByLabel(o.applyBy)}`].filter(Boolean).join(' · ')}</span>
       </div>
       <h2 className="m-0 text-xl font-bold leading-snug">{o.title}</h2>
+      {o.skills.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {o.skills.map((s) => <span key={s} className="rounded-full bg-offwhite px-2.5 py-1 text-[12px] font-semibold text-ink">{s}</span>)}
+        </div>
+      )}
       <div className="flex flex-wrap items-center gap-2">
         <button type="button" aria-expanded={open} onClick={() => setOpen((v) => !v)}
           className="btn rounded-full bg-green px-5 text-[15px] text-white hover:bg-ink hover:text-white">
@@ -151,11 +158,67 @@ function OpeningRow({ o, busy, onEdit, onToggle, onDelete }: { o: Opening; busy:
             <li key={p.candidateId} className="flex flex-wrap items-center gap-3 border-b border-line-soft px-4 py-3 text-sm last:border-b-0">
               <Link to={`/company/candidates/${p.candidateId}`} className="font-semibold">{p.name}</Link>
               <span className="text-muted">{[p.school, p.programme, p.graduationYear].filter(Boolean).join(' · ')}</span>
+              {o.skills.length > 0 && (
+                <span className={`rounded-full px-2.5 py-0.5 text-[12px] font-bold ${p.matched === o.skills.length ? 'bg-green text-white' : 'bg-offwhite text-ink'}`}>
+                  {p.matched}/{o.skills.length} skills
+                </span>
+              )}
               <span className="ml-auto text-[12px] text-muted">{formatDate(p.interestedAt)}</span>
             </li>
           ))}
         </ul>
       )}
     </article>
+  );
+}
+
+/** Skills the company wants: chips from the club lists (matched against profiles) plus free text. */
+function SkillPicker({ value, onChange }: { value: string[]; onChange: (v: string[]) => void }) {
+  const { functions, sectors, languages } = useProfileOptions();
+  const [other, setOther] = useState('');
+  const has = (s: string) => value.some((v) => v.toLowerCase() === s.toLowerCase());
+  const toggle = (s: string) => onChange(has(s) ? value.filter((v) => v.toLowerCase() !== s.toLowerCase()) : [...value, s]);
+  const known = new Set([...functions, ...sectors, ...languages].map((x) => x.toLowerCase()));
+  const free = value.filter((v) => !known.has(v.toLowerCase()));
+  const add = () => {
+    const s = other.trim();
+    if (s && !has(s) && value.length < 15) onChange([...value, s]);
+    setOther('');
+  };
+  const groups: [string, readonly string[]][] = [['Roles', functions], ['Sectors', sectors], ['Languages', languages]];
+  return (
+    <fieldset className="m-0 flex flex-col gap-3 border-0 p-0">
+      <legend className="mb-1 text-sm font-bold">Skills you want to see <span className="font-normal text-muted">({value.length} chosen)</span></legend>
+      {groups.map(([label, list]) => (
+        <div key={label} className="flex flex-col gap-1.5">
+          <span className="text-[12px] font-semibold uppercase tracking-overline text-muted">{label}</span>
+          <div className="flex flex-wrap gap-1.5">
+            {list.map((s) => (
+              <button key={s} type="button" aria-pressed={has(s)} onClick={() => toggle(s)}
+                className={`min-h-[32px] rounded-full border px-3 text-[13px] font-semibold ${has(s) ? 'border-ink bg-ink text-offwhite' : 'border-line-strong bg-surface text-ink hover:border-ink'}`}>
+                {s}
+              </button>
+            ))}
+          </div>
+        </div>
+      ))}
+      <div className="flex flex-col gap-1.5">
+        <span className="text-[12px] font-semibold uppercase tracking-overline text-muted">Other skills</span>
+        <div className="flex gap-2">
+          <input aria-label="Other skill" className="field flex-1 text-[14px]" placeholder="Financial modelling" maxLength={40} value={other}
+            onChange={(e) => setOther(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); add(); } }} />
+          <button type="button" className="btn-small" onClick={add}>Add</button>
+        </div>
+        {free.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {free.map((s) => (
+              <button key={s} type="button" onClick={() => toggle(s)} aria-label={`Remove ${s}`}
+                className="min-h-[32px] rounded-full border border-ink bg-ink px-3 text-[13px] font-semibold text-offwhite">{s} ×</button>
+            ))}
+          </div>
+        )}
+        <span className="text-[12px] text-muted">Roles, sectors and languages are matched with student profiles. Other skills are shown to students.</span>
+      </div>
+    </fieldset>
   );
 }

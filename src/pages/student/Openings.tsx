@@ -22,6 +22,7 @@ export default function StudentOpenings() {
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState<{ msg: string; tone?: 'green' | 'danger' } | null>(null);
   const visible = me ? isVisible(me) : true;
+  const have = new Set(me ? [...me.functions, ...me.sectors, ...me.pastSectors, ...me.languages].map((x) => x.toLowerCase()) : []);
 
   const needle = q.trim().toLowerCase();
   const list = (openings ?? []).filter((o) =>
@@ -33,7 +34,11 @@ export default function StudentOpenings() {
     setBusy(o.id);
     try {
       await db.setOpeningInterest(o.id, !o.isInterested);
-      setNotice({ msg: o.isInterested ? 'Interest withdrawn' : `${o.companyName} can now see that you are interested.` });
+      setNotice({
+        msg: o.isInterested ? 'Interest withdrawn'
+          : visible ? `${o.companyName} can now see that you are interested.`
+            : `Saved. ${o.companyName} will see it as soon as your profile is verified and shared.`,
+      });
     } catch (err) {
       setNotice({ msg: (err as Error).message, tone: 'danger' });
     } finally {
@@ -64,8 +69,8 @@ export default function StudentOpenings() {
 
         {!visible && (
           <p className="m-0 rounded-xl bg-sand px-5 py-4 text-sm leading-relaxed text-ink">
-            Companies only see students whose profile is verified and shared. Finish <Link to="/student/profile">your profile</Link> to
-            show interest in an opening.
+            You can already say “I’m interested”: companies will see it once your profile is verified and shared.
+            Finish <Link to="/student/profile">your profile</Link> so it does not wait.
           </p>
         )}
 
@@ -106,6 +111,7 @@ export default function StudentOpenings() {
                 {o.applyBy && <span className={closed(o) ? 'text-danger' : ''}>{closed(o) ? 'Closed on' : 'Apply by'} {applyByLabel(o.applyBy)}</span>}
               </div>
               {o.description && <p className="m-0 line-clamp-4 text-[15px] leading-relaxed text-ink">{o.description}</p>}
+              {o.skills.length > 0 && <Skills o={o} have={have} />}
               <div className="mt-auto flex flex-wrap items-center gap-3 pt-2">
                 <button type="button" disabled={busy === o.id || (!o.isInterested && closed(o))} onClick={() => toggle(o)}
                   className={o.isInterested ? 'btn-small' : 'btn-primary text-[15px]'}>
@@ -121,5 +127,26 @@ export default function StudentOpenings() {
       </div>
       <Notice message={notice?.msg ?? null} tone={notice?.tone} onDone={() => setNotice(null)} />
     </StudentShell>
+  );
+}
+
+function Skills({ o, have }: { o: Opening; have: Set<string> }) {
+  const matched = o.skills.filter((s) => have.has(s.toLowerCase())).length;
+  return (
+    <div className="flex flex-col gap-1.5">
+      <span className="text-[12px] font-semibold text-muted">
+        Skills wanted · <span className={matched > 0 ? 'text-green' : ''}>you have {matched} of {o.skills.length}</span>
+      </span>
+      <div className="flex flex-wrap gap-1.5">
+        {o.skills.map((s) => {
+          const ok = have.has(s.toLowerCase());
+          return (
+            <span key={s} className={`rounded-full px-2.5 py-1 text-[12px] font-semibold ${ok ? 'bg-green text-white' : 'bg-offwhite text-ink'}`}>
+              {ok && '✓ '}{s}
+            </span>
+          );
+        })}
+      </div>
+    </div>
   );
 }

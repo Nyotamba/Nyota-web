@@ -41,6 +41,7 @@ export function createDemoDb(space = ''): NyotaDb {
   state.slots ??= seed.slots;
   state.openings ??= seed.openings;
   state.openingInterests ??= seed.openingInterests;
+  for (const o of state.openings ?? []) o.skills ??= seed.openings?.find((x) => x.id === o.id)?.skills ?? [];
   state.schools ??= [...SCHOOLS];
   // Sessions added to the seed later (several on one day, one clash), with Amara's registrations.
   for (const s of seed.sessions!.filter((x) => ['s4', 's5', 's6'].includes(x.id))) {
@@ -64,6 +65,11 @@ export function createDemoDb(space = ''): NyotaDb {
     write(STATE_KEY, state);
     write(SESSION_KEY, session);
     listeners.forEach((l) => l());
+  };
+  const skillMatch = (c: Candidate | null | undefined, wanted: string[]) => {
+    if (!c) return 0;
+    const have = new Set([...c.functions, ...c.sectors, ...c.pastSectors, ...c.languages].map((x) => x.toLowerCase()));
+    return wanted.filter((w) => have.has(w.toLowerCase())).length;
   };
   const findCandidate = (id: string) => {
     const cand = state.candidates.find((x) => x.id === id);
@@ -368,6 +374,7 @@ export function createDemoDb(space = ''): NyotaDb {
             interested: mine ? interests.filter((i) => i.openingId === o.id && isVisible(findCandidate(i.candidateId))).length : null,
             isInterested: interests.some((i) => i.openingId === o.id && i.candidateId === cid),
             isMine: mine,
+            myMatch: cid ? skillMatch(state.candidates.find((c) => c.id === cid), o.skills) : null,
           };
         })
         .filter((o) => o.isMine || (role === 'student' && o.published))
@@ -392,20 +399,21 @@ export function createDemoDb(space = ''): NyotaDb {
       const list = (state.openingInterests = state.openingInterests ?? []);
       if (!interested) state.openingInterests = list.filter((i) => !(i.openingId === id && i.candidateId === cid));
       else {
-        if (!isVisible(findCandidate(cid))) throw new Error('Your profile must be verified and shared with companies first (My profile).');
         if (!list.some((i) => i.openingId === id && i.candidateId === cid)) list.push({ openingId: id, candidateId: cid, createdAt: now() });
       }
       commit();
     },
     async listOpeningInterest(id) {
+      const wanted = (state.openings ?? []).find((o) => o.id === id)?.skills ?? [];
       return (state.openingInterests ?? [])
         .filter((i) => i.openingId === id)
         .map((i) => ({ i, c: findCandidate(i.candidateId) }))
         .filter(({ c }) => isVisible(c))
         .map(({ i, c }) => ({
           candidateId: c.id, name: `${c.firstName} ${c.lastName}`.trim(), school: c.school, programme: c.programme,
-          graduationYear: c.graduationYear ?? null, interestedAt: i.createdAt,
-        }));
+          graduationYear: c.graduationYear ?? null, interestedAt: i.createdAt, matched: skillMatch(c, wanted),
+        }))
+        .sort((a, b) => b.matched - a.matched);
     },
     async bookSlot(slotId) {
       const cid = session?.candidateId;

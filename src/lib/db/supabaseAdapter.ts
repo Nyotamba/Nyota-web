@@ -513,18 +513,19 @@ export function createSupabaseDb(url: string, key: string): NyotaDb {
       const rows = check<{
         id: string; company_id: string; company_name: string; title: string; contract: Contract; function: string; location: string;
         description: string; apply_url: string; apply_by: string | null; published: boolean; created_at: string;
-        interested: number | null; is_interested: boolean; is_mine: boolean;
+        interested: number | null; is_interested: boolean; is_mine: boolean; skills: string[] | null; my_match: number | null;
       }[]>(await sb.rpc('list_openings'));
       return rows.map((r) => ({
         id: r.id, companyId: r.company_id, companyName: r.company_name, title: r.title, contract: r.contract, function: r.function,
         location: r.location, description: r.description, applyUrl: r.apply_url, applyBy: r.apply_by, published: r.published,
         createdAt: r.created_at, interested: r.interested, isInterested: r.is_interested, isMine: r.is_mine,
+        skills: r.skills ?? [], myMatch: r.my_match,
       }));
     },
     async saveOpening(companyId, o, id) {
       const row = {
         title: o.title.trim(), contract: o.contract, function: o.function.trim(), location: o.location.trim(),
-        description: o.description.trim(), apply_url: o.applyUrl.trim(), apply_by: o.applyBy || null, published: o.published,
+        description: o.description.trim(), apply_url: o.applyUrl.trim(), apply_by: o.applyBy || null, published: o.published, skills: o.skills,
       };
       if (id) ok(await sb.from('openings').update(row).eq('id', id));
       else ok(await sb.from('openings').insert({ company_id: companyId, ...row }));
@@ -539,10 +540,10 @@ export function createSupabaseDb(url: string, key: string): NyotaDb {
       emit();
     },
     async listOpeningInterest(id) {
-      const rows = check<{ candidate_id: string; name: string; school: string; programme: string; graduation_year: number | null; interested_at: string }[]>(
+      const rows = check<{ candidate_id: string; name: string; school: string; programme: string; graduation_year: number | null; interested_at: string; matched: number }[]>(
         await sb.rpc('opening_interested', { oid: id }));
       return rows.map((r) => ({
-        candidateId: r.candidate_id, name: r.name, school: r.school, programme: r.programme, graduationYear: r.graduation_year, interestedAt: r.interested_at,
+        candidateId: r.candidate_id, name: r.name, school: r.school, programme: r.programme, graduationYear: r.graduation_year, interestedAt: r.interested_at, matched: r.matched ?? 0,
       }));
     },
     async bookSlot(slotId) {
