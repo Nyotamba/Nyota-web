@@ -6,3 +6,4 @@ dist-artifact
 .vercel
 .env*
 !.env.example
+supabase/.temp
