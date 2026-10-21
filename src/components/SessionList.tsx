@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { db, type FairSession, type Registrant, type Role } from '../lib/db';
 import { fairDay, fairDayKey, fairTimeRange, joinWindow } from '../lib/time';
 import { CLUB_NAME } from '../config/constants';
@@ -102,7 +102,7 @@ function SessionCard({ s, viewer, onEdit, onNotice, profileLinkBase }: {
         )}
         {viewer === 'student' && s.isRegistered && (s.hasAttended ? <Badge tone="green" check>Present</Badge>
           : joinWindow(s.startsAt, s.durationMin).open
-            ? <Link to={`/student/sessions/${s.id}/live`} className="btn rounded-full bg-green px-5 text-[15px] text-white hover:bg-ink hover:text-white">Join now</Link>
+            ? <JoinLive s={s} />
             : <JoinButton s={s} />)}
         {viewer === 'student' && s.isRegistered && !w.over && (
           <AddToCalendar event={{
@@ -137,6 +137,29 @@ function SessionCard({ s, viewer, onEdit, onNotice, profileLinkBase }: {
         )}
       </div>
     </article>
+  );
+}
+
+/**
+ * One click: the video call opens in a new tab and this tab becomes the Nyota room, which counts attendance
+ * on its own while it stays open.
+ */
+function JoinLive({ s }: { s: FairSession }) {
+  const navigate = useNavigate();
+  const join = async () => {
+    const call = window.open('', '_blank'); // opened now, inside the click, so pop-up blockers allow it
+    const url = await db.getSessionLink(s.id).catch(() => null);
+    if (call && url) {
+      call.opener = null;
+      call.location.href = url;
+      db.markSessionJoined(s.id);
+    } else call?.close();
+    navigate(`/student/sessions/${s.id}/live`);
+  };
+  return (
+    <button type="button" onClick={join} className="btn rounded-full bg-green px-5 text-[15px] text-white hover:bg-ink hover:text-white">
+      Join now
+    </button>
   );
 }
 
@@ -193,7 +216,7 @@ function Registrants({ sessionId, profileLinkBase }: { sessionId: string; profil
   return (
     <div className="flex flex-col gap-3 rounded-xl bg-offwhite p-4 text-sm">
       <div className="flex flex-wrap items-center gap-3">
-        <span className="flex-1 font-semibold tabular-nums">{list.length} registered · {joined} came in · {present} present</span>
+        <span className="flex-1 font-semibold tabular-nums">{list.length} registered · {joined} joined · {present} present</span>
         <button type="button" className="btn-small text-[13px]" onClick={() => downloadCsv(list)}>Download list (CSV)</button>
       </div>
       <ul className="m-0 flex list-none flex-col gap-2 p-0">
@@ -206,10 +229,10 @@ function Registrants({ sessionId, profileLinkBase }: { sessionId: string; profil
             )}
             <span className="text-muted">{[r.school, r.programme, r.graduationYear].filter(Boolean).join(' · ')}</span>
             {r.linkedinUrl && <a href={r.linkedinUrl} target="_blank" rel="noreferrer" className="text-[13px] font-semibold">LinkedIn</a>}
-            {r.attendedAt ? <Badge tone="green" check>Present</Badge> : r.joinedAt && <Badge tone="neutral">Came in</Badge>}
+            {r.attendedAt ? <Badge tone="green" check>Present</Badge> : r.joinedAt && <Badge tone="neutral">Joined</Badge>}
             {r.joinedAt && (
               <span className="text-[12px] tabular-nums text-muted">
-                out {hm(r.joinedAt)}{r.leftAt ? ` · back ${hm(r.leftAt)} · ${Math.round(r.secondsPresent / 60)} min` : ' · not back yet'}
+                {hm(r.joinedAt)}–{hm(r.leftAt ?? r.lastSeenAt ?? r.joinedAt)} · {Math.round(r.secondsPresent / 60)} min
               </span>
             )}
             <button type="button" className="ml-auto text-[13px] font-semibold text-accent underline hover:text-accent-hover" onClick={() => toggle(r)}>
@@ -219,9 +242,8 @@ function Registrants({ sessionId, profileLinkBase }: { sessionId: string; profil
         ))}
       </ul>
       <p className="m-0 text-[12px] text-muted">
-        Students join through the Nyota waiting room and come back to it at the end. “Came in” = left for the call from Nyota;
-        minutes = time between leaving for the call and coming back. “Present” = came back after at least half of the session
-        (or marked present by you).
+        Counted automatically: “Join now” opens the call and keeps a Nyota tab open, which counts the minutes while it stays
+        open. “Present” = counted at least half of the session (or marked present by you).
       </p>
     </div>
   );
@@ -232,8 +254,8 @@ const hm = (iso: string) => new Date(iso).toLocaleTimeString('en-GB', { timeZone
 function downloadCsv(list: Registrant[]) {
   const esc = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
   const rows = [
-    ['Name', 'School', 'Programme', 'Graduation', 'LinkedIn', 'Registered at', 'Left for the call at', 'Came back at', 'Minutes in the session', 'Present'],
-    ...list.map((r) => [r.name, r.school, r.programme, r.graduationYear, r.linkedinUrl, r.registeredAt, r.joinedAt, r.leftAt,
+    ['Name', 'School', 'Programme', 'Graduation', 'LinkedIn', 'Registered at', 'Joined at', 'Last seen at', 'Minutes counted', 'Present'],
+    ...list.map((r) => [r.name, r.school, r.programme, r.graduationYear, r.linkedinUrl, r.registeredAt, r.joinedAt, r.leftAt ?? r.lastSeenAt,
       Math.round(r.secondsPresent / 60), r.attendedAt ? 'yes' : 'no']),
   ];
   const a = document.createElement('a');

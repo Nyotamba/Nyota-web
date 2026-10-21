@@ -444,12 +444,12 @@ export function createSupabaseDb(url: string, key: string): NyotaDb {
       const rows = check<{
         candidate_id: string; name: string; school: string; programme: string; graduation_year: number | null;
         linkedin_url: string | null; visible: boolean; registered_at: string; joined_at: string | null; attended_at?: string | null;
-        left_at?: string | null; seconds_present?: number;
+        left_at?: string | null; last_seen_at?: string | null; seconds_present?: number;
       }[]>(await sb.rpc('session_registrants', { sid: sessionId }));
       return rows.map((r) => ({
         candidateId: r.candidate_id, name: r.name, school: r.school, programme: r.programme, graduationYear: r.graduation_year,
         linkedinUrl: r.linkedin_url, visible: r.visible, registeredAt: r.registered_at, joinedAt: r.joined_at,
-        attendedAt: r.attended_at ?? null, leftAt: r.left_at ?? null, secondsPresent: r.seconds_present ?? 0,
+        attendedAt: r.attended_at ?? null, leftAt: r.left_at ?? null, lastSeenAt: r.last_seen_at ?? null, secondsPresent: r.seconds_present ?? 0,
       }));
     },
     async sessionHeartbeat(sessionId) {

@@ -148,7 +148,8 @@ export interface Registrant {
   registeredAt: string;
   joinedAt: string | null; // clicked "Join"
   attendedAt: string | null; // checked in with the attendance code, or marked present by the organiser
-  leftAt: string | null; // clicked "I'm leaving" / closed the session room
+  leftAt: string | null; // closed the session room
+  lastSeenAt: string | null; // last beat of the open session room
   secondsPresent: number; // time the Nyota session room stayed open during the session
 }
 

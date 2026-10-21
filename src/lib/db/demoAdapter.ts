@@ -50,6 +50,24 @@ export function createDemoDb(): NyotaDb {
     if (!cand) throw new Error('Candidate not found');
     return cand;
   };
+  // Same rule as the live database: time between beats of the open room counts; present after half the session.
+  const countPresence = (sessionId: string, leaving: boolean) => {
+    const r = (state.registrations ?? []).find((x) => x.sessionId === sessionId && x.candidateId === session?.candidateId);
+    const s = (state.sessions ?? []).find((x) => x.id === sessionId);
+    if (!r || !s) return;
+    const start = Date.parse(s.startsAt) - 15 * 60_000;
+    const end = Date.parse(s.startsAt) + (s.durationMin + 30) * 60_000;
+    if (Date.now() < start) return;
+    const t = Math.min(Date.now(), end);
+    const counting = r.lastSeenAt && !(r.leftAt && r.leftAt >= r.lastSeenAt);
+    if (counting) r.seconds = (r.seconds ?? 0) + Math.max(0, Math.round((t - Math.max(Date.parse(r.lastSeenAt!), start)) / 1000));
+    const iso = new Date(t).toISOString();
+    r.joinedAt ??= iso;
+    r.lastSeenAt = iso;
+    r.leftAt = leaving ? iso : null;
+    if (!r.attendedAt && (r.seconds ?? 0) >= Math.max(60, s.durationMin * 30)) r.attendedAt = iso;
+    commit();
+  };
 
   return {
     mode: 'demo',
@@ -239,24 +257,10 @@ export function createDemoDb(): NyotaDb {
       }
     },
     async sessionHeartbeat(sessionId) {
-      const r = (state.registrations ?? []).find((x) => x.sessionId === sessionId && x.candidateId === session?.candidateId);
-      if (!r) return;
-      const t = Date.now();
-      if (r.lastSeenAt && !(r.leftAt && r.leftAt > r.lastSeenAt)) r.seconds = (r.seconds ?? 0) + Math.min(90, Math.round((t - Date.parse(r.lastSeenAt)) / 1000));
-      r.joinedAt ??= now();
-      r.lastSeenAt = new Date(t).toISOString();
-      r.leftAt = null;
-      commit();
+      countPresence(sessionId, false);
     },
     async leaveSession(sessionId) {
-      const r = (state.registrations ?? []).find((x) => x.sessionId === sessionId && x.candidateId === session?.candidateId);
-      if (!r) return;
-      const s = (state.sessions ?? []).find((x) => x.id === sessionId);
-      if (r.joinedAt) r.seconds = Math.max(r.seconds ?? 0, Math.round((Date.now() - Date.parse(r.joinedAt)) / 1000));
-      // Present: came in through the room and came back after at least half of the session.
-      if (s && r.joinedAt && !r.attendedAt && Date.now() - Date.parse(r.joinedAt) >= Math.max(1, s.durationMin / 2) * 60_000) r.attendedAt = now();
-      r.lastSeenAt = r.leftAt = now();
-      commit();
+      countPresence(sessionId, true);
     },
     async getAttendanceCode(sessionId) {
       const s = (state.sessions ?? []).find((x) => x.id === sessionId);
@@ -295,7 +299,7 @@ export function createDemoDb(): NyotaDb {
             candidateId: c.id, name: `${c.firstName} ${c.lastName}`, school: c.school, programme: c.programme,
             graduationYear: c.graduationYear || null, linkedinUrl: c.linkedinUrl || null, visible: isVisible(c),
             registeredAt: r.createdAt ?? '', joinedAt: r.joinedAt ?? null, attendedAt: r.attendedAt ?? null,
-            leftAt: r.leftAt ?? null, secondsPresent: r.seconds ?? 0,
+            leftAt: r.leftAt ?? null, lastSeenAt: r.lastSeenAt ?? null, secondsPresent: r.seconds ?? 0,
           };
         });
     },
