@@ -12,14 +12,13 @@ import { useProfileOptions } from '../../lib/useOptions';
 
 const EMPTY: OpeningInput = { title: '', contract: 'Full-time', function: '', location: '', description: '', applyUrl: '', applyBy: null, published: true, skills: [] };
 
-export default function CompanyOpenings() {
-  const companyId = useSession()!.companyId!;
+export function OpeningsManager({ companyId }: { companyId: string }) {
   const { data: openings, error } = useDbQuery(() => db.listOpenings());
   const [editing, setEditing] = useState<string | null>(null);
   const [f, setF] = useState<OpeningInput>(EMPTY);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<{ msg: string; tone?: 'green' | 'danger' } | null>(null);
-  const mine = (openings ?? []).filter((o) => o.isMine);
+  const mine = (openings ?? []).filter((o) => o.isMine && o.companyId === companyId);
   const set = <K extends keyof OpeningInput>(k: K, v: OpeningInput[K]) => setF((x) => ({ ...x, [k]: v }));
 
   const run = async (fn: () => Promise<void>, ok: string) => {
@@ -48,7 +47,7 @@ export default function CompanyOpenings() {
   };
 
   return (
-    <CompanyShell>
+    <>
       <div className="mx-auto grid max-w-page items-start gap-7 px-4 py-10 md:px-10 xl:grid-cols-12">
         <section className="flex min-w-0 flex-col gap-5 xl:col-span-8">
           <div className="flex flex-col gap-1">
@@ -113,7 +112,7 @@ export default function CompanyOpenings() {
         </aside>
       </div>
       <Notice message={notice?.msg ?? null} tone={notice?.tone} onDone={() => setNotice(null)} />
-    </CompanyShell>
+    </>
   );
 }
 
@@ -235,4 +234,9 @@ function SkillPicker({ value, onChange }: { value: string[]; onChange: (v: strin
       </div>
     </fieldset>
   );
+}
+
+export default function CompanyOpenings() {
+  const companyId = useSession()!.companyId!;
+  return <CompanyShell><OpeningsManager companyId={companyId} /></CompanyShell>;
 }

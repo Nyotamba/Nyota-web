@@ -1,7 +1,7 @@
 // Live implementation of NyotaDb on Supabase. Access rules are enforced by the database
 // (row-level security in supabase/schema.sql); this file only maps rows to the UI types.
 import { createClient, FunctionsHttpError, type EmailOtpType, type SupabaseClient } from '@supabase/supabase-js';
-import type { Candidate, CompanyDashboard, Consent, Contract, FairCompany, FairSession, Gender, TalentRow, InterviewSlot, InvitationStatus, NyotaDb, OAuthProvider, PositionType, Session, StudentInterview } from './types';
+import type { Candidate, CompanyDashboard, InsightSignal, Consent, Contract, FairCompany, FairSession, Gender, TalentRow, InterviewSlot, InvitationStatus, NyotaDb, OAuthProvider, PositionType, Session, StudentInterview } from './types';
 import { BUILTIN_OPTIONS, CONSENT_VERSION, CV_LINK_TTL_SECONDS, SCHOOLS } from '../../config/constants';
 
 // Every candidate column except e-mail, which companies may not read (column privileges).
@@ -317,7 +317,9 @@ export function createSupabaseDb(url: string, key: string): NyotaDb {
         ),
       ) as unknown as CandidateRow;
       // Gender lives in a separate table companies cannot read (migration 009); skip quietly if it is not there yet.
-      await sb.from('candidate_private').upsert({ candidate_id: candidateId, gender: input.gender, updated_at: new Date().toISOString() });
+      if (session?.role !== 'admin') {
+        await sb.from('candidate_private').upsert({ candidate_id: candidateId, gender: input.gender, updated_at: new Date().toISOString() });
+      }
       const saved = toCandidate(row, await activeConsent(candidateId), session?.email ?? '');
       saved.gender = input.gender;
       return changed(saved);
@@ -740,6 +742,21 @@ export function createSupabaseDb(url: string, key: string): NyotaDb {
     },
     async getCompanyDashboard(companyId) {
       return check<CompanyDashboard>(await sb.rpc('company_dashboard', { cid: companyId }));
+    },
+    logEvent(kind, target, detail) {
+      void sb.rpc('log_event', { p_kind: kind, p_target: target ?? null, p_detail: detail ?? {} }).then(() => undefined, () => undefined);
+    },
+    async getInsightSignals() {
+      const rows = check<{
+        direction: InsightSignal['direction']; kind: InsightSignal['kind']; at: string; company_name: string | null; company_sector: string | null;
+        school: string | null; functions: string[] | null; past_sectors: string[] | null; sectors: string[] | null; languages: string[] | null;
+        years_experience: number | null; detail: Record<string, unknown> | null;
+      }[]>(await sb.rpc('admin_insight_signals'));
+      return rows.map((r) => ({
+        direction: r.direction, kind: r.kind, at: r.at, companyName: r.company_name, companySector: r.company_sector, school: r.school,
+        functions: r.functions ?? [], pastSectors: r.past_sectors ?? [], sectors: r.sectors ?? [], languages: r.languages ?? [],
+        yearsExperience: r.years_experience, detail: r.detail ?? {},
+      }));
     },
     async getCompanyTalentPool() {
       const rows = check<{

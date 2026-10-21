@@ -9,13 +9,12 @@ import { useSession } from '../../App';
 const pct = (part: number, whole: number) => (whole ? Math.round((part / whole) * 100) : 0);
 
 /** The company's own activity at the fair, then the anonymous talent pool it can recruit from. */
-export default function CompanyDashboard() {
-  const companyId = useSession()!.companyId!;
+export function CompanyDashboardBody({ companyId }: { companyId: string }) {
   const { data: d, error } = useDbQuery(() => db.getCompanyDashboard(companyId), [companyId]);
   const { data: pool } = useDbQuery(() => db.getCompanyTalentPool());
 
   return (
-    <CompanyShell>
+    <>
       <div className="mx-auto flex max-w-page flex-col gap-8 px-4 py-10 md:px-10">
         <div className="flex flex-col gap-1">
           <h1 className="m-0 font-display text-[40px] tracking-display">Dashboard</h1>
@@ -65,7 +64,7 @@ export default function CompanyDashboard() {
         )}
         {pool && <TalentPool rows={pool} forCompany />}
       </div>
-    </CompanyShell>
+    </>
   );
 }
 
@@ -105,4 +104,9 @@ function Funnel({ steps }: { steps: [string, number][] }) {
       ))}
     </ol>
   );
+}
+
+export default function CompanyDashboard() {
+  const companyId = useSession()!.companyId!;
+  return <CompanyShell><CompanyDashboardBody companyId={companyId} /></CompanyShell>;
 }

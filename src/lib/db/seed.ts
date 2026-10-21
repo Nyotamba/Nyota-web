@@ -18,6 +18,7 @@ export interface DemoState {
   slots?: InterviewSlot[];
   openings?: (OpeningInput & { id: string; companyId: string; createdAt: string })[];
   openingInterests?: { openingId: string; candidateId: string; createdAt: string }[];
+  events?: { kind: string; at: string; companyId: string | null; candidateId: string | null; detail: Record<string, unknown> }[];
   candidates: Candidate[];
   companies: Company[];
   invitations: Invitation[];
@@ -64,6 +65,17 @@ export function createSeed(): DemoState {
       { openingId: 'op1', candidateId: 'c2', createdAt: '2027-01-22T09:00:00Z' },
       { openingId: 'op1', candidateId: 'c3', createdAt: '2027-01-23T09:00:00Z' },
       { openingId: 'op2', candidateId: 'c4', createdAt: '2027-01-26T09:00:00Z' },
+    ],
+    // Sample activity so the Insights page shows something in the demo.
+    events: [
+      ...['c2', 'c3', 'c2', 'c4', 'c5', 'c2'].map((id, n) => ({ kind: 'profile_view', at: `2027-02-0${n + 1}T10:00:00Z`, companyId: 'co1', candidateId: id, detail: {} })),
+      ...['c3', 'c6', 'c5'].map((id, n) => ({ kind: 'profile_view', at: `2027-02-0${n + 1}T11:00:00Z`, companyId: 'co2', candidateId: id, detail: {} })),
+      { kind: 'filter_search', at: '2027-02-02T09:00:00Z', companyId: 'co1', candidateId: null, detail: { functions: ['Finance'], language: 'French', minYears: 5, positionType: 'Any', results: 2 } },
+      { kind: 'filter_search', at: '2027-02-03T09:00:00Z', companyId: 'co1', candidateId: null, detail: { functions: ['Investment'], sector: 'Financial services', positionType: 'Full-time', results: 1 } },
+      { kind: 'filter_search', at: '2027-02-03T09:30:00Z', companyId: 'co2', candidateId: null, detail: { functions: ['Operations'], language: 'Swahili', positionType: 'Any', results: 0 } },
+      { kind: 'filter_search', at: '2027-02-04T09:00:00Z', companyId: 'co2', candidateId: null, detail: { functions: ['Strategy'], sector: 'Energy', minYears: 3, positionType: 'Any', results: 1 } },
+      ...['c1', 'c3', 'c4', 'c2'].map((id, n) => ({ kind: 'company_click', at: `2027-02-0${n + 1}T15:00:00Z`, companyId: 'co1', candidateId: id, detail: { action: 'openings' } })),
+      ...['c1', 'c6'].map((id, n) => ({ kind: 'company_click', at: `2027-02-0${n + 1}T16:00:00Z`, companyId: 'co2', candidateId: id, detail: { action: 'website' } })),
     ],
     candidates: [
       c({

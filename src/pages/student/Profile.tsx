@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { StudentShell } from './StudentShell';
+import { AdminShell } from '../admin/AdminShell';
 import { ChipGroup } from '../../components/Chip';
 import { Notice } from '../../components/Notice';
 import { Check, FileIcon } from '../../components/icons';
@@ -25,8 +26,12 @@ const toInput = (c: Candidate): CandidateProfileInput => ({
 const OTHER_SCHOOL = '__other__';
 
 export default function StudentProfile() {
-  const session = useSession();
-  const id = session!.candidateId!;
+  return <ProfileEditor id={useSession()!.candidateId!} />;
+}
+
+/** The profile form. admin: the club edits a student's profile (never consent, CV or gender: those stay the student's). */
+export function ProfileEditor({ id, admin = false }: { id: string; admin?: boolean }) {
+  const Shell = admin ? AdminShell : StudentShell;
   const { data: cand } = useDbQuery(() => db.getCandidate(id), [id]);
   const [form, setForm] = useState<CandidateProfileInput | null>(null);
   const [notice, setNotice] = useState<{ msg: string; tone: 'green' | 'danger' } | null>(null);
@@ -40,7 +45,7 @@ export default function StudentProfile() {
     if (cand && !form) setForm(toInput(cand));
   }, [cand, form]);
 
-  if (!cand || !form) return <StudentShell><p className="p-10 text-muted">Loading your profile…</p></StudentShell>;
+  if (!cand || !form) return <Shell><p className="p-10 text-muted">Loading the profile…</p></Shell>;
 
   const set = <K extends keyof CandidateProfileInput>(k: K, v: CandidateProfileInput[K]) => setForm({ ...form, [k]: v });
   const dirty = JSON.stringify(form) !== JSON.stringify(toInput(cand));
@@ -80,10 +85,16 @@ export default function StudentProfile() {
   };
 
   return (
-    <StudentShell>
+    <Shell>
       <div className="mx-auto grid max-w-page items-start gap-8 px-4 py-10 md:px-10 lg:grid-cols-12 lg:py-12 xl:px-20">
         <aside className="flex flex-col gap-5 lg:sticky lg:top-6 lg:col-span-4">
-          <h1 className="m-0 font-display text-[40px] font-normal tracking-display md:text-[44px]">My profile</h1>
+          {admin && <Link to={`/admin/review/${id}`} className="text-sm font-semibold no-underline">← Back to the profile</Link>}
+          <h1 className="m-0 font-display text-[40px] font-normal tracking-display md:text-[44px]">{admin ? `Edit ${cand.firstName || 'profile'}` : 'My profile'}</h1>
+          {admin && (
+            <p className="m-0 rounded-xl bg-sand px-4 py-3 text-sm text-ink">
+              Admin edit. Consent, CV and gender stay with the student and are not editable here.
+            </p>
+          )}
           <StatusCard c={cand} />
           <p className="m-0 text-sm leading-[1.55] text-muted">
             We never ask for ethnicity, religion, health, nationality or immigration status. Please leave them out of your CV too.
@@ -112,7 +123,7 @@ export default function StudentProfile() {
               <label className="label" htmlFor="p-prog">Program<input id="p-prog" className="field" value={form.programme} onChange={(e) => set('programme', e.target.value)} /></label>
               <label className="label" htmlFor="p-grad">Graduation<input id="p-grad" className="field" type="number" min={2025} max={2032} value={form.graduationYear} onChange={(e) => set('graduationYear', Number(e.target.value))} /></label>
             </div>
-            <label className="label sm:col-span-2" htmlFor="p-gender">Gender <span className="font-normal text-muted">(optional)</span>
+            {!admin && <label className="label sm:col-span-2" htmlFor="p-gender">Gender <span className="font-normal text-muted">(optional)</span>
               <select id="p-gender" className="field" value={form.gender ?? ''}
                 onChange={(e) => set('gender', (e.target.value || null) as Gender | null)}>
                 <option value="">Not answered</option>
@@ -121,7 +132,7 @@ export default function StudentProfile() {
               <span className="text-[13px] font-normal leading-snug text-muted">
                 Used only by the club for anonymous statistics on the talent pool. Companies never see it.
               </span>
-            </label>
+            </label>}
             <label className="label sm:col-span-2" htmlFor="p-li">LinkedIn URL<input id="p-li" className="field" type="url" placeholder="https://www.linkedin.com/in/…" value={form.linkedinUrl} onChange={(e) => set('linkedinUrl', e.target.value)} /></label>
           </Fieldset>
 
@@ -191,12 +202,12 @@ export default function StudentProfile() {
                   <><span className="text-[15px] font-bold text-danger">No CV yet</span><span className="text-[13px] text-muted">PDF only, 5 MB maximum</span></>
                 )}
               </div>
-              <button type="button" className="btn-small" onClick={() => fileRef.current?.click()}>{cand.cv ? 'Replace' : 'Upload CV'}</button>
-              {cand.cv && <button type="button" className="btn-small text-danger hover:text-danger" onClick={() => db.setCv(id, null)}>Remove</button>}
+              {!admin && <button type="button" className="btn-small" onClick={() => fileRef.current?.click()}>{cand.cv ? 'Replace' : 'Upload CV'}</button>}
+              {!admin && cand.cv && <button type="button" className="btn-small text-danger hover:text-danger" onClick={() => db.setCv(id, null)}>Remove</button>}
             </div>
           </Fieldset>
 
-          <fieldset className="m-0 flex flex-col gap-4 rounded-[18px] border-2 border-ink bg-surface p-6 md:p-8">
+          {!admin && <fieldset className="m-0 flex flex-col gap-4 rounded-[18px] border-2 border-ink bg-surface p-6 md:p-8">
             <legend className="px-2 text-xl font-bold">Consent</legend>
             <p className="m-0 text-[15px] leading-relaxed text-muted">{S.consent_text}</p>
             <label htmlFor="p-consent" className="flex cursor-pointer items-start gap-3 text-[15px] font-semibold leading-normal">
@@ -221,17 +232,17 @@ export default function StudentProfile() {
               </div>
             )}
             {!cand.consent && <div className="text-[13px] text-muted">Version {S.consent_version}. You can withdraw at any time.</div>}
-          </fieldset>
+          </fieldset>}
 
           <div className="flex flex-wrap items-center justify-end gap-3">
             {dirty && <span className="mr-auto text-sm text-muted">You have unsaved changes.</span>}
-            <Link to="/student/preview" className="btn-secondary text-base">Preview</Link>
+            {!admin && <Link to="/student/preview" className="btn-secondary text-base">Preview</Link>}
             <button type="submit" className="btn-primary text-base" disabled={!dirty}>Save profile</button>
           </div>
         </form>
       </div>
       <Notice message={notice?.msg ?? null} tone={notice?.tone} onDone={() => setNotice(null)} />
-    </StudentShell>
+    </Shell>
   );
 }
 

@@ -13,14 +13,15 @@ export default function AdminReview() {
   return (
     <AdminShell>
       {c ? (
-        <CandidateProfile c={c} top={back} actions={
-          !c.verifiedAt && (
+        <CandidateProfile c={c} top={back} actions={<>
+          <Link to={`/admin/candidates/${c.id}/edit`} className="btn-small">Edit profile</Link>
+          {!c.verifiedAt && (
             <button type="button" disabled={!c.cv || !c.consent} onClick={async () => { await db.verifyCandidates([c.id]); navigate('/admin'); }}
               className="btn rounded-xl bg-green px-5 text-[15px] text-white hover:bg-[#053129] disabled:bg-line disabled:text-muted">
               {c.cv ? 'Verify this profile' : 'A CV is required before verification'}
             </button>
-          )
-        } />
+          )}
+        </>} />
       ) : c === null ? <div className="p-10">{back}<p className="text-muted">Profile not found.</p></div> : null}
     </AdminShell>
   );

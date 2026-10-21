@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
-import { BrowserRouter, HashRouter, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
+import { BrowserRouter, HashRouter, Navigate, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { db, isPreview, type Role, type Session } from './lib/db';
 import { exitPreview, previewRole, startPreview } from './lib/preview';
 import { useDbQuery } from './lib/useDb';
@@ -18,6 +18,9 @@ import AdminCompanies from './pages/admin/Companies';
 import AdminLists from './pages/admin/Lists';
 import AdminCandidates from './pages/admin/Candidates';
 import OwnerSettings from './pages/admin/Settings';
+import AdminCompanySpace from './pages/admin/CompanySpace';
+import AdminInsights from './pages/admin/Insights';
+import { ProfileEditor } from './pages/student/Profile';
 import SetPassword from './pages/SetPassword';
 import PublicSessions from './pages/Sessions';
 import StudentSessions from './pages/student/Sessions';
@@ -38,6 +41,11 @@ export const useSession = () => useContext(SessionContext);
 
 // Hash routing works on any static host; set VITE_ROUTER=browser when the host rewrites to index.html.
 const Router = import.meta.env.VITE_ROUTER === 'browser' ? BrowserRouter : HashRouter;
+
+function AdminEditCandidate() {
+  const { id = '' } = useParams();
+  return <ProfileEditor id={id} admin />;
+}
 
 function Guard({ role, children }: { role: Role; children: ReactNode }) {
   const session = useSession();
@@ -81,6 +89,9 @@ export default function App() {
           <Route path="/admin/companies" element={<Guard role="admin"><AdminCompanies /></Guard>} />
           <Route path="/admin/lists" element={<Guard role="admin"><AdminLists /></Guard>} />
           <Route path="/admin/schools" element={<Navigate to="/admin/lists" replace />} />
+          <Route path="/admin/candidates/:id/edit" element={<Guard role="admin"><AdminEditCandidate /></Guard>} />
+          <Route path="/admin/companies/:id" element={<Guard role="admin"><AdminCompanySpace /></Guard>} />
+          <Route path="/admin/insights" element={<Guard role="admin"><AdminInsights /></Guard>} />
           <Route path="/admin/candidates" element={<Guard role="admin"><AdminCandidates /></Guard>} />
           <Route path="/admin/settings" element={<Guard role="admin"><OwnerSettings /></Guard>} />
           <Route path="/admin/consents" element={<Guard role="admin"><AdminShell><ComingSoon title="Consents">{later}</ComingSoon></AdminShell></Guard>} />

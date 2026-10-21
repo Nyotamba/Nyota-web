@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { CompanyShell } from './CompanyShell';
 import { CandidateTable } from '../../components/CandidateTable';
@@ -40,6 +40,16 @@ export default function CompanyCandidates() {
   const current = Math.min(page, pages);
   const visible = rows.slice((current - 1) * PAGE_SIZE, current * PAGE_SIZE);
   const activeCount = f.functions.length + (f.minYears ? 1 : 0) + [f.search, f.sector, f.language, f.availableBy].filter(Boolean).length + (f.positionType !== 'Any' ? 1 : 0);
+  // Insights: what companies search for, and whether they find it. The free-text search itself is never stored.
+  const structured = f.functions.length + (f.minYears ? 1 : 0) + [f.sector, f.language, f.availableBy].filter(Boolean).length + (f.positionType !== 'Any' ? 1 : 0);
+  useEffect(() => {
+    if (!all || structured === 0) return;
+    const t = setTimeout(() => db.logEvent('filter_search', null, {
+      functions: f.functions, sector: f.sector || null, language: f.language || null, minYears: f.minYears || null,
+      positionType: f.positionType, availableBy: f.availableBy || null, results: rows.length,
+    }), 2500);
+    return () => clearTimeout(t);
+  }, [f.functions, f.sector, f.language, f.minYears, f.positionType, f.availableBy, structured, rows.length, all]);
 
   return (
     <CompanyShell>

@@ -11,8 +11,7 @@ import { useProfileOptions } from '../../lib/useOptions';
 const SIZES = ['1–50', '50–200', '200–1,000', '1,000–10,000', '10,000+'];
 
 /** First tab of the company side: the company profile students see in "Companies", with a live preview. */
-export default function CompanyPage() {
-  const companyId = useSession()!.companyId!;
+export function CompanyProfileEditor({ companyId }: { companyId: string }) {
   const { data: companies } = useDbQuery(() => db.listFairCompanies());
   const { functions } = useProfileOptions();
   const me = companies?.find((c) => c.id === companyId);
@@ -50,7 +49,7 @@ export default function CompanyPage() {
   const missing = f ? [!me?.logoUrl && 'logo', !f.about && 'presentation', !f.hiringFor.length && 'roles you hire for'].filter(Boolean) : [];
 
   return (
-    <CompanyShell>
+    <>
       <div className="mx-auto grid max-w-page items-start gap-7 px-4 py-10 md:px-10 xl:grid-cols-12">
         <section className="flex min-w-0 flex-col gap-5 xl:col-span-7">
           <div className="flex flex-col gap-1">
@@ -114,6 +113,11 @@ export default function CompanyPage() {
         </aside>
       </div>
       <Notice message={notice?.msg ?? null} tone={notice?.tone} onDone={() => setNotice(null)} />
-    </CompanyShell>
+    </>
   );
+}
+
+export default function CompanyPage() {
+  const companyId = useSession()!.companyId!;
+  return <CompanyShell><CompanyProfileEditor companyId={companyId} /></CompanyShell>;
 }

@@ -165,6 +165,11 @@ export default function Landing() {
         <p className="m-0 rounded-[14px] border border-line bg-surface px-6 py-5 text-[15px] text-muted">
           We never ask for ethnicity, religion, health, nationality or immigration status.
         </p>
+        <p className="m-0 max-w-[90ch] text-[15px] leading-relaxed text-muted">
+          To improve the fair, the club records which profiles companies open and search for, and which companies students click
+          on, sign up with or show interest in. The club only looks at these as anonymous statistics (never “who viewed whom”),
+          and deletes them after 12 months.
+        </p>
       </section>
 
       <footer id="contact" className="flex flex-col gap-8 border-t border-line px-4 py-10 text-sm text-muted md:px-10 xl:px-20">

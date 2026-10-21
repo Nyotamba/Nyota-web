@@ -1,5 +1,5 @@
 // Browser-storage implementation of NyotaDb, used until the real database is connected.
-import type { Candidate, NyotaDb, Session } from './types';
+import type { Candidate, InsightSignal, NyotaDb, Session } from './types';
 import { createSeed, DEMO_ACCOUNTS, type DemoState } from './seed';
 import { BUILTIN_OPTIONS, CONSENT_VERSION, SCHOOLS } from '../../config/constants';
 import { isProfileComplete, isVisible } from '../candidate';
@@ -43,6 +43,7 @@ export function createDemoDb(space = ''): NyotaDb {
   state.openings ??= seed.openings;
   for (const co of state.companies) if (co.about === undefined) Object.assign(co, seed.companies.find((x) => x.id === co.id) ?? {}, { name: co.name });
   state.openingInterests ??= seed.openingInterests;
+  state.events ??= seed.events;
   for (const o of state.openings ?? []) o.skills ??= seed.openings?.find((x) => x.id === o.id)?.skills ?? [];
   state.schools ??= [...SCHOOLS];
   // Sessions added to the seed later (several on one day, one clash), with Amara's registrations.
@@ -676,6 +677,49 @@ export function createDemoDb(space = ''): NyotaDb {
         registered: regs.filter((r) => r.sessionId !== 'slive').length,
         attended: regs.filter((r) => r.sessionId !== 'slive' && r.attendedAt).length,
       };
+    },
+    logEvent(kind, target, detail) {
+      const role = session?.role;
+      if ((kind === 'company_click') !== (role === 'student') || role === 'admin') return;
+      (state.events ??= []).push({
+        kind, at: now(), detail: detail ?? {},
+        companyId: role === 'company' ? session?.companyId ?? null : target ?? null,
+        candidateId: role === 'student' ? session?.candidateId ?? null : kind === 'profile_view' ? target ?? null : null,
+      });
+      write(STATE_KEY, state);
+    },
+    async getInsightSignals() {
+      const co = (id: string | null | undefined) => state.companies.find((c) => c.id === id);
+      const ca = (id: string | null | undefined) => state.candidates.find((c) => c.id === id);
+      const row = (direction: InsightSignal['direction'], kind: InsightSignal['kind'], at: string, companyId: string | null | undefined,
+        candidateId: string | null | undefined, detail: Record<string, unknown> = {}): InsightSignal => {
+        const c = ca(candidateId);
+        const k = co(companyId);
+        return {
+          direction, kind, at, companyName: k?.name ?? null, companySector: k?.sector ?? null, school: c?.school ?? null,
+          functions: c?.functions ?? [], pastSectors: c?.pastSectors ?? [], sectors: c?.sectors ?? [], languages: c?.languages ?? [],
+          yearsExperience: c?.yearsExperience ?? null, detail,
+        };
+      };
+      const sessions = state.sessions ?? [];
+      return [
+        ...(state.events ?? []).map((e) => row(
+          e.kind === 'company_click' ? 'candidate_to_company' : e.kind === 'filter_search' ? 'search' : 'company_to_candidate',
+          e.kind as InsightSignal['kind'], e.at, e.companyId, e.candidateId, e.detail)),
+        ...state.cvViews.map((v) => row('company_to_candidate', 'cv_view', v.viewedAt, v.companyId, v.candidateId)),
+        ...state.shortlists.map((s) => row('company_to_candidate', 'shortlist', now(), s.companyId, s.candidateId)),
+        ...state.interviewRequests.map((r) => row('company_to_candidate', 'interview_request', r.createdAt, r.companyId, r.candidateId)),
+        ...(state.openingInterests ?? []).map((i) => {
+          const o = (state.openings ?? []).find((x) => x.id === i.openingId);
+          return row('candidate_to_company', 'opening_interest', i.createdAt, o?.companyId, i.candidateId, { opening: o?.title });
+        }),
+        ...(state.registrations ?? []).flatMap((r) => {
+          const s = sessions.find((x) => x.id === r.sessionId);
+          if (!s?.companyId || s.id === 'slive') return [];
+          const reg = row('candidate_to_company', 'session_register', r.createdAt ?? now(), s.companyId, r.candidateId, { session: s.title });
+          return r.attendedAt ? [reg, row('candidate_to_company', 'session_attend', r.attendedAt, s.companyId, r.candidateId, { session: s.title })] : [reg];
+        }),
+      ];
     },
     async getCompanyTalentPool() {
       return state.candidates.filter(isVisible).map((c) => ({

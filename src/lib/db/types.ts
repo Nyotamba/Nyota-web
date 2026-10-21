@@ -61,6 +61,24 @@ export interface Company {
   size?: string;
 }
 
+/** Something a company or a student did, logged for the admin Insights page (12 months, aggregates only). */
+export type ActivityKind = 'profile_view' | 'filter_search' | 'company_click';
+/** One anonymous signal: no names, only the candidate's background and the company's name and sector. */
+export interface InsightSignal {
+  direction: 'company_to_candidate' | 'candidate_to_company' | 'search';
+  kind: 'profile_view' | 'cv_view' | 'shortlist' | 'interview_request' | 'company_click' | 'opening_interest' | 'session_register' | 'session_attend' | 'filter_search';
+  at: string;
+  companyName: string | null;
+  companySector: string | null;
+  school: string | null;
+  functions: string[];
+  pastSectors: string[];
+  sectors: string[];
+  languages: string[];
+  yearsExperience: number | null;
+  detail: Record<string, unknown>;
+}
+
 /** The company's presentation for students. */
 export interface CompanyPage {
   about: string;
@@ -446,6 +464,8 @@ export interface NyotaDb {
   saveCompanyPage(companyId: string, page: CompanyPage): Promise<void>;
   getCompanyDashboard(companyId: string): Promise<CompanyDashboard>;
   getCompanyTalentPool(): Promise<TalentRow[]>; // verified + shared profiles only, no gender
+  logEvent(kind: ActivityKind, target?: string | null, detail?: Record<string, unknown>): void; // fire and forget
+  getInsightSignals(): Promise<InsightSignal[]>; // admins only
   listInvitations(): Promise<Invitation[]>;
   /** Records the invitation and, on the live site, e-mails the person a sign-in link. */
   inviteCompanyMember(input: { companyId?: string; newCompanyName?: string; email: string }): Promise<Invitation & { emailSent: boolean }>;

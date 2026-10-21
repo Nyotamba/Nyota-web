@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { CompanyShell } from './CompanyShell';
 import { CandidateProfile } from '../../components/CandidateProfile';
@@ -16,6 +16,8 @@ export default function CompanyCandidateDetail() {
   const { data: shortlist = [] } = useDbQuery(() => db.listShortlist(companyId), [companyId]);
   const { data: requests = [] } = useDbQuery(() => db.listInterviewRequests(companyId), [companyId]);
   const [notice, setNotice] = useState<string | null>(null);
+  // Insights: which profiles companies open (anonymous aggregates for the club).
+  useEffect(() => { if (id) db.logEvent('profile_view', id); }, [id]);
 
   const back = <Link to="/company/candidates" className="flex items-center gap-1.5 self-start text-sm font-semibold no-underline"><ChevronLeft size={16} />Back to candidates</Link>;
 

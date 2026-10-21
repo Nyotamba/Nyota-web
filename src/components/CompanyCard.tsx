@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import type { FairCompany } from '../lib/db';
+import { db, type FairCompany } from '../lib/db';
 import { isoToFairInput } from '../lib/time';
 import { Badge } from './Badge';
 
@@ -20,7 +20,7 @@ export function CompanyCard({ c, links = true }: { c: FairCompany; links?: boole
           <h2 className="m-0 text-xl font-bold leading-snug">{c.name}</h2>
           <span className="text-sm text-muted">{[c.sector, c.size && `${c.size} employees`].filter(Boolean).join(' · ') || 'At the Nyota Africa Career Fair'}</span>
           {c.locations && <span className="text-sm text-muted">Offices: {c.locations}</span>}
-          {c.website && <a href={c.website} target="_blank" rel="noreferrer" className="self-start text-sm font-semibold">Website ↗</a>}
+          {c.website && <a href={c.website} target="_blank" rel="noreferrer" className="self-start text-sm font-semibold" onClick={() => db.logEvent('company_click', c.id, { action: 'website' })}>Website ↗</a>}
         </div>
       </div>
       {c.about && <p className="m-0 text-[15px] leading-relaxed text-ink">{c.about}</p>}
@@ -47,7 +47,7 @@ export function CompanyCard({ c, links = true }: { c: FairCompany; links?: boole
                 <span className="text-muted">{s.kind}: {s.title}</span>
               </span>
             ))}
-            {links && c.sessions.length > 0 && <Link to="/student/sessions" className="text-[13px] font-semibold">Register →</Link>}
+            {links && c.sessions.length > 0 && <Link to="/student/sessions" className="text-[13px] font-semibold" onClick={() => db.logEvent('company_click', c.id, { action: 'sessions' })}>Register →</Link>}
           </dd>
         </div>
         <div className="flex flex-col gap-1.5 rounded-xl bg-offwhite p-4">
@@ -68,7 +68,7 @@ export function CompanyCard({ c, links = true }: { c: FairCompany; links?: boole
           <dt className="overline">Openings</dt>
           <dd className="m-0 flex flex-col gap-1.5 text-sm">
             <span className="font-semibold">{c.openings === 0 ? <span className="font-normal text-muted">None yet</span> : `${c.openings} role${c.openings > 1 ? 's' : ''}`}</span>
-            {links && c.openings > 0 && <Link to={`/student/openings?company=${encodeURIComponent(c.name)}`} className="text-[13px] font-semibold">See the roles →</Link>}
+            {links && c.openings > 0 && <Link to={`/student/openings?company=${encodeURIComponent(c.name)}`} className="text-[13px] font-semibold" onClick={() => db.logEvent('company_click', c.id, { action: 'openings' })}>See the roles →</Link>}
           </dd>
         </div>
       </dl>
