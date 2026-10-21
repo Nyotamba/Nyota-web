@@ -37,6 +37,12 @@ export function createDemoDb(): NyotaDb {
   state.registrations ??= seed.registrations;
   state.slots ??= seed.slots;
   state.schools ??= [...SCHOOLS];
+  // Sessions added to the seed later (several on one day, one clash), with Amara's registrations.
+  for (const s of seed.sessions!.filter((x) => ['s4', 's5', 's6'].includes(x.id))) {
+    if (state.sessions!.some((x) => x.id === s.id)) continue;
+    state.sessions!.push(s);
+    state.registrations!.push(...seed.registrations!.filter((r) => r.sessionId === s.id));
+  }
   // A session that is always live in the demo, so the waiting room can be tried at any time.
   const liveStart = new Date(Date.now() - 10 * 60_000).toISOString();
   const live = state.sessions!.find((s) => s.id === 'slive');

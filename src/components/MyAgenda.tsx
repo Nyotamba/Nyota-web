@@ -33,8 +33,12 @@ export function MyAgenda({ sessions, interviews }: { sessions: FairSession[]; in
 
   const end = (i: Item) => Date.parse(i.startsAt) + i.durationMin * 60_000;
   const clashes = new Set<string>();
+  const pairs: [Item, Item][] = [];
   items.forEach((a, n) => items.slice(n + 1).forEach((b) => {
-    if (Date.parse(b.startsAt) < end(a)) clashes.add(a.key).add(b.key);
+    if (Date.parse(b.startsAt) < end(a)) {
+      clashes.add(a.key).add(b.key);
+      pairs.push([a, b]);
+    }
   }));
   const days = [...new Set(items.map((i) => fairDayKey(i.startsAt)))];
   const events: CalendarEvent[] = items.map((i) => ({
@@ -56,11 +60,12 @@ export function MyAgenda({ sessions, interviews }: { sessions: FairSession[]; in
           <Calendar size={14} />Add all to my calendar
         </button>
       </div>
-      {clashes.size > 0 && (
-        <p role="alert" className="m-0 rounded-xl bg-sand px-4 py-3 text-sm text-ink">
-          Two events overlap in your agenda. Cancel one of them, or ask the company to move the interview.
+      {pairs.map(([a, b]) => (
+        <p key={a.key + b.key} role="alert" className="m-0 rounded-xl bg-sand px-4 py-3 text-sm text-ink">
+          <strong>“{a.title}”</strong> and <strong>“{b.title}”</strong> overlap ({fairTimeRange(b.startsAt, Math.round((Math.min(end(a), end(b)) - Date.parse(b.startsAt)) / 60_000))}).
+          Cancel one of them, or ask the company to move the interview.
         </p>
-      )}
+      ))}
       <div className="grid gap-4 md:grid-cols-3">
         {days.map((d) => {
           const today = items.filter((i) => fairDayKey(i.startsAt) === d);

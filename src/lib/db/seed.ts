@@ -41,8 +41,14 @@ export function createSeed(): DemoState {
       { id: 's1', companyId: null, title: 'Opening of the Nyota Africa Career Fair', kind: 'Panel', description: 'Welcome from the IESE Africa Business Club and how the fair works: sessions, shortlists and interviews.', startsAt: '2027-02-16T17:00:00Z', durationMin: 45, capacity: null, meetingUrl: 'https://example.com/demo-opening' },
       { id: 's2', companyId: 'co1', title: 'Investing in West African fintech', kind: 'Presentation', description: 'Kora Capital (demo) presents its portfolio and the roles it is hiring for.', startsAt: '2027-02-17T12:00:00Z', durationMin: 45, capacity: 80, meetingUrl: 'https://example.com/demo-kora' },
       { id: 's3', companyId: 'co2', title: 'Building the Sahel grid: a project finance workshop', kind: 'Workshop', description: 'A hands-on case with the Sahel Grid Energy (demo) team. Limited seats.', startsAt: '2027-02-18T15:00:00Z', durationMin: 60, capacity: 25, meetingUrl: 'https://example.com/demo-sahel' },
+      { id: 's4', companyId: 'co2', title: 'Careers in African energy', kind: 'Presentation', description: 'Sahel Grid Energy (demo) on its MBA programme and open roles.', startsAt: '2027-02-17T09:00:00Z', durationMin: 45, capacity: null, meetingUrl: 'https://example.com/demo-sahel-careers' },
+      { id: 's5', companyId: null, title: 'Panel: going back to Africa after the MBA', kind: 'Panel', description: 'Alumni share how they chose their country, sector and first role.', startsAt: '2027-02-17T15:30:00Z', durationMin: 60, capacity: null, meetingUrl: 'https://example.com/demo-panel' },
+      { id: 's6', companyId: 'co1', title: 'Case workshop: a fintech due diligence', kind: 'Workshop', description: 'Work on a real deal with the Kora Capital (demo) team.', startsAt: '2027-02-17T16:00:00Z', durationMin: 45, capacity: 30, meetingUrl: 'https://example.com/demo-kora-case' },
     ],
-    registrations: [{ sessionId: 's1', candidateId: 'c1' }, { sessionId: 's2', candidateId: 'c3' }],
+    registrations: [
+      { sessionId: 's1', candidateId: 'c1' }, { sessionId: 's2', candidateId: 'c3' }, { sessionId: 's2', candidateId: 'c1' },
+      { sessionId: 's4', candidateId: 'c1' }, { sessionId: 's5', candidateId: 'c1' }, { sessionId: 's6', candidateId: 'c1' }, { sessionId: 's3', candidateId: 'c1' },
+    ],
     slots: [
       { id: 'sl1', companyId: 'co1', startsAt: '2027-02-17T14:00:00Z', durationMin: 30, meetingUrl: 'https://example.com/demo-kora-interviews', candidateId: null, bookedAt: null },
       { id: 'sl2', companyId: 'co1', startsAt: '2027-02-17T14:30:00Z', durationMin: 30, meetingUrl: 'https://example.com/demo-kora-interviews', candidateId: null, bookedAt: null },
