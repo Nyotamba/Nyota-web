@@ -632,6 +632,7 @@ export function createDemoDb(space = ''): NyotaDb {
         return {
           id: co.id, name: co.name, logoUrl: co.logoUrl ?? null,
           about: co.about ?? '', website: co.website ?? '', sector: co.sector ?? '', locations: co.locations ?? '',
+          hiringFor: co.hiringFor ?? [], hiringCountries: co.hiringCountries ?? '', size: co.size ?? '',
           sessions: (state.sessions ?? []).filter((s) => s.companyId === co.id && s.id !== 'slive')
             .sort((a, b) => a.startsAt.localeCompare(b.startsAt))
             .map((s) => ({ id: s.id, title: s.title, kind: s.kind, startsAt: s.startsAt, durationMin: s.durationMin })),
@@ -645,8 +646,44 @@ export function createDemoDb(space = ''): NyotaDb {
     async saveCompanyPage(companyId, page) {
       const co = state.companies.find((x) => x.id === companyId);
       if (!co) throw new Error('Company not found');
-      Object.assign(co, { about: page.about.trim(), website: page.website.trim(), sector: page.sector.trim(), locations: page.locations.trim() });
+      Object.assign(co, {
+        about: page.about.trim(), website: page.website.trim(), sector: page.sector.trim(), locations: page.locations.trim(),
+        hiringFor: page.hiringFor, hiringCountries: page.hiringCountries.trim(), size: page.size.trim(),
+      });
       commit();
+    },
+    async getCompanyDashboard(companyId) {
+      const vis = state.candidates.filter(isVisible);
+      const visId = new Set(vis.map((c) => c.id));
+      const mySessions = (state.sessions ?? []).filter((s) => s.companyId === companyId);
+      const regs = (state.registrations ?? []).filter((r) => mySessions.some((s) => s.id === r.sessionId));
+      const myOpenings = (state.openings ?? []).filter((o) => o.companyId === companyId);
+      const ints = (state.openingInterests ?? []).filter((i) => myOpenings.some((o) => o.id === i.openingId) && visId.has(i.candidateId));
+      const slots = (state.slots ?? []).filter((s) => s.companyId === companyId);
+      const views = state.cvViews.filter((v) => v.companyId === companyId);
+      return {
+        visibleCandidates: vis.length,
+        shortlisted: state.shortlists.filter((s) => s.companyId === companyId && visId.has(s.candidateId)).length,
+        cvViews: views.length,
+        profilesOpened: new Set(views.map((v) => v.candidateId)).size,
+        interviewRequests: state.interviewRequests.filter((r) => r.companyId === companyId).length,
+        slots: slots.length,
+        slotsBooked: slots.filter((s) => s.candidateId).length,
+        openings: myOpenings.filter((o) => o.published).length,
+        interested: ints.length,
+        interestedPeople: new Set(ints.map((i) => i.candidateId)).size,
+        sessions: mySessions.filter((s) => s.id !== 'slive').length,
+        registered: regs.filter((r) => r.sessionId !== 'slive').length,
+        attended: regs.filter((r) => r.sessionId !== 'slive' && r.attendedAt).length,
+      };
+    },
+    async getCompanyTalentPool() {
+      return state.candidates.filter(isVisible).map((c) => ({
+        school: c.school, programme: c.programme, graduationYear: c.graduationYear, gender: 'Not answered' as const,
+        yearsExperience: c.yearsExperience, pastSectors: c.pastSectors, functions: c.functions, sectors: c.sectors,
+        countries: c.countries, workedCountries: c.workedCountries, languages: c.languages, positionType: c.positionType,
+        complete: true, consented: true, visible: true,
+      }));
     },
     async listInvitations() {
       return clone([...state.invitations].sort((a, b) => (b.createdAt > a.createdAt ? 1 : -1)));

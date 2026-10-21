@@ -9,7 +9,6 @@ import StudentProfile from './pages/student/Profile';
 import StudentPreview from './pages/student/Preview';
 import CompanyCandidates from './pages/company/Candidates';
 import CompanyCandidateDetail from './pages/company/CandidateDetail';
-import { CompanyShell } from './pages/company/CompanyShell';
 import Admin from './pages/admin/Admin';
 import AdminReview from './pages/admin/Review';
 import AdminDashboard from './pages/admin/Dashboard';
@@ -30,6 +29,7 @@ import CompanyOpenings from './pages/company/Openings';
 import StudentOpenings from './pages/student/Openings';
 import StudentCompanies from './pages/student/Companies';
 import CompanyPageEditor from './pages/company/CompanyPage';
+import CompanyDashboard from './pages/company/Dashboard';
 import { AdminShell } from './pages/admin/AdminShell';
 import { ComingSoon } from './pages/ComingSoon';
 
@@ -74,7 +74,7 @@ export default function App() {
           <Route path="/company/page" element={<Guard role="company"><CompanyPageEditor /></Guard>} />
           <Route path="/company/openings" element={<Guard role="company"><CompanyOpenings /></Guard>} />
           <Route path="/company/meetings" element={<Guard role="company"><CompanyMeetings /></Guard>} />
-          <Route path="/company/dashboard" element={<Guard role="company"><CompanyShell><ComingSoon title="Dashboard">{later}</ComingSoon></CompanyShell></Guard>} />
+          <Route path="/company/dashboard" element={<Guard role="company"><CompanyDashboard /></Guard>} />
 
           <Route path="/admin" element={<Guard role="admin"><Admin /></Guard>} />
           <Route path="/admin/review/:id" element={<Guard role="admin"><AdminReview /></Guard>} />
@@ -98,7 +98,7 @@ export default function App() {
   );
 }
 
-const HOME: Record<Role, string> = { student: '/student/profile', company: '/company/candidates', admin: '/admin' };
+const HOME: Record<Role, string> = { student: '/student/profile', company: '/company/page', admin: '/admin' };
 
 /** After a sign-in link, send people to their own area. */
 function AfterSignIn({ session }: { session: Session | null }) {
@@ -161,7 +161,7 @@ function DemoBar() {
         <div id="demo-menu" className="flex w-64 flex-col gap-1 rounded-2xl border border-line bg-surface p-2 text-sm shadow-[0_24px_60px_-30px_rgba(5,49,41,0.45)]">
           <div className="px-3 pb-1 pt-2 text-xs font-bold uppercase tracking-overline text-muted">View the demo as</div>
           <button type="button" className="min-h-[44px] rounded-field px-3 text-left font-semibold hover:bg-offwhite" onClick={() => go('student', '/student/profile')}>Student · Amara Diallo</button>
-          <button type="button" className="min-h-[44px] rounded-field px-3 text-left font-semibold hover:bg-offwhite" onClick={() => go('company', '/company/candidates')}>Company · Kora Capital</button>
+          <button type="button" className="min-h-[44px] rounded-field px-3 text-left font-semibold hover:bg-offwhite" onClick={() => go('company', '/company/page')}>Company · Kora Capital</button>
           <button type="button" className="min-h-[44px] rounded-field px-3 text-left font-semibold hover:bg-offwhite" onClick={() => go('admin', '/admin')}>Club admin</button>
           <div className="my-1 h-px bg-line" />
           <button type="button" className="min-h-[44px] rounded-field px-3 text-left font-semibold text-danger hover:bg-offwhite" onClick={async () => { await db.resetDemo(); setOpen(false); }}>Reset demo data</button>

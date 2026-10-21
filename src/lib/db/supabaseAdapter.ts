@@ -1,7 +1,7 @@
 // Live implementation of NyotaDb on Supabase. Access rules are enforced by the database
 // (row-level security in supabase/schema.sql); this file only maps rows to the UI types.
 import { createClient, FunctionsHttpError, type EmailOtpType, type SupabaseClient } from '@supabase/supabase-js';
-import type { Candidate, Consent, Contract, FairCompany, FairSession, Gender, TalentRow, InterviewSlot, InvitationStatus, NyotaDb, OAuthProvider, PositionType, Session, StudentInterview } from './types';
+import type { Candidate, CompanyDashboard, Consent, Contract, FairCompany, FairSession, Gender, TalentRow, InterviewSlot, InvitationStatus, NyotaDb, OAuthProvider, PositionType, Session, StudentInterview } from './types';
 import { BUILTIN_OPTIONS, CONSENT_VERSION, CV_LINK_TTL_SECONDS, SCHOOLS } from '../../config/constants';
 
 // Every candidate column except e-mail, which companies may not read (column privileges).
@@ -683,7 +683,7 @@ export function createSupabaseDb(url: string, key: string): NyotaDb {
         throw new Error(/bucket/i.test(up.error.message) ? 'Run the SQL update 010 in Supabase first (it creates the logo storage).' : up.error.message);
       }
       const url = sb.storage.from('logos').getPublicUrl(path).data.publicUrl;
-      if (target.kind === 'company') ok(await sb.from('companies').update({ logo_url: url }).eq('id', target.id));
+      if (target.kind === 'company') maybe(await sb.rpc('set_company_logo', { cid: target.id, url }));
       else ok(await sb.from('schools').update({ logo_url: url }).eq('name', target.name));
       emit();
     },
@@ -711,26 +711,47 @@ export function createSupabaseDb(url: string, key: string): NyotaDb {
       return check(await sb.from('companies').select('id,name').order('name'));
     },
     async getCompany(id) {
-      const full = await sb.from('companies').select('id,name,logo_url,about,website,sector,locations').eq('id', id).maybeSingle();
+      const full = await sb.from('companies').select('id,name,logo_url,about,website,sector,locations,hiring_for,hiring_countries,size').eq('id', id).maybeSingle();
       if (!full.error) {
         const r = full.data;
-        return r ? { id: r.id, name: r.name, logoUrl: r.logo_url ?? null, about: r.about, website: r.website, sector: r.sector, locations: r.locations } : null;
+        return r ? { id: r.id, name: r.name, logoUrl: r.logo_url ?? null, about: r.about, website: r.website, sector: r.sector, locations: r.locations,
+          hiringFor: r.hiring_for ?? [], hiringCountries: r.hiring_countries ?? '', size: r.size ?? '' } : null;
       }
       return maybe(await sb.from('companies').select('id,name').eq('id', id).maybeSingle());
     },
     async listFairCompanies() {
       const rows = check<{
         id: string; name: string; logo_url: string | null; about: string; website: string; sector: string; locations: string;
+        hiring_for: string[] | null; hiring_countries: string | null; size: string | null;
         sessions: FairCompany['sessions']; interview_slots: number; free_slots: number; interview_days: FairCompany['interviewDays']; openings: number;
       }[]>(await sb.rpc('list_fair_companies'));
       return rows.map((r) => ({
         id: r.id, name: r.name, logoUrl: r.logo_url, about: r.about, website: r.website, sector: r.sector, locations: r.locations,
+        hiringFor: r.hiring_for ?? [], hiringCountries: r.hiring_countries ?? '', size: r.size ?? '',
         sessions: r.sessions ?? [], interviewSlots: r.interview_slots, freeSlots: r.free_slots, interviewDays: r.interview_days ?? [], openings: r.openings,
       }));
     },
     async saveCompanyPage(companyId, p) {
-      maybe(await sb.rpc('save_company_page', { cid: companyId, p_about: p.about, p_website: p.website, p_sector: p.sector, p_locations: p.locations }));
+      maybe(await sb.rpc('save_company_page', {
+        cid: companyId, p_about: p.about, p_website: p.website, p_sector: p.sector, p_locations: p.locations,
+        p_hiring_for: p.hiringFor, p_hiring_countries: p.hiringCountries, p_size: p.size,
+      }));
       emit();
+    },
+    async getCompanyDashboard(companyId) {
+      return check<CompanyDashboard>(await sb.rpc('company_dashboard', { cid: companyId }));
+    },
+    async getCompanyTalentPool() {
+      const rows = check<{
+        school: string; programme: string; graduation_year: number | null; years_experience: number | null; past_sectors: string[];
+        functions: string[]; sectors: string[]; countries: string; worked_countries: string; languages: string[]; position_type: TalentRow['positionType'];
+      }[]>(await sb.rpc('company_talent_pool'));
+      return rows.map((r) => ({
+        school: r.school, programme: r.programme, graduationYear: r.graduation_year, gender: 'Not answered' as const, yearsExperience: r.years_experience,
+        pastSectors: r.past_sectors ?? [], functions: r.functions ?? [], sectors: r.sectors ?? [], countries: r.countries ?? '',
+        workedCountries: r.worked_countries ?? '', languages: r.languages ?? [], positionType: r.position_type,
+        complete: true, consented: true, visible: true,
+      }));
     },
     async listInvitations() {
       const rows = check<{ id: string; email: string; company_id: string; status: InvitationStatus; created_at: string; access_code: string | null }[]>(

@@ -18,11 +18,23 @@ export function CompanyCard({ c, links = true }: { c: FairCompany; links?: boole
           : <span aria-hidden="true" className="flex size-14 shrink-0 items-center justify-center rounded-xl bg-ink font-display text-xl text-offwhite">{initials(c.name)}</span>}
         <div className="flex min-w-0 flex-1 flex-col gap-0.5">
           <h2 className="m-0 text-xl font-bold leading-snug">{c.name}</h2>
-          <span className="text-sm text-muted">{[c.sector, c.locations].filter(Boolean).join(' · ') || 'At the Nyota Africa Career Fair'}</span>
+          <span className="text-sm text-muted">{[c.sector, c.size && `${c.size} employees`].filter(Boolean).join(' · ') || 'At the Nyota Africa Career Fair'}</span>
+          {c.locations && <span className="text-sm text-muted">Offices: {c.locations}</span>}
           {c.website && <a href={c.website} target="_blank" rel="noreferrer" className="self-start text-sm font-semibold">Website ↗</a>}
         </div>
       </div>
       {c.about && <p className="m-0 text-[15px] leading-relaxed text-ink">{c.about}</p>}
+      {(c.hiringFor.length > 0 || c.hiringCountries) && (
+        <div className="flex flex-col gap-1.5 text-sm">
+          {c.hiringFor.length > 0 && (
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="font-semibold">Hires MBAs in</span>
+              {c.hiringFor.map((r) => <span key={r} className="rounded-full bg-offwhite px-2.5 py-1 text-[12px] font-semibold">{r}</span>)}
+            </div>
+          )}
+          {c.hiringCountries && <span><span className="font-semibold">Countries:</span> <span className="text-muted">{c.hiringCountries}</span></span>}
+        </div>
+      )}
 
       <dl className="m-0 grid gap-3 sm:grid-cols-3">
         <div className="flex flex-col gap-1.5 rounded-xl bg-offwhite p-4">

@@ -17,14 +17,24 @@ export default function CompanyCandidates() {
   const { data: shortlist = [] } = useDbQuery(() => db.listShortlist(companyId), [companyId]);
   const { functions: FUNCTIONS, sectors: SECTORS, languages: LANGUAGES } = useProfileOptions();
   const [params, setParams] = useSearchParams();
-  const starred = params.get('view') === 'shortlist';
-  const setStarred = (on: boolean) => { setParams(on ? { view: 'shortlist' } : {}, { replace: true }); setPage(1); };
+  type View = 'all' | 'interested' | 'shortlist';
+  const view: View = params.get('view') === 'shortlist' ? 'shortlist' : params.get('view') === 'interested' ? 'interested' : 'all';
+  const starred = view === 'shortlist';
+  const setView = (v: View) => { setParams(v === 'all' ? {} : { view: v }, { replace: true }); setPage(1); };
+  // Who showed interest in which of our openings (verified profiles only).
+  const { data: interest = new Map<string, string[]>() } = useDbQuery(async () => {
+    const mine = (await db.listOpenings()).filter((o) => o.isMine);
+    const m = new Map<string, string[]>();
+    for (const o of mine) for (const p of await db.listOpeningInterest(o.id)) m.set(p.candidateId, [...(m.get(p.candidateId) ?? []), o.title]);
+    return m;
+  });
   const [f, setF] = useState<CandidateFilters>(emptyFilters);
   const [page, setPage] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
 
   const update = (patch: Partial<CandidateFilters>) => { setF({ ...f, ...patch }); setPage(1); };
-  const pool = useMemo(() => (starred ? (all ?? []).filter((c) => shortlist.includes(c.id)) : all ?? []), [all, shortlist, starred]);
+  const pool = useMemo(() => (all ?? []).filter((c) =>
+    view === 'shortlist' ? shortlist.includes(c.id) : view === 'interested' ? interest.has(c.id) : true), [all, shortlist, interest, view]);
   const rows = useMemo(() => applyFilters(pool, f), [pool, f]);
   const pages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
   const current = Math.min(page, pages);
@@ -84,16 +94,16 @@ export default function CompanyCandidates() {
         <div className="flex min-w-0 flex-1 flex-col gap-5 px-4 py-9 md:px-10">
           <div className="flex flex-wrap items-end gap-4">
             <div className="flex flex-1 flex-col gap-1">
-              <h1 className="m-0 font-display text-[40px] font-normal tracking-display">{starred ? 'Shortlist' : 'Candidates'}</h1>
+              <h1 className="m-0 font-display text-[40px] font-normal tracking-display">{view === 'shortlist' ? 'Shortlist' : view === 'interested' ? 'Interested in your roles' : 'Candidates'}</h1>
               <div className="text-[15px] text-muted" aria-live="polite">
-                {starred ? 'Shared with everyone on your company’s team. ' : ''}
-                Showing {visible.length} of {rows.length} {starred ? 'shortlisted' : 'verified'} profiles{rows.length !== pool.length ? ` (${pool.length} in total)` : ''}
+                {starred ? 'Shared with everyone on your company’s team. ' : view === 'interested' ? 'Students who clicked “I’m interested” on one of your openings. ' : ''}
+                Showing {visible.length} of {rows.length} {starred ? 'shortlisted' : view === 'interested' ? 'interested' : 'verified'} profiles{rows.length !== pool.length ? ` (${pool.length} in total)` : ''}
               </div>
             </div>
-            <div role="group" aria-label="Show" className="grid grid-cols-2 overflow-hidden rounded-field border border-line-strong">
-              {([[false, `All · ${all?.length ?? 0}`], [true, `★ Shortlist · ${shortlist.length}`]] as const).map(([v, label]) => (
-                <button key={String(v)} type="button" aria-pressed={starred === v} onClick={() => setStarred(v)}
-                  className={`min-h-[44px] px-4 text-sm font-semibold ${starred === v ? 'bg-ink text-offwhite' : 'bg-surface text-ink hover:bg-offwhite'}`}>
+            <div role="group" aria-label="Show" className="grid grid-cols-3 overflow-hidden rounded-field border border-line-strong">
+              {([['all', `All · ${all?.length ?? 0}`], ['interested', `Interested · ${interest.size}`], ['shortlist', `★ Shortlist · ${shortlist.length}`]] as const).map(([v, label]) => (
+                <button key={v} type="button" aria-pressed={view === v} onClick={() => setView(v)}
+                  className={`min-h-[44px] px-3 text-sm font-semibold ${view === v ? 'bg-ink text-offwhite' : 'bg-surface text-ink hover:bg-offwhite'}`}>
                   {label}
                 </button>
               ))}
@@ -109,12 +119,16 @@ export default function CompanyCandidates() {
           </div>
 
           {!all ? <p className="text-muted">Loading candidates…</p>
-            : starred && shortlist.length === 0 ? (
+            : view !== 'all' && pool.length === 0 ? (
               <div className="card flex flex-col items-start gap-3 p-7">
-                <p className="m-0 text-base text-muted">Your shortlist is empty. Use the star on a candidate to add them here.</p>
-                <button type="button" className="btn-primary" onClick={() => setStarred(false)}>Browse all candidates</button>
+                <p className="m-0 text-base text-muted">
+                  {starred ? 'Your shortlist is empty. Use the star on a candidate to add them here.'
+                    : 'No verified student has shown interest in your openings yet. Post roles in “Openings” to attract them.'}
+                </p>
+                <button type="button" className="btn-primary" onClick={() => setView('all')}>Browse all candidates</button>
               </div>
-            ) : <CandidateTable rows={visible} shortlisted={shortlist} onToggle={(id) => db.toggleShortlist(companyId, id)} />}
+            ) : <CandidateTable rows={visible} shortlisted={shortlist} onToggle={(id) => db.toggleShortlist(companyId, id)}
+                notes={view === 'all' ? undefined : Object.fromEntries([...interest].map(([id, t]) => [id, `Interested in: ${t.join(', ')}`]))} />}
 
           <nav aria-label="Pagination" className="flex items-center justify-between text-sm text-muted">
             <span>Page {current} of {pages}</span>

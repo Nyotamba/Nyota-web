@@ -5,8 +5,8 @@ import { Star } from './icons';
 
 const cols = 'xl:grid-cols-[2.2fr_1.8fr_1.3fr_1fr_1fr_150px]';
 
-export function CandidateTable({ rows, shortlisted, onToggle }: {
-  rows: Candidate[]; shortlisted: string[]; onToggle: (id: string) => void;
+export function CandidateTable({ rows, shortlisted, onToggle, notes }: {
+  rows: Candidate[]; shortlisted: string[]; onToggle: (id: string) => void; notes?: Record<string, string>; // e.g. which openings they like
 }) {
   return (
     <div className="overflow-hidden rounded-2xl border border-line bg-surface" role="table" aria-label="Candidates">
@@ -25,6 +25,7 @@ export function CandidateTable({ rows, shortlisted, onToggle }: {
               <span className="flex min-w-0 flex-col gap-0.5">
                 <span className="text-[15px] font-bold hover:underline">{name}</span>
                 <span className="text-muted">{shortSchool(c.school)} · MBA {c.graduationYear}</span>
+                {notes?.[c.id] && <span className="text-[12px] font-semibold text-green">{notes[c.id]}</span>}
               </span>
             </Link>
             <span role="cell" className="col-span-2 flex flex-col gap-0.5 xl:col-span-1">

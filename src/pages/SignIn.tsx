@@ -4,7 +4,7 @@ import { Logo } from '../components/Logo';
 import { db, type OAuthProvider, type Role } from '../lib/db';
 import { useDbQuery } from '../lib/useDb';
 
-const HOME: Record<Role, string> = { student: '/student/profile', company: '/company/candidates', admin: '/admin' };
+const HOME: Record<Role, string> = { student: '/student/profile', company: '/company/page', admin: '/admin' };
 type Mode = 'signin' | 'create' | 'link';
 
 export default function SignIn() {

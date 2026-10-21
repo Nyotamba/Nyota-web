@@ -10,11 +10,11 @@ export function CompanyShell({ children }: { children: ReactNode }) {
   const { data: company } = useDbQuery(() => db.getCompany(companyId), [companyId]);
   const { data: shortlist } = useDbQuery(() => db.listShortlist(companyId), [companyId]);
   const tabs = [
-    { to: '/company/candidates', label: shortlist?.length ? `Candidates · ★${shortlist.length}` : 'Candidates' },
+    { to: '/company/page', label: 'Profile' },
+    { to: '/company/dashboard', label: 'Dashboard' },
     { to: '/company/meetings', label: 'Sessions & interviews' },
     { to: '/company/openings', label: 'Openings' },
-    { to: '/company/page', label: 'Your page' },
-    { to: '/company/dashboard', label: 'Dashboard' },
+    { to: '/company/candidates', label: shortlist?.length ? `Candidates · ★${shortlist.length}` : 'Candidates' },
   ];
   return <AppShell variant="ink" tabs={tabs} who={company?.name}>{children}</AppShell>;
 }

@@ -43,7 +43,8 @@ function tally(values: string[]): Count[] {
 const expBucket = (y: number | null) => (y === null ? 'Not answered' : y <= 2 ? '0–2 years' : y <= 5 ? '3–5 years' : y <= 9 ? '6–9 years' : '10+ years');
 const EXP_ORDER = ['0–2 years', '3–5 years', '6–9 years', '10+ years', 'Not answered'];
 
-export function TalentPool({ rows }: { rows: TalentRow[] }) {
+/** forCompany: the company dashboard version (verified profiles only, never gender). */
+export function TalentPool({ rows, forCompany = false }: { rows: TalentRow[]; forCompany?: boolean }) {
   const [school, setSchool] = useState('');
   const [year, setYear] = useState('');
   const [gender, setGender] = useState('');
@@ -84,8 +85,9 @@ export function TalentPool({ rows }: { rows: TalentRow[] }) {
       <div className="flex flex-col gap-1">
         <h2 id="pool-title" className="m-0 font-display text-[32px] tracking-display">Talent pool</h2>
         <p className="m-0 max-w-[75ch] text-sm text-muted">
-          Who the students are: their professional background first, then what they look for. Anonymous counts; gender is optional
-          and never shown to companies, and Nyota never asks for nationality or origin.
+          {forCompany
+            ? 'The verified profiles you can recruit from: their background first, then what they look for. Anonymous counts.'
+            : 'Who the students are: their professional background first, then what they look for. Anonymous counts; gender is optional and never shown to companies, and Nyota never asks for nationality or origin.'}
         </p>
       </div>
 
@@ -93,16 +95,16 @@ export function TalentPool({ rows }: { rows: TalentRow[] }) {
       <div className="card flex flex-wrap items-end gap-3 p-4">
         <Filter id="tp-school" label="School" value={school} onChange={setSchool} options={schools} all="All schools" />
         <Filter id="tp-year" label="Class" value={year} onChange={setYear} options={years.map(String)} all="All classes" />
-        <Filter id="tp-gender" label="Gender" value={gender} onChange={setGender}
-          options={['Woman', 'Man', 'Non-binary', 'Prefer not to say', 'Not answered']} all="All" />
-        <div role="group" aria-label="Status" className="grid grid-cols-2 overflow-hidden rounded-field border border-line-strong">
+        {!forCompany && <Filter id="tp-gender" label="Gender" value={gender} onChange={setGender}
+          options={['Woman', 'Man', 'Non-binary', 'Prefer not to say', 'Not answered']} all="All" />}
+        {!forCompany && <div role="group" aria-label="Status" className="grid grid-cols-2 overflow-hidden rounded-field border border-line-strong">
           {[['All students', false], ['Visible to companies', true]].map(([label, v]) => (
             <button key={String(v)} type="button" aria-pressed={onlyVisible === v} onClick={() => setOnlyVisible(v as boolean)}
               className={`min-h-[44px] px-3 text-[13px] font-semibold ${onlyVisible === v ? 'bg-ink text-offwhite' : 'bg-surface text-ink hover:bg-offwhite'}`}>
               {label as string}
             </button>
           ))}
-        </div>
+        </div>}
         <span className="ml-auto text-sm font-semibold tabular-nums" aria-live="polite">{n} student{n === 1 ? '' : 's'}</span>
       </div>
 
@@ -116,8 +118,10 @@ export function TalentPool({ rows }: { rows: TalentRow[] }) {
             <Headline label="Median experience" value={median(list.map((r) => r.yearsExperience))} sub="years of work before the MBA" />
             <Headline label="Most common past sector" value={pastSectors[0]?.[0] ?? '—'} small
               sub={pastSectors[0] ? `${pastSectors[0][1]} students have worked in it` : 'Not filled in yet'} />
-            <Headline label="Women" value={answered ? `${Math.round((women / answered) * 100)}%` : '—'}
-              sub={answered ? `of the ${answered} who answered the gender question` : 'Nobody answered the gender question yet'} />
+            {forCompany
+              ? <Headline label="Most wanted role" value={functions[0]?.[0] ?? '—'} small sub={functions[0] ? `${functions[0][1]} students target it` : 'Not filled in yet'} />
+              : <Headline label="Women" value={answered ? `${Math.round((women / answered) * 100)}%` : '—'}
+                  sub={answered ? `of the ${answered} who answered the gender question` : 'Nobody answered the gender question yet'} />}
           </div>
 
           <div className="grid items-start gap-4 xl:grid-cols-12">
@@ -154,7 +158,7 @@ export function TalentPool({ rows }: { rows: TalentRow[] }) {
             <Bars title="School" data={bySchool} n={n} />
             <Bars title="Programme" data={byProgramme} n={n} />
             <Bars title="Class" data={byYear} n={n} />
-            <Bars title="Gender" data={byGender} n={n} />
+            {!forCompany && <Bars title="Gender" data={byGender} n={n} />}
             <Bars title="Languages" data={languages} n={n} multi />
           </div>
 

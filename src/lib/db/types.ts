@@ -56,6 +56,9 @@ export interface Company {
   website?: string;
   sector?: string;
   locations?: string;
+  hiringFor?: string[];
+  hiringCountries?: string;
+  size?: string;
 }
 
 /** The company's presentation for students. */
@@ -63,7 +66,26 @@ export interface CompanyPage {
   about: string;
   website: string;
   sector: string;
-  locations: string;
+  locations: string; // offices
+  hiringFor: string[]; // roles they hire MBAs into
+  hiringCountries: string;
+  size: string;
+}
+/** The company's own figures (Company → Dashboard). */
+export interface CompanyDashboard {
+  visibleCandidates: number;
+  shortlisted: number;
+  cvViews: number;
+  profilesOpened: number;
+  interviewRequests: number;
+  slots: number;
+  slotsBooked: number;
+  openings: number;
+  interested: number;
+  interestedPeople: number;
+  sessions: number;
+  registered: number;
+  attended: number;
 }
 /** A company of the fair as students see it: presentation, sessions, interviews, openings. */
 export interface FairCompany extends CompanyPage {
@@ -422,6 +444,8 @@ export interface NyotaDb {
   getCompany(id: string): Promise<Company | null>;
   listFairCompanies(): Promise<FairCompany[]>;
   saveCompanyPage(companyId: string, page: CompanyPage): Promise<void>;
+  getCompanyDashboard(companyId: string): Promise<CompanyDashboard>;
+  getCompanyTalentPool(): Promise<TalentRow[]>; // verified + shared profiles only, no gender
   listInvitations(): Promise<Invitation[]>;
   /** Records the invitation and, on the live site, e-mails the person a sign-in link. */
   inviteCompanyMember(input: { companyId?: string; newCompanyName?: string; email: string }): Promise<Invitation & { emailSent: boolean }>;

@@ -25,7 +25,7 @@ export function startPreview(role: PreviewRole) {
   } catch {
     return;
   }
-  reloadAt(role === 'student' ? '#/student/profile' : '#/company/candidates');
+  reloadAt(role === 'student' ? '#/student/profile' : '#/company/page');
 }
 
 export function exitPreview() {
