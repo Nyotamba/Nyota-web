@@ -7,7 +7,7 @@ This README is written for **the next team running Nyota**. Read sections 1 to 4
 
 - Live site: https://nyota-mba.vercel.app (target domain: nyota.mba, see section 6)
 - Code: https://github.com/Nyotamba/Nyota-web
-- Club mailbox used to send e-mails: the Nyota Gmail (see section 2)
+- Club account for every service: **nyotamba2027@gmail.com** (the Nyota Gmail, see section 2)
 
 ---
 
@@ -46,9 +46,9 @@ Never leave a service on one student's personal address: when they graduate, the
 
 | Service | What for | Owner account | Second admin | Notes |
 |---|---|---|---|---|
-| Nyota Gmail | Sends access codes, owns the other accounts | club | | 2-step verification on: keep the recovery phone and codes in the club's password manager. The "app password" used by Supabase is in Supabase secrets. |
-| GitHub org **Nyotamba** | The code | _fill in_ | _fill in_ | Organisation owners can add people. Repository `Nyota-web`. |
-| Supabase project `zucuuwsisyyixjamtpep` | Database, sign-in, files, e-mail functions | _fill in_ | _fill in_ | Free plan. Invite people under Organization → Team. |
+| Nyota Gmail `nyotamba2027@gmail.com` | Sends access codes, owns the other accounts | club | | 2-step verification on: keep the recovery phone and codes in the club's password manager. The "app password" used by Supabase is in Supabase secrets. |
+| GitHub org **Nyotamba** | The code | `nyotamba2027-stack` (club) | `Sirdec973` (2026–27 team) | Organisation owners can add people. Repository `Nyota-web`. |
+| Supabase org **Nyotamba**, project “Nyota Website” `zucuuwsisyyixjamtpep` | Database, sign-in, files, e-mail functions | nyotamba2027@gmail.com (club) | 2026–27 team | Free plan. Invite people under Organization → Team. |
 | Vercel project `nyota-mba` | Hosting, auto-deploy from GitHub | _fill in_ | | Free (Hobby) plan = one owner. Do not pick Pro. |
 | Namecheap | Domain `nyota.mba` | _fill in_ | | Renew every year. See section 6. |
 
