@@ -7,7 +7,6 @@ import Landing from './pages/Landing';
 import SignIn from './pages/SignIn';
 import StudentProfile from './pages/student/Profile';
 import StudentPreview from './pages/student/Preview';
-import { StudentShell } from './pages/student/StudentShell';
 import CompanyCandidates from './pages/company/Candidates';
 import CompanyCandidateDetail from './pages/company/CandidateDetail';
 import CompanyShortlist from './pages/company/Shortlist';
@@ -28,6 +27,8 @@ import StudentInterviews from './pages/student/Interviews';
 import StudentAccount from './pages/student/Account';
 import SessionRoom from './pages/student/SessionRoom';
 import CompanyMeetings from './pages/company/Meetings';
+import CompanyOpenings from './pages/company/Openings';
+import StudentOpenings from './pages/student/Openings';
 import { AdminShell } from './pages/admin/AdminShell';
 import { ComingSoon } from './pages/ComingSoon';
 
@@ -59,7 +60,7 @@ export default function App() {
 
           <Route path="/student/profile" element={<Guard role="student"><StudentProfile /></Guard>} />
           <Route path="/student/preview" element={<Guard role="student"><StudentPreview /></Guard>} />
-          <Route path="/student/openings" element={<Guard role="student"><StudentShell><ComingSoon title="Openings">{later}</ComingSoon></StudentShell></Guard>} />
+          <Route path="/student/openings" element={<Guard role="student"><StudentOpenings /></Guard>} />
           <Route path="/student/sessions" element={<Guard role="student"><StudentSessions /></Guard>} />
           <Route path="/student/sessions/:id/live" element={<Guard role="student"><SessionRoom /></Guard>} />
           <Route path="/student/meetings" element={<Guard role="student"><StudentInterviews /></Guard>} />
@@ -68,7 +69,7 @@ export default function App() {
           <Route path="/company/candidates" element={<Guard role="company"><CompanyCandidates /></Guard>} />
           <Route path="/company/candidates/:id" element={<Guard role="company"><CompanyCandidateDetail /></Guard>} />
           <Route path="/company/shortlist" element={<Guard role="company"><CompanyShortlist /></Guard>} />
-          <Route path="/company/openings" element={<Guard role="company"><CompanyShell><ComingSoon title="Openings">{later}</ComingSoon></CompanyShell></Guard>} />
+          <Route path="/company/openings" element={<Guard role="company"><CompanyOpenings /></Guard>} />
           <Route path="/company/meetings" element={<Guard role="company"><CompanyMeetings /></Guard>} />
           <Route path="/company/dashboard" element={<Guard role="company"><CompanyShell><ComingSoon title="Dashboard">{later}</ComingSoon></CompanyShell></Guard>} />
 

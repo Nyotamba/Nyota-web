@@ -1,5 +1,5 @@
 // Fictional demo data — mirrors supabase/seed.sql. Never ship it to production.
-import type { Candidate, Company, Invitation, InterviewRequest, CvView, InterviewSlot, SessionInput } from './types';
+import type { Candidate, Company, Invitation, InterviewRequest, CvView, InterviewSlot, OpeningInput, SessionInput } from './types';
 
 export interface DemoSession extends SessionInput {
   id: string;
@@ -16,6 +16,8 @@ export interface DemoState {
   sessions?: DemoSession[];
   registrations?: { sessionId: string; candidateId: string; createdAt?: string; joinedAt?: string | null; attendedAt?: string | null; attempts?: number; lastSeenAt?: string | null; leftAt?: string | null; seconds?: number }[];
   slots?: InterviewSlot[];
+  openings?: (OpeningInput & { id: string; companyId: string; createdAt: string })[];
+  openingInterests?: { openingId: string; candidateId: string; createdAt: string }[];
   candidates: Candidate[];
   companies: Company[];
   invitations: Invitation[];
@@ -52,6 +54,16 @@ export function createSeed(): DemoState {
     slots: [
       { id: 'sl1', companyId: 'co1', startsAt: '2027-02-17T14:00:00Z', durationMin: 30, meetingUrl: 'https://example.com/demo-kora-interviews', candidateId: null, bookedAt: null },
       { id: 'sl2', companyId: 'co1', startsAt: '2027-02-17T14:30:00Z', durationMin: 30, meetingUrl: 'https://example.com/demo-kora-interviews', candidateId: null, bookedAt: null },
+    ],
+    openings: [
+      { id: 'op1', companyId: 'co1', title: 'Investment associate, West Africa', contract: 'Full-time', function: 'Finance', location: 'Dakar, Senegal · or Abidjan', description: 'Join the investment team covering fintech and payments in WAEMU countries: sourcing, due diligence and portfolio support. French and English required.', applyUrl: 'https://example.com/kora-associate', applyBy: '2027-03-15', published: true, createdAt: '2027-01-20T10:00:00Z' },
+      { id: 'op2', companyId: 'co1', title: 'Summer associate, venture team', contract: 'Summer internship', function: 'Investment', location: 'Lagos, Nigeria', description: '10-week summer internship with the venture team, from June 2027. You will lead one investment memo end to end.', applyUrl: '', applyBy: '2027-02-28', published: true, createdAt: '2027-01-25T10:00:00Z' },
+      { id: 'op3', companyId: 'co2', title: 'Strategy manager, grid projects', contract: 'Full-time', function: 'Strategy', location: 'Nairobi, Kenya', description: 'Shape the roll-out of mini-grids in East Africa: market entry, partnerships and project finance with the CFO.', applyUrl: 'https://example.com/sahel-strategy', applyBy: null, published: true, createdAt: '2027-01-28T10:00:00Z' },
+    ] satisfies (OpeningInput & { id: string; companyId: string; createdAt: string })[],
+    openingInterests: [
+      { openingId: 'op1', candidateId: 'c2', createdAt: '2027-01-22T09:00:00Z' },
+      { openingId: 'op1', candidateId: 'c3', createdAt: '2027-01-23T09:00:00Z' },
+      { openingId: 'op2', candidateId: 'c4', createdAt: '2027-01-26T09:00:00Z' },
     ],
     candidates: [
       c({

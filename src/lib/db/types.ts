@@ -163,6 +163,37 @@ export interface InterviewSlot {
   bookedAt: string | null;
 }
 
+export type Contract = 'Full-time' | 'Internship' | 'Summer internship' | 'Other';
+export const CONTRACTS: Contract[] = ['Full-time', 'Internship', 'Summer internship', 'Other'];
+
+export interface OpeningInput {
+  title: string;
+  contract: Contract;
+  function: string;
+  location: string;
+  description: string;
+  applyUrl: string;
+  applyBy: string | null; // YYYY-MM-DD
+  published: boolean;
+}
+export interface Opening extends OpeningInput {
+  id: string;
+  companyId: string;
+  companyName: string;
+  createdAt: string;
+  interested: number | null; // only for the company that posted it (and admins)
+  isInterested: boolean;
+  isMine: boolean;
+}
+export interface InterestedCandidate {
+  candidateId: string;
+  name: string;
+  school: string;
+  programme: string;
+  graduationYear: number | null;
+  interestedAt: string;
+}
+
 export interface StudentInterview {
   companyId: string;
   companyName: string;
@@ -339,6 +370,12 @@ export interface NyotaDb {
   addSlot(companyId: string, slot: { startsAt: string; durationMin: number; meetingUrl: string }): Promise<void>;
   deleteSlot(slotId: string): Promise<void>;
   listStudentInterviews(): Promise<StudentInterview[]>;
+  // Openings (roles posted by companies)
+  listOpenings(): Promise<Opening[]>;
+  saveOpening(companyId: string, input: OpeningInput, id?: string): Promise<void>;
+  deleteOpening(id: string): Promise<void>;
+  setOpeningInterest(id: string, interested: boolean): Promise<void>;
+  listOpeningInterest(id: string): Promise<InterestedCandidate[]>;
   bookSlot(slotId: string): Promise<void>;
   cancelBooking(slotId: string): Promise<void>;
 

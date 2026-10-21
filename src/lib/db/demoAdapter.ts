@@ -39,6 +39,8 @@ export function createDemoDb(space = ''): NyotaDb {
   state.sessions ??= seed.sessions;
   state.registrations ??= seed.registrations;
   state.slots ??= seed.slots;
+  state.openings ??= seed.openings;
+  state.openingInterests ??= seed.openingInterests;
   state.schools ??= [...SCHOOLS];
   // Sessions added to the seed later (several on one day, one clash), with Amara's registrations.
   for (const s of seed.sessions!.filter((x) => ['s4', 's5', 's6'].includes(x.id))) {
@@ -352,6 +354,58 @@ export function createDemoDb(space = ''): NyotaDb {
               .map((s) => ({ id: s.id, startsAt: s.startsAt, durationMin: s.durationMin })),
           };
         });
+    },
+    async listOpenings() {
+      const role = session?.role;
+      const cid = session?.candidateId;
+      const interests = state.openingInterests ?? [];
+      return (state.openings ?? [])
+        .map((o) => {
+          const mine = role === 'admin' || (role === 'company' && o.companyId === session?.companyId);
+          return {
+            ...o,
+            companyName: state.companies.find((c) => c.id === o.companyId)?.name ?? '',
+            interested: mine ? interests.filter((i) => i.openingId === o.id && isVisible(findCandidate(i.candidateId))).length : null,
+            isInterested: interests.some((i) => i.openingId === o.id && i.candidateId === cid),
+            isMine: mine,
+          };
+        })
+        .filter((o) => o.isMine || (role === 'student' && o.published))
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    },
+    async saveOpening(companyId, input, id) {
+      if (!input.title.trim()) throw new Error('Give the opening a title');
+      const list = (state.openings = state.openings ?? []);
+      const existing = id && list.find((o) => o.id === id);
+      if (existing) Object.assign(existing, input);
+      else list.push({ id: uid('op'), companyId, createdAt: now(), ...input });
+      commit();
+    },
+    async deleteOpening(id) {
+      state.openings = (state.openings ?? []).filter((o) => o.id !== id);
+      state.openingInterests = (state.openingInterests ?? []).filter((i) => i.openingId !== id);
+      commit();
+    },
+    async setOpeningInterest(id, interested) {
+      const cid = session?.candidateId;
+      if (!cid) throw new Error('Only students can show interest');
+      const list = (state.openingInterests = state.openingInterests ?? []);
+      if (!interested) state.openingInterests = list.filter((i) => !(i.openingId === id && i.candidateId === cid));
+      else {
+        if (!isVisible(findCandidate(cid))) throw new Error('Your profile must be verified and shared with companies first (My profile).');
+        if (!list.some((i) => i.openingId === id && i.candidateId === cid)) list.push({ openingId: id, candidateId: cid, createdAt: now() });
+      }
+      commit();
+    },
+    async listOpeningInterest(id) {
+      return (state.openingInterests ?? [])
+        .filter((i) => i.openingId === id)
+        .map((i) => ({ i, c: findCandidate(i.candidateId) }))
+        .filter(({ c }) => isVisible(c))
+        .map(({ i, c }) => ({
+          candidateId: c.id, name: `${c.firstName} ${c.lastName}`.trim(), school: c.school, programme: c.programme,
+          graduationYear: c.graduationYear ?? null, interestedAt: i.createdAt,
+        }));
     },
     async bookSlot(slotId) {
       const cid = session?.candidateId;

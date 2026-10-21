@@ -1,7 +1,7 @@
 // Live implementation of NyotaDb on Supabase. Access rules are enforced by the database
 // (row-level security in supabase/schema.sql); this file only maps rows to the UI types.
 import { createClient, FunctionsHttpError, type EmailOtpType, type SupabaseClient } from '@supabase/supabase-js';
-import type { Candidate, Consent, FairSession, Gender, TalentRow, InterviewSlot, InvitationStatus, NyotaDb, OAuthProvider, PositionType, Session, StudentInterview } from './types';
+import type { Candidate, Consent, Contract, FairSession, Gender, TalentRow, InterviewSlot, InvitationStatus, NyotaDb, OAuthProvider, PositionType, Session, StudentInterview } from './types';
 import { BUILTIN_OPTIONS, CONSENT_VERSION, CV_LINK_TTL_SECONDS, SCHOOLS } from '../../config/constants';
 
 // Every candidate column except e-mail, which companies may not read (column privileges).
@@ -508,6 +508,42 @@ export function createSupabaseDb(url: string, key: string): NyotaDb {
     },
     async listStudentInterviews() {
       return check<StudentInterview[]>(await sb.rpc('student_interviews'));
+    },
+    async listOpenings() {
+      const rows = check<{
+        id: string; company_id: string; company_name: string; title: string; contract: Contract; function: string; location: string;
+        description: string; apply_url: string; apply_by: string | null; published: boolean; created_at: string;
+        interested: number | null; is_interested: boolean; is_mine: boolean;
+      }[]>(await sb.rpc('list_openings'));
+      return rows.map((r) => ({
+        id: r.id, companyId: r.company_id, companyName: r.company_name, title: r.title, contract: r.contract, function: r.function,
+        location: r.location, description: r.description, applyUrl: r.apply_url, applyBy: r.apply_by, published: r.published,
+        createdAt: r.created_at, interested: r.interested, isInterested: r.is_interested, isMine: r.is_mine,
+      }));
+    },
+    async saveOpening(companyId, o, id) {
+      const row = {
+        title: o.title.trim(), contract: o.contract, function: o.function.trim(), location: o.location.trim(),
+        description: o.description.trim(), apply_url: o.applyUrl.trim(), apply_by: o.applyBy || null, published: o.published,
+      };
+      if (id) ok(await sb.from('openings').update(row).eq('id', id));
+      else ok(await sb.from('openings').insert({ company_id: companyId, ...row }));
+      emit();
+    },
+    async deleteOpening(id) {
+      ok(await sb.from('openings').delete().eq('id', id));
+      emit();
+    },
+    async setOpeningInterest(id, interested) {
+      maybe(await sb.rpc('set_opening_interest', { oid: id, interested }));
+      emit();
+    },
+    async listOpeningInterest(id) {
+      const rows = check<{ candidate_id: string; name: string; school: string; programme: string; graduation_year: number | null; interested_at: string }[]>(
+        await sb.rpc('opening_interested', { oid: id }));
+      return rows.map((r) => ({
+        candidateId: r.candidate_id, name: r.name, school: r.school, programme: r.programme, graduationYear: r.graduation_year, interestedAt: r.interested_at,
+      }));
     },
     async bookSlot(slotId) {
       maybe(await sb.rpc('book_slot', { slot: slotId }));
