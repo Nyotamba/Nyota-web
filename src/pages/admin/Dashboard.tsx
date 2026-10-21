@@ -3,30 +3,27 @@ import { Link } from 'react-router-dom';
 import { AdminShell } from './AdminShell';
 import { db, type Dashboard } from '../../lib/db';
 import { useDbQuery } from '../../lib/useDb';
-import { TalentPool } from '../../components/TalentPool';
+import { DailyActivity, ReachAndOutcomes, SessionAttendance } from './DashboardViews';
 
 const pct = (part: number, whole: number) => (whole ? Math.round((part / whole) * 100) : 0);
 
 export default function AdminDashboard({ embedded = false }: { embedded?: boolean }) {
   const Wrap = embedded ? Fragment : AdminShell;
   const { data: d, error } = useDbQuery(() => db.getDashboard());
-  const { data: pool, error: poolError } = useDbQuery(() => db.getTalentPool());
+  const { data: signals = [] } = useDbQuery(() => db.getInsightSignals());
   return (
     <Wrap>
       <div className="mx-auto flex max-w-page flex-col gap-8 px-4 py-10 md:px-10">
         <div className="flex flex-col gap-1">
           <h1 className="m-0 font-display text-[34px] tracking-display md:text-[40px]">Dashboard</h1>
-          <div className="text-[15px] text-muted">Where candidates stand, and what companies do with their profiles.</div>
+          <div className="text-[15px] text-muted">How the fair is going: candidates, companies, sessions and outcomes.</div>
         </div>
         {error && <p className="card m-0 p-6 text-danger">The dashboard could not load: {error.message}</p>}
         {!d && !error && <p className="text-muted">Loading figures…</p>}
         {d && <Body d={d} />}
-        {pool && <TalentPool rows={pool} />}
-        {poolError && (
-          <p className="card m-0 p-6 text-[15px] text-muted">
-            The talent pool needs the latest database update (SQL 009). Run it in Supabase → SQL Editor, then reload this page.
-          </p>
-        )}
+        <ReachAndOutcomes />
+        <DailyActivity signals={signals} />
+        <SessionAttendance />
       </div>
     </Wrap>
   );

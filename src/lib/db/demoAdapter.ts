@@ -44,6 +44,7 @@ export function createDemoDb(space = ''): NyotaDb {
   for (const co of state.companies) if (co.about === undefined) Object.assign(co, seed.companies.find((x) => x.id === co.id) ?? {}, { name: co.name });
   state.openingInterests ??= seed.openingInterests;
   state.events ??= seed.events;
+  state.outcomes ??= seed.outcomes;
   for (const o of state.openings ?? []) o.skills ??= seed.openings?.find((x) => x.id === o.id)?.skills ?? [];
   state.schools ??= [...SCHOOLS];
   // Sessions added to the seed later (several on one day, one clash), with Amara's registrations.
@@ -687,6 +688,93 @@ export function createDemoDb(space = ''): NyotaDb {
         candidateId: role === 'student' ? session?.candidateId ?? null : kind === 'profile_view' ? target ?? null : null,
       });
       write(STATE_KEY, state);
+    },
+    async listOutcomes(companyId) {
+      return Object.fromEntries((state.outcomes ?? []).filter((o) => o.companyId === companyId).map((o) => [o.candidateId, o.status]));
+    },
+    async setOutcome(companyId, candidateId, status) {
+      const rest = (state.outcomes ?? []).filter((o) => !(o.companyId === companyId && o.candidateId === candidateId));
+      state.outcomes = status ? [...rest, { companyId, candidateId, status, updatedAt: now() }] : rest;
+      commit();
+    },
+    async getCandidateReach() {
+      const ev = state.events ?? [];
+      return state.candidates.map((c) => {
+        const views = ev.filter((e) => e.kind === 'profile_view' && e.candidateId === c.id);
+        const cvs = state.cvViews.filter((v) => v.candidateId === c.id);
+        const outs = (state.outcomes ?? []).filter((o) => o.candidateId === c.id).map((o) => o.status);
+        return {
+          candidateId: c.id, profileViews: views.length, cvViews: cvs.length,
+          companies: new Set([...views.map((e) => e.companyId), ...cvs.map((v) => v.companyId)]).size,
+          shortlists: state.shortlists.filter((s) => s.candidateId === c.id).length,
+          requests: state.interviewRequests.filter((r) => r.candidateId === c.id).length,
+          interests: (state.openingInterests ?? []).filter((i) => i.candidateId === c.id).length,
+          outcome: outs.includes('offer') ? 'offer' : outs.includes('hired') ? 'hired' : null,
+        };
+      });
+    },
+    async getCompanyActivity() {
+      const ev = state.events ?? [];
+      return state.companies.map((co) => {
+        const mine = <T extends { companyId: string | null }>(xs: T[]) => xs.filter((x) => x.companyId === co.id);
+        const opens = mine(state.openings ?? []);
+        const dates = [
+          ...mine(ev).filter((e) => e.kind !== 'company_click').map((e) => e.at), ...mine(state.cvViews).map((v) => v.viewedAt),
+          ...mine(state.interviewRequests).map((r) => r.createdAt), ...opens.map((o) => o.createdAt),
+        ].sort();
+        return {
+          companyId: co.id, members: mine(state.invitations).length, signedIn: mine(state.invitations).filter((i) => i.status === 'Accepted').length,
+          profileViews: mine(ev).filter((e) => e.kind === 'profile_view').length, cvViews: mine(state.cvViews).length,
+          shortlists: mine(state.shortlists).length, requests: mine(state.interviewRequests).length,
+          openings: opens.filter((o) => o.published).length, slots: mine(state.slots ?? []).length,
+          sessions: mine(state.sessions ?? []).filter((s) => s.id !== 'slive').length,
+          interested: (state.openingInterests ?? []).filter((i) => opens.some((o) => o.id === i.openingId)).length,
+          offers: mine(state.outcomes ?? []).filter((o) => o.status === 'offer').length,
+          hires: mine(state.outcomes ?? []).filter((o) => o.status === 'hired').length,
+          lastActivity: dates[dates.length - 1] ?? null,
+        };
+      });
+    },
+    async getCompanyBenchmark(companyId) {
+      const ev = state.events ?? [];
+      const fig = (id: string) => {
+        const opens = (state.openings ?? []).filter((o) => o.companyId === id);
+        const sess = (state.sessions ?? []).filter((s) => s.companyId === id && s.id !== 'slive');
+        return {
+          clicks: ev.filter((e) => e.kind === 'company_click' && e.companyId === id).length,
+          interestsPerOpening: Math.round(((state.openingInterests ?? []).filter((i) => opens.some((o) => o.id === i.openingId)).length / Math.max(1, opens.filter((o) => o.published).length)) * 10) / 10,
+          registrations: (state.registrations ?? []).filter((r) => sess.some((s) => s.id === r.sessionId)).length,
+          views: ev.filter((e) => e.kind === 'profile_view' && e.companyId === id).length,
+        };
+      };
+      const avg = (ids: string[]) => {
+        const xs = ids.map(fig);
+        const a = (k: keyof ReturnType<typeof fig>) => Math.round((xs.reduce((t, x) => t + x[k], 0) / Math.max(1, xs.length)) * 10) / 10;
+        return { clicks: a('clicks'), interestsPerOpening: a('interestsPerOpening'), registrations: a('registrations'), views: a('views'), companies: xs.length };
+      };
+      const sector = state.companies.find((c) => c.id === companyId)?.sector ?? '';
+      const ids = state.companies.map((c) => c.id);
+      return {
+        me: fig(companyId), all: avg(ids),
+        sector: sector ? { ...avg(state.companies.filter((c) => c.sector === sector).map((c) => c.id)), name: sector } : null,
+      };
+    },
+    async listSeenCandidates() {
+      const id = session?.companyId;
+      return [...new Set([
+        ...(state.events ?? []).filter((e) => e.kind === 'profile_view' && e.companyId === id).map((e) => e.candidateId!),
+        ...state.cvViews.filter((v) => v.companyId === id).map((v) => v.candidateId),
+      ])];
+    },
+    async getMyProfileStats() {
+      const cid = session?.candidateId;
+      if (!cid) return null;
+      const views = (state.events ?? []).filter((e) => e.kind === 'profile_view' && e.candidateId === cid);
+      const cvs = state.cvViews.filter((v) => v.candidateId === cid);
+      return {
+        views30: views.filter((e) => Date.now() - Date.parse(e.at) < 30 * 86_400_000).length, views: views.length, cvViews: cvs.length,
+        companies: new Set([...views.map((e) => e.companyId), ...cvs.map((v) => v.companyId)]).size,
+      };
     },
     async getInsightSignals() {
       const co = (id: string | null | undefined) => state.companies.find((c) => c.id === id);

@@ -5,6 +5,20 @@ import AdminInsights from './Insights';
 import AdminLists from './Lists';
 import OwnerSettings from './Settings';
 import { useSession } from '../../App';
+import { FollowUp } from './DashboardViews';
+import { TalentPool } from '../../components/TalentPool';
+import { db } from '../../lib/db';
+import { useDbQuery } from '../../lib/useDb';
+
+function TalentPoolPage() {
+  const { data: pool, error } = useDbQuery(() => db.getTalentPool());
+  return (
+    <div className="mx-auto flex max-w-page flex-col gap-8 px-4 py-10 md:px-10">
+      {error && <p className="card m-0 p-6 text-danger">The talent pool could not load: {error.message}</p>}
+      {pool ? <TalentPool rows={pool} /> : !error && <p className="text-muted">Loading…</p>}
+    </div>
+  );
+}
 
 /** Sub-tabs under one admin tab, kept in the URL (?view=…) so links and reloads land on the right one. */
 function SubTabs<T extends string>({ tabs, current }: { tabs: [T, string][]; current: T }) {
@@ -24,14 +38,20 @@ function SubTabs<T extends string>({ tabs, current }: { tabs: [T, string][]; cur
   );
 }
 
-/** Admin → Dashboard: the figures, then who attracts whom (Insights). */
+type DashView = 'overview' | 'follow-up' | 'pool' | 'insights';
+const DASH_TABS: [DashView, string][] = [['overview', 'Overview'], ['follow-up', 'Follow-up'], ['pool', 'Talent pool'], ['insights', 'Market insights']];
+
+/** Admin → Dashboard: how the fair goes, who to nudge, who the students are, and who attracts whom. */
 export function AdminDashboardTabs() {
   const [params] = useSearchParams();
-  const view = params.get('view') === 'insights' ? 'insights' : 'overview';
+  const view = (DASH_TABS.find(([t]) => t === params.get('view'))?.[0] ?? 'overview') as DashView;
   return (
     <AdminShell>
-      <SubTabs tabs={[['overview', 'Overview'], ['insights', 'Insights']]} current={view} />
-      {view === 'insights' ? <AdminInsights embedded /> : <AdminDashboard embedded />}
+      <SubTabs tabs={DASH_TABS} current={view} />
+      {view === 'overview' && <AdminDashboard embedded />}
+      {view === 'follow-up' && <FollowUp />}
+      {view === 'pool' && <TalentPoolPage />}
+      {view === 'insights' && <AdminInsights embedded />}
     </AdminShell>
   );
 }

@@ -15,6 +15,7 @@ export default function CompanyCandidateDetail() {
   const { data: c, loading } = useDbQuery(() => db.getCandidate(id), [id]);
   const { data: shortlist = [] } = useDbQuery(() => db.listShortlist(companyId), [companyId]);
   const { data: requests = [] } = useDbQuery(() => db.listInterviewRequests(companyId), [companyId]);
+  const { data: outcomes = {} } = useDbQuery(() => db.listOutcomes(companyId), [companyId]);
   const [notice, setNotice] = useState<string | null>(null);
   // Insights: which profiles companies open (anonymous aggregates for the club).
   useEffect(() => { if (id) db.logEvent('profile_view', id); }, [id]);
@@ -50,6 +51,20 @@ export default function CompanyCandidateDetail() {
         </button>
       </div>
       {requested && <p className="m-0 text-[13px] text-muted">Requested on {formatDate(requested.createdAt)}. The candidate picks an interview slot during the fair.</p>}
+      <div role="group" aria-label="Outcome" className="flex flex-wrap items-center gap-2 border-t border-line-soft pt-3 text-sm">
+        <span className="font-semibold">Outcome</span>
+        {([['offer', 'Offer made'], ['hired', 'Hired']] as const).map(([v, label]) => {
+          const active = outcomes[c.id] === v;
+          return (
+            <button key={v} type="button" aria-pressed={active}
+              onClick={async () => { await db.setOutcome(companyId, c.id, active ? null : v); setNotice(active ? 'Outcome cleared' : `Marked: ${label.toLowerCase()}. Thank you, it helps the club.`); }}
+              className={`min-h-[36px] rounded-full border px-3 text-[13px] font-semibold ${active ? 'border-green bg-green text-white' : 'border-line-strong bg-surface text-ink hover:border-ink'}`}>
+              {label}
+            </button>
+          );
+        })}
+        <span className="w-full text-[12px] text-muted">Only the club sees it, as a total. The candidate is not told.</span>
+      </div>
     </div>
   );
 

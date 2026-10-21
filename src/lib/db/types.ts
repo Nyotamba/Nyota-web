@@ -84,6 +84,28 @@ export interface InsightSignal {
   detail: Record<string, unknown>;
 }
 
+/** After the fair: what came of it, ticked by the company. */
+export type Outcome = 'offer' | 'hired';
+/** Admin: attention a candidate received (counts only, never which company). */
+export interface CandidateReach {
+  candidateId: string; profileViews: number; cvViews: number; companies: number; shortlists: number; requests: number; interests: number;
+  outcome: Outcome | null;
+}
+/** Admin: what a company did on Nyota. */
+export interface CompanyEngagement {
+  companyId: string; members: number; signedIn: number; profileViews: number; cvViews: number; shortlists: number; requests: number;
+  openings: number; slots: number; sessions: number; interested: number; offers: number; hires: number; lastActivity: string | null;
+}
+type BenchFigures = { clicks: number; interestsPerOpening: number; registrations: number; views: number };
+/** A company's figures next to the average company and its sector. */
+export interface CompanyBenchmark {
+  me: BenchFigures | null;
+  all: (BenchFigures & { companies: number }) | null;
+  sector: (BenchFigures & { companies: number; name: string | null }) | null;
+}
+/** A student's own reach (numbers only). */
+export interface MyProfileStats { views30: number; views: number; cvViews: number; companies: number }
+
 /** The company's presentation for students. */
 export interface CompanyPage {
   about: string;
@@ -470,6 +492,13 @@ export interface NyotaDb {
   getCompanyDashboard(companyId: string): Promise<CompanyDashboard>;
   getCompanyTalentPool(): Promise<TalentRow[]>; // verified + shared profiles only, no gender
   logEvent(kind: ActivityKind, target?: string | null, detail?: Record<string, unknown>): void; // fire and forget
+  listOutcomes(companyId: string): Promise<Record<string, Outcome>>;
+  setOutcome(companyId: string, candidateId: string, status: Outcome | null): Promise<void>;
+  getCandidateReach(): Promise<CandidateReach[]>; // admins
+  getCompanyActivity(): Promise<CompanyEngagement[]>; // admins
+  getCompanyBenchmark(companyId: string): Promise<CompanyBenchmark>;
+  listSeenCandidates(): Promise<string[]>; // profiles the signed-in company already opened
+  getMyProfileStats(): Promise<MyProfileStats | null>; // the signed-in student
   getInsightSignals(): Promise<InsightSignal[]>; // admins only
   listInvitations(): Promise<Invitation[]>;
   /** Records the invitation and, on the live site, e-mails the person a sign-in link. */

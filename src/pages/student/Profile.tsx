@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'r
 import { Link } from 'react-router-dom';
 import { StudentShell } from './StudentShell';
 import { AdminShell } from '../admin/AdminShell';
+import { ReachCard } from '../../components/StudentInsights';
 import { ChipGroup } from '../../components/Chip';
 import { Notice } from '../../components/Notice';
 import { Check, FileIcon } from '../../components/icons';
@@ -96,6 +97,7 @@ export function ProfileEditor({ id, admin = false }: { id: string; admin?: boole
             </p>
           )}
           <StatusCard c={cand} />
+          {!admin && <ReachCard c={cand} />}
           <p className="m-0 text-sm leading-[1.55] text-muted">
             We never ask for ethnicity, religion, health, nationality or immigration status. Please leave them out of your CV too.
           </p>

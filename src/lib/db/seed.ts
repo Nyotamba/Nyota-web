@@ -18,6 +18,7 @@ export interface DemoState {
   slots?: InterviewSlot[];
   openings?: (OpeningInput & { id: string; companyId: string; createdAt: string })[];
   openingInterests?: { openingId: string; candidateId: string; createdAt: string }[];
+  outcomes?: { companyId: string; candidateId: string; status: 'offer' | 'hired'; updatedAt: string }[];
   events?: { kind: string; at: string; companyId: string | null; candidateId: string | null; detail: Record<string, unknown> }[];
   candidates: Candidate[];
   companies: Company[];
@@ -66,6 +67,7 @@ export function createSeed(): DemoState {
       { openingId: 'op1', candidateId: 'c3', createdAt: '2027-01-23T09:00:00Z' },
       { openingId: 'op2', candidateId: 'c4', createdAt: '2027-01-26T09:00:00Z' },
     ],
+    outcomes: [{ companyId: 'co1', candidateId: 'c3', status: 'offer', updatedAt: '2027-02-20T10:00:00Z' }],
     // Sample activity so the Insights page shows something in the demo.
     events: [
       ...['c2', 'c3', 'c2', 'c4', 'c5', 'c2'].map((id, n) => ({ kind: 'profile_view', at: `2027-02-0${n + 1}T10:00:00Z`, companyId: 'co1', candidateId: id, detail: {} })),

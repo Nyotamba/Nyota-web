@@ -1,7 +1,7 @@
 // Live implementation of NyotaDb on Supabase. Access rules are enforced by the database
 // (row-level security in supabase/schema.sql); this file only maps rows to the UI types.
 import { createClient, FunctionsHttpError, type EmailOtpType, type SupabaseClient } from '@supabase/supabase-js';
-import type { Candidate, CompanyDashboard, InsightSignal, Consent, Contract, FairCompany, FairSession, Gender, TalentRow, InterviewSlot, InvitationStatus, NyotaDb, OAuthProvider, PositionType, Session, StudentInterview } from './types';
+import type { Candidate, CompanyBenchmark, CompanyDashboard, InsightSignal, MyProfileStats, Outcome, Consent, Contract, FairCompany, FairSession, Gender, TalentRow, InterviewSlot, InvitationStatus, NyotaDb, OAuthProvider, PositionType, Session, StudentInterview } from './types';
 import { BUILTIN_OPTIONS, CONSENT_VERSION, CV_LINK_TTL_SECONDS, SCHOOLS } from '../../config/constants';
 
 // Every candidate column except e-mail, which companies may not read (column privileges).
@@ -745,6 +745,43 @@ export function createSupabaseDb(url: string, key: string): NyotaDb {
     },
     logEvent(kind, target, detail) {
       void sb.rpc('log_event', { p_kind: kind, p_target: target ?? null, p_detail: detail ?? {} }).then(() => undefined, () => undefined);
+    },
+    async listOutcomes(companyId) {
+      const rows = check<{ candidate_id: string; status: Outcome }[]>(await sb.from('hiring_outcomes').select('candidate_id,status').eq('company_id', companyId));
+      return Object.fromEntries(rows.map((r) => [r.candidate_id, r.status]));
+    },
+    async setOutcome(companyId, candidateId, status) {
+      if (status) ok(await sb.from('hiring_outcomes').upsert({ company_id: companyId, candidate_id: candidateId, status, updated_at: new Date().toISOString() }));
+      else ok(await sb.from('hiring_outcomes').delete().eq('company_id', companyId).eq('candidate_id', candidateId));
+      emit();
+    },
+    async getCandidateReach() {
+      const rows = check<{ candidate_id: string; profile_views: number; cv_views: number; companies: number; shortlists: number; requests: number; interests: number; outcome: Outcome | null }[]>(
+        await sb.rpc('admin_candidate_reach'));
+      return rows.map((r) => ({
+        candidateId: r.candidate_id, profileViews: r.profile_views, cvViews: r.cv_views, companies: r.companies, shortlists: r.shortlists,
+        requests: r.requests, interests: r.interests, outcome: r.outcome,
+      }));
+    },
+    async getCompanyActivity() {
+      const rows = check<{
+        company_id: string; members: number; signed_in: number; profile_views: number; cv_views: number; shortlists: number; requests: number;
+        openings: number; slots: number; sessions: number; interested: number; offers: number; hires: number; last_activity: string | null;
+      }[]>(await sb.rpc('admin_company_activity'));
+      return rows.map((r) => ({
+        companyId: r.company_id, members: r.members, signedIn: r.signed_in, profileViews: r.profile_views, cvViews: r.cv_views, shortlists: r.shortlists,
+        requests: r.requests, openings: r.openings, slots: r.slots, sessions: r.sessions, interested: r.interested, offers: r.offers, hires: r.hires,
+        lastActivity: r.last_activity,
+      }));
+    },
+    async getCompanyBenchmark(companyId) {
+      return check<CompanyBenchmark>(await sb.rpc('company_benchmark', { cid: companyId }));
+    },
+    async listSeenCandidates() {
+      return check<string[]>(await sb.rpc('company_seen_candidates'));
+    },
+    async getMyProfileStats() {
+      return maybe<MyProfileStats>(await sb.rpc('my_profile_stats'));
     },
     async getInsightSignals() {
       const rows = check<{

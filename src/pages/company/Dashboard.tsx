@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import type { ReactNode } from 'react';
 import { CompanyShell } from './CompanyShell';
 import { TalentPool } from '../../components/TalentPool';
+import { CompanyInsights } from './DashboardInsights';
 import { db } from '../../lib/db';
 import { useDbQuery } from '../../lib/useDb';
 import { useSession } from '../../App';
@@ -62,6 +63,7 @@ export function CompanyDashboardBody({ companyId }: { companyId: string }) {
             </section>
           </>
         )}
+        <CompanyInsights companyId={companyId} />
         {pool && <TalentPool rows={pool} forCompany />}
       </div>
     </>

@@ -3,6 +3,7 @@ import { AdminShell } from './AdminShell';
 import { db, type InsightSignal } from '../../lib/db';
 import { useDbQuery } from '../../lib/useDb';
 import { parseCountries } from '../../components/TalentPool';
+import { DemandSupply } from './DashboardViews';
 
 // How much each action says about real interest.
 type Weights = Partial<Record<InsightSignal['kind'], number>>;
@@ -71,7 +72,7 @@ export default function AdminInsights({ embedded = false }: { embedded?: boolean
       <div className="mx-auto flex max-w-page flex-col gap-8 px-4 py-10 md:px-10">
         <div className="flex flex-wrap items-end gap-4">
           <div className="flex flex-1 flex-col gap-1">
-            <h1 className="m-0 font-display text-[34px] tracking-display md:text-[40px]">Insights</h1>
+            <h1 className="m-0 font-display text-[34px] tracking-display md:text-[40px]">Market insights</h1>
             <div className="max-w-[75ch] text-[15px] text-muted">
               Who attracts whom, and why. Pick a company for its details. Anonymous counts over the last 12 months; no name is ever shown.
             </div>
@@ -113,6 +114,9 @@ function AllCompanies({ list, poolFor, dir, setDir }: {
   const pool = poolFor(dir);
   return (
     <>
+      <Section title="Demand vs supply" sub="What companies ask for against what the pool offers: the profiles and countries to recruit for, and the companies to invite.">
+        <DemandSupply signals={list} />
+      </Section>
       <Section title="Which companies go with which profiles"
         sub={dir === 'company_to_candidate'
           ? 'For each kind of company (rows), the profiles it looks at (columns). ×2.0 = twice as much attention as these profiles weigh in the verified pool. Weights: profile view 1, CV 2, shortlist 3, interview request 5.'
