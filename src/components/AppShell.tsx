@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { Logo } from './Logo';
-import { db } from '../lib/db';
+import { db, isPreview } from '../lib/db';
+import { exitPreview } from '../lib/preview';
 
 export interface Tab { to: string; label: string; end?: boolean }
 
@@ -12,6 +13,7 @@ export function AppShell({ variant, tabs, who, badge, children }: {
   const navigate = useNavigate();
   const ink = variant === 'ink';
   const signOut = async () => {
+    if (isPreview) return exitPreview();
     await db.signOut();
     navigate('/');
   };
@@ -36,7 +38,7 @@ export function AppShell({ variant, tabs, who, badge, children }: {
           <Tabs tabs={tabs} ink={ink} />
         </nav>
       </header>
-      <main className="flex-1">{children}</main>
+      <main className={`flex-1 ${isPreview ? 'pb-24' : ''}`}>{children}</main>
     </div>
   );
 }

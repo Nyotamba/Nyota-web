@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { BrowserRouter, HashRouter, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
-import { db, type Role, type Session } from './lib/db';
+import { db, isPreview, type Role, type Session } from './lib/db';
+import { exitPreview, previewRole, startPreview } from './lib/preview';
 import { useDbQuery } from './lib/useDb';
 import Landing from './pages/Landing';
 import SignIn from './pages/SignIn';
@@ -87,7 +88,7 @@ export default function App() {
         </Routes>
         <ScrollToTop />
         <AfterSignIn session={session ?? null} />
-        {db.mode === 'demo' && <DemoBar />}
+        {isPreview ? <PreviewBar /> : db.mode === 'demo' && <DemoBar />}
       </Router>
     </SessionContext.Provider>
   );
@@ -114,6 +115,29 @@ function ScrollToTop() {
     window.scrollTo(0, 0);
   }, [pathname]);
   return null;
+}
+
+/** Admin preview of the student / company side (sample data). */
+function PreviewBar() {
+  const role = previewRole();
+  const other = role === 'student' ? 'company' : 'student';
+  return (
+    <div role="region" aria-label="Preview" className="fixed inset-x-0 bottom-0 z-40 border-t border-ink-line bg-ink text-offwhite"
+      style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+      <div className="mx-auto flex max-w-page flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 md:px-10">
+        <span className="flex-1 text-sm">
+          <strong>Preview · what a {role} sees.</strong> <span className="text-ink-muted">Sample data: nothing you do here is saved or sent.</span>
+        </span>
+        <button type="button" onClick={() => startPreview(other)}
+          className="min-h-[40px] rounded-full border border-ink-border px-4 text-sm font-semibold hover:border-offwhite">
+          See the {other} side
+        </button>
+        <button type="button" onClick={exitPreview} className="min-h-[40px] rounded-full bg-orange px-4 text-sm font-bold text-ink hover:bg-offwhite">
+          Back to admin
+        </button>
+      </div>
+    </div>
+  );
 }
 
 /** Floating switcher so reviewers can move between the three sides of the demo. */

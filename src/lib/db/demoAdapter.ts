@@ -4,8 +4,8 @@ import { createSeed, DEMO_ACCOUNTS, type DemoState } from './seed';
 import { BUILTIN_OPTIONS, CONSENT_VERSION, SCHOOLS } from '../../config/constants';
 import { isProfileComplete, isVisible } from '../candidate';
 
-const STATE_KEY = 'nyota-demo-state-v1';
-const SESSION_KEY = 'nyota-demo-session-v1';
+const BASE_STATE_KEY = 'nyota-demo-state-v1';
+const BASE_SESSION_KEY = 'nyota-demo-session-v1';
 
 function read<T>(key: string): T | null {
   try {
@@ -28,7 +28,10 @@ const now = () => new Date().toISOString();
 const uid = (prefix: string) => `${prefix}${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
 const clone = <T,>(v: T): T => JSON.parse(JSON.stringify(v));
 
-export function createDemoDb(): NyotaDb {
+/** `space` keeps separate data (the admin preview uses its own, so it never touches a demo in progress). */
+export function createDemoDb(space = ''): NyotaDb {
+  const STATE_KEY = BASE_STATE_KEY + space;
+  const SESSION_KEY = BASE_SESSION_KEY + space;
   let state: DemoState = read<DemoState>(STATE_KEY) ?? createSeed();
   // Demo data saved by an older version: add what it lacks.
   const seed = createSeed();
