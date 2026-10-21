@@ -25,6 +25,7 @@ import PublicSessions from './pages/Sessions';
 import StudentSessions from './pages/student/Sessions';
 import StudentInterviews from './pages/student/Interviews';
 import StudentAccount from './pages/student/Account';
+import SessionRoom from './pages/student/SessionRoom';
 import CompanyMeetings from './pages/company/Meetings';
 import { AdminShell } from './pages/admin/AdminShell';
 import { ComingSoon } from './pages/ComingSoon';
@@ -59,6 +60,7 @@ export default function App() {
           <Route path="/student/preview" element={<Guard role="student"><StudentPreview /></Guard>} />
           <Route path="/student/openings" element={<Guard role="student"><StudentShell><ComingSoon title="Openings">{later}</ComingSoon></StudentShell></Guard>} />
           <Route path="/student/sessions" element={<Guard role="student"><StudentSessions /></Guard>} />
+          <Route path="/student/sessions/:id/live" element={<Guard role="student"><SessionRoom /></Guard>} />
           <Route path="/student/meetings" element={<Guard role="student"><StudentInterviews /></Guard>} />
           <Route path="/student/account" element={<Guard role="student"><StudentAccount /></Guard>} />
 

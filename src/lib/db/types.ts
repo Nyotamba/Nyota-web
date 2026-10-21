@@ -119,7 +119,9 @@ export interface FairSession {
   durationMin: number;
   capacity: number | null;
   registered: number;
+  attended: number; // checked in with the attendance code (or marked present)
   isRegistered: boolean;
+  hasAttended: boolean;
   isOrganiser: boolean;
 }
 
@@ -145,6 +147,9 @@ export interface Registrant {
   visible: boolean; // shared a verified profile: the full profile can be opened
   registeredAt: string;
   joinedAt: string | null; // clicked "Join"
+  attendedAt: string | null; // checked in with the attendance code, or marked present by the organiser
+  leftAt: string | null; // clicked "I'm leaving" / closed the session room
+  secondsPresent: number; // time the Nyota session room stayed open during the session
 }
 
 export interface InterviewSlot {
@@ -316,6 +321,16 @@ export interface NyotaDb {
   unregisterSession(sessionId: string): Promise<void>;
   /** Records that a registered student clicked "Join". */
   markSessionJoined(sessionId: string): Promise<void>;
+  /** Session room: called about every minute while the room is open (arrival + time spent). */
+  sessionHeartbeat(sessionId: string): Promise<void>;
+  /** Session room: the student leaves (keepalive: also works while the tab is closing). */
+  leaveSession(sessionId: string, opts?: { keepalive?: boolean }): Promise<void>;
+  /** Organisers: the 4-digit code to show during the session. */
+  getAttendanceCode(sessionId: string): Promise<string | null>;
+  /** Students: check in with the code; returns attempts left when wrong. */
+  checkIn(sessionId: string, code: string): Promise<{ present: true } | { present: false; attemptsLeft: number }>;
+  /** Organisers: mark a registrant present or not by hand. */
+  markAttended(sessionId: string, candidateId: string, present: boolean): Promise<void>;
   listRegistrants(sessionId: string): Promise<Registrant[]>;
 
   // Interview slots (1:1)

@@ -197,7 +197,9 @@ export function createDemoDb(): NyotaDb {
           id: s.id, companyId: s.companyId, companyName: company(s.companyId), title: s.title, kind: s.kind,
           description: s.description, startsAt: s.startsAt, durationMin: s.durationMin, capacity: s.capacity,
           registered: regs.filter((r) => r.sessionId === s.id).length,
+          attended: regs.filter((r) => r.sessionId === s.id && r.attendedAt).length,
           isRegistered: regs.some((r) => r.sessionId === s.id && r.candidateId === session?.candidateId),
+          hasAttended: regs.some((r) => r.sessionId === s.id && r.candidateId === session?.candidateId && r.attendedAt),
           isOrganiser: organiser(s),
         }))
         .sort((a, b) => a.startsAt.localeCompare(b.startsAt));
@@ -236,6 +238,54 @@ export function createDemoDb(): NyotaDb {
         commit();
       }
     },
+    async sessionHeartbeat(sessionId) {
+      const r = (state.registrations ?? []).find((x) => x.sessionId === sessionId && x.candidateId === session?.candidateId);
+      if (!r) return;
+      const t = Date.now();
+      if (r.lastSeenAt && !(r.leftAt && r.leftAt > r.lastSeenAt)) r.seconds = (r.seconds ?? 0) + Math.min(90, Math.round((t - Date.parse(r.lastSeenAt)) / 1000));
+      r.joinedAt ??= now();
+      r.lastSeenAt = new Date(t).toISOString();
+      r.leftAt = null;
+      commit();
+    },
+    async leaveSession(sessionId) {
+      const r = (state.registrations ?? []).find((x) => x.sessionId === sessionId && x.candidateId === session?.candidateId);
+      if (!r) return;
+      const s = (state.sessions ?? []).find((x) => x.id === sessionId);
+      if (r.joinedAt) r.seconds = Math.max(r.seconds ?? 0, Math.round((Date.now() - Date.parse(r.joinedAt)) / 1000));
+      // Present: came in through the room and came back after at least half of the session.
+      if (s && r.joinedAt && !r.attendedAt && Date.now() - Date.parse(r.joinedAt) >= Math.max(1, s.durationMin / 2) * 60_000) r.attendedAt = now();
+      r.lastSeenAt = r.leftAt = now();
+      commit();
+    },
+    async getAttendanceCode(sessionId) {
+      const s = (state.sessions ?? []).find((x) => x.id === sessionId);
+      if (!s) return null;
+      s.attendanceCode ??= String(Math.floor(Math.random() * 10000)).padStart(4, '0');
+      commit();
+      return s.attendanceCode;
+    },
+    async checkIn(sessionId, code) {
+      const s = (state.sessions ?? []).find((x) => x.id === sessionId);
+      const r = (state.registrations ?? []).find((x) => x.sessionId === sessionId && x.candidateId === session?.candidateId);
+      if (!s || !r) throw new Error('Register for this session first');
+      if (r.attendedAt) return { present: true as const };
+      if ((r.attempts ?? 0) >= 5) throw new Error('Too many wrong codes. Ask the organiser to mark you present.');
+      s.attendanceCode ??= String(Math.floor(Math.random() * 10000)).padStart(4, '0');
+      if (code.trim() === s.attendanceCode) {
+        r.attendedAt = now();
+        commit();
+        return { present: true as const };
+      }
+      r.attempts = (r.attempts ?? 0) + 1;
+      commit();
+      return { present: false as const, attemptsLeft: 5 - r.attempts };
+    },
+    async markAttended(sessionId, candidateId, present) {
+      const r = (state.registrations ?? []).find((x) => x.sessionId === sessionId && x.candidateId === candidateId);
+      if (r) r.attendedAt = present ? r.attendedAt ?? now() : null;
+      commit();
+    },
     async listRegistrants(sessionId) {
       return (state.registrations ?? [])
         .filter((r) => r.sessionId === sessionId)
@@ -244,7 +294,8 @@ export function createDemoDb(): NyotaDb {
           return {
             candidateId: c.id, name: `${c.firstName} ${c.lastName}`, school: c.school, programme: c.programme,
             graduationYear: c.graduationYear || null, linkedinUrl: c.linkedinUrl || null, visible: isVisible(c),
-            registeredAt: r.createdAt ?? '', joinedAt: r.joinedAt ?? null,
+            registeredAt: r.createdAt ?? '', joinedAt: r.joinedAt ?? null, attendedAt: r.attendedAt ?? null,
+            leftAt: r.leftAt ?? null, secondsPresent: r.seconds ?? 0,
           };
         });
     },

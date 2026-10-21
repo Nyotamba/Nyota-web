@@ -125,6 +125,7 @@ export function createSupabaseDb(url: string, key: string): NyotaDb {
   const listeners = new Set<() => void>();
   const emit = () => listeners.forEach((l) => l());
   let session: Session | null | undefined; // undefined = not loaded yet
+  let accessToken: string | null = null; // kept for the keepalive "leave" request when a tab closes
   sb.auth.onAuthStateChange(() => {
     session = undefined;
     emit();
@@ -404,12 +405,12 @@ export function createSupabaseDb(url: string, key: string): NyotaDb {
       const rows = check<{
         id: string; company_id: string | null; company_name: string | null; title: string; kind: FairSession['kind'];
         description: string; starts_at: string; duration_min: number; capacity: number | null; registered: number;
-        is_registered: boolean; is_organiser: boolean;
+        attended?: number; is_registered: boolean; has_attended?: boolean; is_organiser: boolean;
       }[]>(await sb.rpc('list_sessions'));
       return rows.map((r) => ({
         id: r.id, companyId: r.company_id, companyName: r.company_name, title: r.title, kind: r.kind, description: r.description,
         startsAt: r.starts_at, durationMin: r.duration_min, capacity: r.capacity, registered: r.registered,
-        isRegistered: r.is_registered, isOrganiser: r.is_organiser,
+        attended: r.attended ?? 0, isRegistered: r.is_registered, hasAttended: Boolean(r.has_attended), isOrganiser: r.is_organiser,
       }));
     },
     async getSessionLink(sessionId) {
@@ -442,12 +443,46 @@ export function createSupabaseDb(url: string, key: string): NyotaDb {
     async listRegistrants(sessionId) {
       const rows = check<{
         candidate_id: string; name: string; school: string; programme: string; graduation_year: number | null;
-        linkedin_url: string | null; visible: boolean; registered_at: string; joined_at: string | null;
+        linkedin_url: string | null; visible: boolean; registered_at: string; joined_at: string | null; attended_at?: string | null;
+        left_at?: string | null; seconds_present?: number;
       }[]>(await sb.rpc('session_registrants', { sid: sessionId }));
       return rows.map((r) => ({
         candidateId: r.candidate_id, name: r.name, school: r.school, programme: r.programme, graduationYear: r.graduation_year,
         linkedinUrl: r.linkedin_url, visible: r.visible, registeredAt: r.registered_at, joinedAt: r.joined_at,
+        attendedAt: r.attended_at ?? null, leftAt: r.left_at ?? null, secondsPresent: r.seconds_present ?? 0,
       }));
+    },
+    async sessionHeartbeat(sessionId) {
+      const { data } = await sb.auth.getSession();
+      accessToken = data.session?.access_token ?? accessToken;
+      await sb.rpc('session_heartbeat', { sid: sessionId });
+    },
+    async leaveSession(sessionId, opts) {
+      if (opts?.keepalive && accessToken) {
+        // The tab is closing: a keepalive request still reaches the server.
+        fetch(`${url}/rest/v1/rpc/leave_session`, {
+          method: 'POST', keepalive: true,
+          headers: { apikey: key, Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sid: sessionId }),
+        }).catch(() => undefined);
+        return;
+      }
+      await sb.rpc('leave_session', { sid: sessionId });
+    },
+    async getAttendanceCode(sessionId) {
+      return maybe<string>(await sb.rpc('session_attendance_code', { sid: sessionId }));
+    },
+    async checkIn(sessionId, code) {
+      const result = check<string>(await sb.rpc('check_in_session', { sid: sessionId, code }));
+      if (result === 'present') {
+        emit();
+        return { present: true as const };
+      }
+      return { present: false as const, attemptsLeft: Number(result.split(':')[1] ?? 0) };
+    },
+    async markAttended(sessionId, candidateId, present) {
+      ok(await sb.rpc('mark_attended', { sid: sessionId, cid: candidateId, present }));
+      emit();
     },
 
     async listSlots(companyId) {
