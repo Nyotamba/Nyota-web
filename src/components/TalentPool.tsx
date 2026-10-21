@@ -76,7 +76,6 @@ export function TalentPool({ rows, forCompany = false }: { rows: TalentRow[]; fo
   const africaNames = new Set(AFRICA_COUNTRIES.map((c) => c.name));
   const africaXp = list.filter((r) => parseCountries(r.workedCountries).some((c) => africaNames.has(c))).length;
   const [mapView, setMapView] = useState<'worked' | 'targeted'>('worked');
-  const [mapScope, setMapScope] = useState<'africa' | 'world'>('africa');
   const women = list.filter((r) => r.gender === 'Woman').length;
   const answered = list.filter((r) => r.gender !== 'Not answered' && r.gender !== 'Prefer not to say').length;
 
@@ -138,13 +137,7 @@ export function TalentPool({ rows, forCompany = false }: { rows: TalentRow[]; fo
                   ))}
                 </div>
               </div>
-              <div role="group" aria-label="Map area" className="grid w-44 grid-cols-2 overflow-hidden rounded-field border border-line-strong">
-                {([['africa', 'Africa'], ['world', 'World']] as const).map(([v, label]) => (
-                  <button key={v} type="button" aria-pressed={mapScope === v} onClick={() => setMapScope(v)}
-                    className={`min-h-[44px] text-[13px] font-semibold ${mapScope === v ? 'bg-ink text-offwhite' : 'bg-surface text-ink hover:bg-offwhite'}`}>{label}</button>
-                ))}
-              </div>
-              <CountryMap counts={mapView === 'worked' ? worked : targeted} scope={mapScope} />
+              <CountryMap counts={mapView === 'worked' ? worked : targeted} />
             </div>
             <div className="flex flex-col gap-4 xl:col-span-5">
               <Bars title="Work experience" data={byExp} n={n} />
@@ -239,10 +232,14 @@ function Bars({ title, data, n, multi = false, limit = 8 }: { title: string; dat
   );
 }
 
-function CountryMap({ counts, scope }: { counts: Count[]; scope: 'africa' | 'world' }) {
-  const shapes = scope === 'africa' ? AFRICA_COUNTRIES : WORLD_COUNTRIES;
-  const [vw, vh] = scope === 'africa' ? [400, 420] : [800, 460];
-  const [hover, setHover] = useState<{ name: string; count: number; x: number; y: number } | null>(null);
+// One world map framed on Africa: Africa sits in the middle, Europe, the Middle East and the Americas stay in view.
+const FRAME = { x: 140, y: 10, w: 680, h: 450 };
+const AFRICA = new Set(AFRICA_COUNTRIES.map((c) => c.name));
+const EMPTY_ELSEWHERE = '#F7F4EC';
+
+function CountryMap({ counts }: { counts: Count[] }) {
+  const shapes = WORLD_COUNTRIES;
+  const [hover, setHover] = useState<{ name: string; count: number; x: number; y: number; w: number } | null>(null);
   const byName = new Map(counts);
   const max = Math.max(1, ...shapes.map((c) => byName.get(c.name) ?? 0));
   const step = (v: number) => (v === 0 ? EMPTY : RAMP[Math.min(RAMP.length - 1, Math.floor(((v - 1) / max) * RAMP.length))]);
@@ -250,17 +247,19 @@ function CountryMap({ counts, scope }: { counts: Count[]; scope: 'africa' | 'wor
   const top = counts.filter(([name]) => shapes.some((c) => c.name === name)).slice(0, 6);
 
   return (
-    <div className={`flex flex-col gap-4 ${scope === 'africa' ? 'lg:flex-row' : ''}`}>
-      <div className={`relative mx-auto w-full ${scope === 'africa' ? 'max-w-[420px]' : ''}`} onMouseLeave={() => setHover(null)}>
-        <svg viewBox={`0 0 ${vw} ${vh}`} className="h-auto w-full" role="img"
-          aria-label={`Map of ${scope === 'africa' ? 'Africa' : 'the world centred on Africa'} shaded by the number of students per country`}>
+    <div className="flex flex-col gap-4">
+      <div className="relative w-full overflow-hidden rounded-xl bg-[#FBFAF6]" onMouseLeave={() => setHover(null)}>
+        <svg viewBox={`${FRAME.x} ${FRAME.y} ${FRAME.w} ${FRAME.h}`} className="h-auto w-full" role="img"
+          aria-label="World map centred on Africa, shaded by the number of students per country">
           {shapes.map((c) => {
             const v = byName.get(c.name) ?? 0;
+            const africa = AFRICA.has(c.name);
             return (
-              <path key={c.name} d={c.d} fill={step(v)} stroke="#FFFFFF" strokeWidth={0.8} strokeLinejoin="round"
+              <path key={c.name} d={c.d} fill={v ? step(v) : africa ? EMPTY : EMPTY_ELSEWHERE}
+                stroke={africa ? '#FFFFFF' : '#EAE2CD'} strokeWidth={africa ? 0.8 : 0.5} strokeLinejoin="round"
                 onMouseMove={(e) => {
                   const box = (e.currentTarget.ownerSVGElement as SVGSVGElement).getBoundingClientRect();
-                  setHover({ name: c.name, count: v, x: e.clientX - box.left, y: e.clientY - box.top });
+                  setHover({ name: c.name, count: v, x: e.clientX - box.left, y: e.clientY - box.top, w: box.width });
                 }}>
                 <title>{`${c.name}: ${v} student${v === 1 ? '' : 's'}`}</title>
               </path>
@@ -268,8 +267,8 @@ function CountryMap({ counts, scope }: { counts: Count[]; scope: 'africa' | 'wor
           })}
         </svg>
         {hover && (
-          <div className="pointer-events-none absolute z-10 rounded-lg bg-ink px-3 py-2 text-[13px] text-offwhite shadow-lg"
-            style={{ left: Math.max(0, Math.min(hover.x + 12, (scope === 'africa' ? 300 : 620))), top: Math.max(hover.y - 40, 0) }}>
+          <div className="pointer-events-none absolute z-10 whitespace-nowrap rounded-lg bg-ink px-3 py-2 text-[13px] text-offwhite shadow-lg"
+            style={{ left: Math.max(0, Math.min(hover.x + 12, hover.w - 180)), top: Math.max(hover.y - 40, 0) }}>
             <strong>{hover.name}</strong> · {hover.count} student{hover.count === 1 ? '' : 's'}
           </div>
         )}
