@@ -61,8 +61,8 @@ export default function AdminAdmins() {
                 </span>
                 {a.isOwner && <Badge tone="neutral">Owner</Badge>}
                 {a.signedIn ? <Badge tone="green">Signed in</Badge> : <Badge tone="orange">Not signed in yet</Badge>}
-                {!a.signedIn && a.accessCode && <CopyCode code={a.accessCode} />}
-                {!a.signedIn && a.accessCode && <SendCodeButton email={a.email} kind="admin" onNotice={(msg, tone) => setNotice({ msg, tone: tone ?? 'green' })} />}
+                {(!a.signedIn || session?.isOwner) && a.accessCode && <CopyCode code={a.accessCode} />}
+                {(!a.signedIn || session?.isOwner) && a.accessCode && <SendCodeButton email={a.email} kind="admin" onNotice={(msg, tone) => setNotice({ msg, tone: tone ?? 'green' })} />}
                 {canManage && ownersOn && (
                   <button type="button" disabled={busy} className="btn-small text-[13px]"
                     onClick={() => run(() => db.setOwner(a.email, !a.isOwner), a.isOwner ? `${a.email} is no longer an owner` : `${a.email} is now an owner`)}>

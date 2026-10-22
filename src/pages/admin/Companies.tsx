@@ -119,8 +119,8 @@ function CompanyCard({ company, members, onNotice }: {
           {members.map((m) => (
             <li key={m.id} className="flex flex-wrap items-center gap-3 border-b border-line-soft py-2.5 text-sm last:border-b-0">
               <span className="min-w-0 flex-1 truncate font-semibold">{m.email}</span>
-              {m.status === 'Invited' && m.accessCode && <CopyCode code={m.accessCode} />}
-              {m.status === 'Invited' && m.accessCode && <SendCodeButton email={m.email} kind="company" onNotice={onNotice} />}
+              {(m.status === 'Invited' || isOwner) && m.accessCode && <CopyCode code={m.accessCode} />}
+              {(m.status === 'Invited' || isOwner) && m.accessCode && <SendCodeButton email={m.email} kind="company" onNotice={onNotice} />}
               <Badge tone={m.status === 'Accepted' ? 'green' : 'orange'}>{m.status === 'Accepted' ? 'Signed in' : 'Invited'}</Badge>
             </li>
           ))}
