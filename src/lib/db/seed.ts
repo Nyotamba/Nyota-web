@@ -31,10 +31,10 @@ export interface DemoState {
 const cv = (sizeKb: number, uploadedAt: string) => ({ name: 'cv.pdf', sizeBytes: sizeKb * 1024, uploadedAt });
 const consent = (givenAt: string) => ({ version: 'v1', givenAt });
 
-type Background = 'jobTitle' | 'employer' | 'yearsExperience' | 'pastSectors' | 'workedCountries' | 'gender';
+type Background = 'jobTitle' | 'employer' | 'yearsExperience' | 'pastSectors' | 'workedCountries' | 'gender' | 'nationalities';
 type Seed = Omit<Candidate, 'programme' | 'linkedinUrl' | Background> & Partial<Pick<Candidate, 'programme' | 'linkedinUrl' | Background>>;
 const c = (s: Seed): Candidate => ({
-  programme: 'Full-time MBA', linkedinUrl: '', jobTitle: '', employer: '', yearsExperience: null, pastSectors: [], workedCountries: '', gender: null, ...s,
+  programme: 'Full-time MBA', linkedinUrl: '', jobTitle: '', employer: '', yearsExperience: null, pastSectors: [], workedCountries: '', gender: null, nationalities: '', ...s,
 });
 
 export function createSeed(): DemoState {

@@ -495,7 +495,7 @@ export function createDemoDb(space = ''): NyotaDb {
         school: c.school, programme: c.programme, graduationYear: c.graduationYear || null, gender: c.gender ?? 'Not answered',
         yearsExperience: c.yearsExperience ?? null, pastSectors: c.pastSectors ?? [], functions: c.functions, sectors: c.sectors,
         countries: c.countries, workedCountries: c.workedCountries ?? '', languages: c.languages, positionType: c.positionType,
-        complete: isProfileComplete(c), consented: Boolean(c.consent), visible: isVisible(c),
+        complete: isProfileComplete(c), consented: Boolean(c.consent), visible: isVisible(c), nationalities: c.nationalities ?? '',
       }));
     },
     async getDashboard() {
@@ -821,7 +821,7 @@ export function createDemoDb(space = ''): NyotaDb {
     async getCompanyTalentPool() {
       if (session?.role === 'company' && !state.companies.find((c) => c.id === session?.companyId)?.premium) throw new Error('premium');
       return state.candidates.filter(isVisible).map((c) => ({
-        school: c.school, programme: c.programme, graduationYear: c.graduationYear, gender: 'Not answered' as const,
+        school: c.school, programme: c.programme, graduationYear: c.graduationYear, gender: 'Not answered' as const, nationalities: '',
         yearsExperience: c.yearsExperience, pastSectors: c.pastSectors, functions: c.functions, sectors: c.sectors,
         countries: c.countries, workedCountries: c.workedCountries, languages: c.languages, positionType: c.positionType,
         complete: true, consented: true, visible: true,

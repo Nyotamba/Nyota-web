@@ -76,6 +76,7 @@ function toCandidate(r: CandidateRow, consent: Consent | null, email = ''): Cand
     pastSectors: r.past_sectors ?? [],
     workedCountries: r.worked_countries ?? '',
     gender: null,
+    nationalities: '',
     cv: r.cv_path ? { name: 'cv.pdf', sizeBytes: r.cv_size_bytes ?? 0, uploadedAt: r.cv_uploaded_at ?? '' } : null,
     consent,
     verifiedAt: r.verified_at,
@@ -281,8 +282,9 @@ export function createSupabaseDb(url: string, key: string): NyotaDb {
       const consent = s?.role === 'company' ? IMPLIED_CONSENT : await activeConsent(id);
       const c = toCandidate(row, consent, s?.candidateId === id ? s.email : '');
       if (s?.candidateId === id) {
-        const { data } = await sb.from('candidate_private').select('gender').eq('candidate_id', id).maybeSingle();
+        const { data } = await sb.from('candidate_private').select('gender,nationalities').eq('candidate_id', id).maybeSingle();
         c.gender = (data?.gender as Gender | undefined) ?? null;
+        c.nationalities = (data?.nationalities as string | undefined) ?? '';
       }
       return c;
     },
@@ -318,10 +320,11 @@ export function createSupabaseDb(url: string, key: string): NyotaDb {
       ) as unknown as CandidateRow;
       // Gender lives in a separate table companies cannot read (migration 009); skip quietly if it is not there yet.
       if (session?.role !== 'admin') {
-        await sb.from('candidate_private').upsert({ candidate_id: candidateId, gender: input.gender, updated_at: new Date().toISOString() });
+        await sb.from('candidate_private').upsert({ candidate_id: candidateId, gender: input.gender, nationalities: input.nationalities.trim(), updated_at: new Date().toISOString() });
       }
       const saved = toCandidate(row, await activeConsent(candidateId), session?.email ?? '');
       saved.gender = input.gender;
+      saved.nationalities = input.nationalities.trim();
       return changed(saved);
     },
     async setCv(candidateId, file) {
@@ -610,13 +613,13 @@ export function createSupabaseDb(url: string, key: string): NyotaDb {
       const rows = check<{
         school: string; programme: string; graduation_year: number | null; gender: TalentRow['gender']; years_experience: number | null;
         past_sectors: string[]; functions: string[]; sectors: string[]; countries: string; worked_countries: string; languages: string[];
-        position_type: TalentRow['positionType']; complete: boolean; consented: boolean; visible: boolean;
+        position_type: TalentRow['positionType']; complete: boolean; consented: boolean; visible: boolean; nationalities?: string;
       }[]>(await sb.rpc('admin_talent_pool'));
       return rows.map((r) => ({
         school: r.school, programme: r.programme, graduationYear: r.graduation_year, gender: r.gender, yearsExperience: r.years_experience,
         pastSectors: r.past_sectors ?? [], functions: r.functions ?? [], sectors: r.sectors ?? [], countries: r.countries ?? '',
         workedCountries: r.worked_countries ?? '', languages: r.languages ?? [], positionType: r.position_type,
-        complete: r.complete, consented: r.consented, visible: r.visible,
+        complete: r.complete, consented: r.consented, visible: r.visible, nationalities: r.nationalities ?? '',
       }));
     },
     async getDashboard() {
@@ -808,7 +811,7 @@ export function createSupabaseDb(url: string, key: string): NyotaDb {
         functions: string[]; sectors: string[]; countries: string; worked_countries: string; languages: string[]; position_type: TalentRow['positionType'];
       }[]>(await sb.rpc('company_talent_pool'));
       return rows.map((r) => ({
-        school: r.school, programme: r.programme, graduationYear: r.graduation_year, gender: 'Not answered' as const, yearsExperience: r.years_experience,
+        school: r.school, programme: r.programme, graduationYear: r.graduation_year, gender: 'Not answered' as const, nationalities: '', yearsExperience: r.years_experience,
         pastSectors: r.past_sectors ?? [], functions: r.functions ?? [], sectors: r.sectors ?? [], countries: r.countries ?? '',
         workedCountries: r.worked_countries ?? '', languages: r.languages ?? [], positionType: r.position_type,
         complete: true, consented: true, visible: true,

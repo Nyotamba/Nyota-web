@@ -163,7 +163,7 @@ export default function Landing() {
           ))}
         </div>
         <p className="m-0 rounded-[14px] border border-line bg-surface px-6 py-5 text-[15px] text-muted">
-          We never ask for ethnicity, religion, health, nationality or immigration status.
+          We never ask for ethnicity, religion, health, passport or immigration status. Nationality is optional and only counted anonymously: companies never see it.
         </p>
         <p className="m-0 max-w-[90ch] text-[15px] leading-relaxed text-muted">
           To improve the fair, the club records which profiles companies open and search for, and which companies students click

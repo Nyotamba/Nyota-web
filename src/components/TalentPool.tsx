@@ -62,6 +62,7 @@ export function TalentPool({ rows, forCompany = false }: { rows: TalentRow[]; fo
   const n = list.length;
 
   const byGender = tally(list.map((r) => r.gender));
+  const nationalities = tally(list.flatMap((r) => (r.nationalities ? r.nationalities.split(/,|;|\/| and /i).map((x) => x.trim()).filter(Boolean) : ['Not answered'])));
   const byYear = tally(list.map((r) => (r.graduationYear ? `Class of ${r.graduationYear}` : 'Not answered'))).sort((a, b) => a[0].localeCompare(b[0]));
   const bySchool = tally(list.map((r) => r.school || 'Not answered'));
   const byProgramme = tally(list.map((r) => r.programme || 'Not answered'));
@@ -86,7 +87,7 @@ export function TalentPool({ rows, forCompany = false }: { rows: TalentRow[]; fo
         <p className="m-0 max-w-[75ch] text-sm text-muted">
           {forCompany
             ? 'The verified profiles you can recruit from: their background first, then what they look for. Anonymous counts.'
-            : 'Who the students are: their professional background first, then what they look for. Anonymous counts; gender is optional and never shown to companies, and Nyota never asks for nationality or origin.'}
+            : 'Who the students are: their professional background first, then what they look for. Anonymous counts. Gender and nationality are optional, seen by admins only, and never shown to companies.'}
         </p>
       </div>
 
@@ -152,6 +153,7 @@ export function TalentPool({ rows, forCompany = false }: { rows: TalentRow[]; fo
             <Bars title="Programme" data={byProgramme} n={n} />
             <Bars title="Class" data={byYear} n={n} />
             {!forCompany && <Bars title="Gender" data={byGender} n={n} />}
+            {!forCompany && <Bars title="Nationality (optional)" data={nationalities} n={n} multi limit={8} />}
             <Bars title="Languages" data={languages} n={n} multi />
           </div>
 

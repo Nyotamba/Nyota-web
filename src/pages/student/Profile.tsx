@@ -22,7 +22,7 @@ const toInput = (c: Candidate): CandidateProfileInput => ({
   linkedinUrl: c.linkedinUrl, functions: c.functions, sectors: c.sectors, regions: c.regions, countries: c.countries,
   languages: c.languages, positionType: c.positionType, availableFrom: c.availableFrom, story: c.story,
   jobTitle: c.jobTitle, employer: c.employer, yearsExperience: c.yearsExperience, pastSectors: c.pastSectors, workedCountries: c.workedCountries,
-  gender: c.gender,
+  gender: c.gender, nationalities: c.nationalities ?? '',
 });
 const OTHER_SCHOOL = '__other__';
 
@@ -99,7 +99,7 @@ export function ProfileEditor({ id, admin = false }: { id: string; admin?: boole
           <StatusCard c={cand} />
           {!admin && <ReachCard c={cand} />}
           <p className="m-0 text-sm leading-[1.55] text-muted">
-            We never ask for ethnicity, religion, health, nationality or immigration status. Please leave them out of your CV too.
+            We never ask for ethnicity, religion, health, passport or immigration status. Please leave them out of your CV too.
           </p>
         </aside>
 
@@ -135,6 +135,16 @@ export function ProfileEditor({ id, admin = false }: { id: string; admin?: boole
                 Used only by the club for anonymous statistics on the talent pool. Companies never see it.
               </span>
             </label>}
+            {!admin && (
+              <label className="label sm:col-span-2" htmlFor="p-nat">Nationality <span className="font-normal text-muted">(optional)</span>
+                <input id="p-nat" className="field" maxLength={200} placeholder="e.g. Senegalese, French" value={form.nationalities}
+                  onChange={(e) => set('nationalities', e.target.value)} />
+                <span className="text-[13px] font-normal leading-snug text-muted">
+                  Used only by the club for anonymous statistics on the talent pool. Companies never see it, and it is never used to filter
+                  profiles. We never ask for your passport or immigration status.
+                </span>
+              </label>
+            )}
             <label className="label sm:col-span-2" htmlFor="p-li">LinkedIn URL<input id="p-li" className="field" type="url" placeholder="https://www.linkedin.com/in/…" value={form.linkedinUrl} onChange={(e) => set('linkedinUrl', e.target.value)} /></label>
           </Fieldset>
 
@@ -158,7 +168,7 @@ export function ProfileEditor({ id, admin = false }: { id: string; admin?: boole
               </label>
             </div>
             <ChipGroup label="Sectors you have worked in" options={SECTORS} value={form.pastSectors} onChange={(v) => set('pastSectors', v)} />
-            <p className="m-0 text-[13px] text-muted">Your professional background only. We never ask where you are from.</p>
+            <p className="m-0 text-[13px] text-muted">Your professional background: what you have done, and where.</p>
           </Fieldset>
 
           <Fieldset legend="What you are looking for" className="flex flex-col gap-6">

@@ -32,13 +32,14 @@ export interface Candidate {
   positionType: PositionType;
   availableFrom: string; // YYYY-MM
   story: string;
-  // Professional background (never nationality or origin)
+  // Professional background
   jobTitle: string; // current or most recent role
   employer: string;
   yearsExperience: number | null;
   pastSectors: string[];
   workedCountries: string;
   gender: Gender | null; // filled only for the student's own profile
+  nationalities: string; // optional, own profile only; admins see anonymous counts, companies never
   cv: CvFile | null;
   consent: Consent | null;
   verifiedAt: string | null;
@@ -303,6 +304,7 @@ export interface TalentRow {
   programme: string;
   graduationYear: number | null;
   gender: Gender | 'Not answered';
+  nationalities: string; // admin talent pool only; empty for companies
   yearsExperience: number | null;
   pastSectors: string[];
   functions: string[];
