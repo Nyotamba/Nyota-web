@@ -60,7 +60,7 @@ export interface Company {
   hiringFor?: string[];
   hiringCountries?: string;
   size?: string;
-  premium?: boolean; // Nyota Premium: advanced insights, switched on by the club
+  premium?: boolean; // reserved for a later version: unlocks the advanced company insights
 }
 
 /** Something a company or a student did, logged for the admin Insights page (12 months, aggregates only). */
@@ -84,6 +84,23 @@ export interface InsightSignal {
   workedCountries: string;
   targetCountries: string;
   detail: Record<string, unknown>;
+}
+
+/** A company asking to join the fair. It gets an access code only once an admin approves it. */
+export interface CompanyRegistrationInput {
+  companyName: string;
+  contactName: string;
+  email: string;
+  jobTitle: string;
+  website: string;
+  sector: string;
+  hiringCountries: string;
+  message: string;
+}
+export interface CompanyRegistration extends CompanyRegistrationInput {
+  id: string;
+  status: 'pending' | 'approved' | 'rejected';
+  createdAt: string;
 }
 
 /** After the fair: what came of it, ticked by the company. */
@@ -154,7 +171,7 @@ export interface SchoolEntry {
 
 export interface Partner {
   name: string;
-  logoUrl: string;
+  logoUrl: string | null; // organising schools can show by name until their logo is uploaded
 }
 
 export type OptionKind = 'function' | 'sector' | 'language';
@@ -298,7 +315,7 @@ export interface StudentInterview {
   freeSlots: { id: string; startsAt: string; durationMin: number }[];
 }
 
-/** One anonymous row per student for the dashboard (no name, e-mail or CV). */
+/** One anonymous row per student for the dashboard (no name, email or CV). */
 export interface TalentRow {
   school: string;
   programme: string;
@@ -325,7 +342,7 @@ export interface SiteSettings {
   forum_venue: string;
   forum_year: string;
   club_email: string;
-  retention_months: string;
+  instagram_url: string; // optional: shown in the footer once Nyota has its own account
   consent_version: string;
   consent_text: string;
   hero_title: string;
@@ -364,6 +381,7 @@ export interface CandidateFilters {
   language: string; // '' = any
   positionType: 'Internship' | 'Full-time' | 'Any';
   availableBy: string; // YYYY-MM or ''
+  country: string; // '' = any: worked there, wants to work there, or open to any country
   minYears: number; // 0 = any experience
   sort: 'updated' | 'graduation' | 'availability';
 }
@@ -379,7 +397,7 @@ export interface NyotaDb {
   subscribe(listener: () => void): () => void;
 
   getSession(): Promise<Session | null>;
-  /** Live only: e-mails a one-time sign-in link. */
+  /** Live only: emails a one-time sign-in link. */
   sendMagicLink(email: string): Promise<void>;
   /** Live only: providers switched on in Supabase (the sign-in page shows only these). */
   enabledProviders(): Promise<OAuthProvider[]>;
@@ -390,11 +408,11 @@ export interface NyotaDb {
   /** Why the last sign-in link failed (expired, already used…), once; null otherwise. */
   takeLinkError(): string | null;
   signInDemo(role: Role): Promise<Session>;
-  /** Live only: e-mail + password. */
+  /** Live only: email + password. */
   signInWithPassword(email: string, password: string): Promise<void>;
-  /** Live only. Returns needsConfirmation when Supabase still requires an e-mail confirmation. */
+  /** Live only. Returns needsConfirmation when Supabase still requires an email confirmation. */
   signUpWithPassword(email: string, password: string, accessCode?: string): Promise<{ needsConfirmation: boolean }>;
-  /** Live only: e-mails a link that signs the person in and lets them choose a new password. */
+  /** Live only: emails a link that signs the person in and lets them choose a new password. */
   sendPasswordReset(email: string): Promise<void>;
   /** True once, right after the visitor came back from a password-reset link. */
   takePasswordReset(): boolean;
@@ -435,7 +453,6 @@ export interface NyotaDb {
   /** PNG, JPEG or WebP, 1 MB max. */
   uploadLogo(target: LogoTarget, file: File): Promise<void>;
   setShowOnSite(target: LogoTarget, show: boolean): Promise<void>;
-  setPremium(companyId: string, premium: boolean): Promise<void>; // admins
   /** Logos chosen for the homepage (public). */
   getPartners(): Promise<{ companies: Partner[]; schools: Partner[] }>;
   removeSchool(name: string): Promise<void>;
@@ -484,13 +501,17 @@ export interface NyotaDb {
   deleteCompany(companyId: string): Promise<void>;
   getSettings(): Promise<Partial<SiteSettings>>;
   saveSettings(values: Partial<SiteSettings>): Promise<void>;
-  /** E-mails someone their access code (new admin or invited company member). */
+  /** Emails someone their access code (new admin or invited company member). */
   sendAccessCode(email: string, kind: 'admin' | 'company'): Promise<void>;
   addAdmin(email: string): Promise<void>;
   removeAdmin(email: string): Promise<void>;
   getDashboard(): Promise<Dashboard>;
   getTalentPool(): Promise<TalentRow[]>;
   getCompany(id: string): Promise<Company | null>;
+  registerCompany(input: CompanyRegistrationInput): Promise<void>; // public form
+  listCompanyRegistrations(): Promise<CompanyRegistration[]>; // admins
+  approveCompanyRegistration(id: string): Promise<{ email: string; emailSent: boolean }>; // creates the company and its access code
+  rejectCompanyRegistration(id: string): Promise<void>;
   listFairCompanies(): Promise<FairCompany[]>;
   saveCompanyPage(companyId: string, page: CompanyPage): Promise<void>;
   getCompanyDashboard(companyId: string): Promise<CompanyDashboard>;
@@ -505,6 +526,6 @@ export interface NyotaDb {
   getMyProfileStats(): Promise<MyProfileStats | null>; // the signed-in student
   getInsightSignals(): Promise<InsightSignal[]>; // admins only
   listInvitations(): Promise<Invitation[]>;
-  /** Records the invitation and, on the live site, e-mails the person a sign-in link. */
+  /** Records the invitation and, on the live site, emails the person a sign-in link. */
   inviteCompanyMember(input: { companyId?: string; newCompanyName?: string; email: string }): Promise<Invitation & { emailSent: boolean }>;
 }

@@ -4,7 +4,7 @@ import { StudentShell } from './StudentShell';
 import { db } from '../../lib/db';
 import { useDbQuery } from '../../lib/useDb';
 import { fairDay, fairTimeRange, joinWindow } from '../../lib/time';
-import { CLUB_NAME } from '../../config/constants';
+import { ORGANISER_NAME } from '../../config/constants';
 
 const BEAT_MS = 60_000;
 
@@ -56,7 +56,7 @@ export default function SessionRoom() {
         {s && (
           <>
             <div className="flex flex-col gap-1">
-              <span className="text-sm font-semibold text-muted">{s.companyName ?? CLUB_NAME} · {s.kind}</span>
+              <span className="text-sm font-semibold text-muted">{s.companyName ?? ORGANISER_NAME} · {s.kind}</span>
               <h1 className="m-0 font-display text-[36px] leading-[0.95] tracking-display md:text-[44px]">{s.title}</h1>
               <span className="text-[15px] tabular-nums text-muted">{fairDay(s.startsAt)} · {fairTimeRange(s.startsAt, s.durationMin)}</span>
             </div>

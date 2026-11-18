@@ -1,5 +1,5 @@
 // Fictional demo data — mirrors supabase/seed.sql. Never ship it to production.
-import type { Candidate, Company, Invitation, InterviewRequest, CvView, InterviewSlot, OpeningInput, SessionInput } from './types';
+import type { Candidate, Company, CompanyRegistration, Invitation, InterviewRequest, CvView, InterviewSlot, OpeningInput, SessionInput } from './types';
 
 export interface DemoSession extends SessionInput {
   id: string;
@@ -18,6 +18,7 @@ export interface DemoState {
   slots?: InterviewSlot[];
   openings?: (OpeningInput & { id: string; companyId: string; createdAt: string })[];
   openingInterests?: { openingId: string; candidateId: string; createdAt: string }[];
+  registrations2027?: CompanyRegistration[];
   outcomes?: { companyId: string; candidateId: string; status: 'offer' | 'hired'; updatedAt: string }[];
   events?: { kind: string; at: string; companyId: string | null; candidateId: string | null; detail: Record<string, unknown> }[];
   candidates: Candidate[];

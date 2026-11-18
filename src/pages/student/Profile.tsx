@@ -122,7 +122,7 @@ export function ProfileEditor({ id, admin = false }: { id: string; admin?: boole
               )}
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <label className="label" htmlFor="p-prog">Program<input id="p-prog" className="field" value={form.programme} onChange={(e) => set('programme', e.target.value)} /></label>
+              <label className="label" htmlFor="p-prog">Programme<input id="p-prog" className="field" value={form.programme} onChange={(e) => set('programme', e.target.value)} /></label>
               <label className="label" htmlFor="p-grad">Graduation<input id="p-grad" className="field" type="number" min={2025} max={2032} value={form.graduationYear} onChange={(e) => set('graduationYear', Number(e.target.value))} /></label>
             </div>
             {!admin && <label className="label sm:col-span-2" htmlFor="p-gender">Gender <span className="font-normal text-muted">(optional)</span>
@@ -132,7 +132,7 @@ export function ProfileEditor({ id, admin = false }: { id: string; admin?: boole
                 {(['Woman', 'Man', 'Non-binary', 'Prefer not to say'] as Gender[]).map((g) => <option key={g}>{g}</option>)}
               </select>
               <span className="text-[13px] font-normal leading-snug text-muted">
-                Used only by the club for anonymous statistics on the talent pool. Companies never see it.
+                Used only for anonymous statistics on the talent pool. Companies never see it.
               </span>
             </label>}
             {!admin && (
@@ -140,7 +140,7 @@ export function ProfileEditor({ id, admin = false }: { id: string; admin?: boole
                 <input id="p-nat" className="field" maxLength={200} placeholder="e.g. Senegalese, French" value={form.nationalities}
                   onChange={(e) => set('nationalities', e.target.value)} />
                 <span className="text-[13px] font-normal leading-snug text-muted">
-                  Used only by the club for anonymous statistics on the talent pool. Companies never see it, and it is never used to filter
+                  Used only for anonymous statistics on the talent pool. Companies never see it, and it is never used to filter
                   profiles. We never ask for your passport or immigration status.
                 </span>
               </label>
@@ -236,7 +236,7 @@ export function ProfileEditor({ id, admin = false }: { id: string; admin?: boole
             )}
             {confirmWithdraw && (
               <div role="alert" className="flex flex-col gap-3 rounded-xl bg-offwhite p-4 text-sm">
-                <p className="m-0 leading-relaxed">Withdrawing hides your profile from every company straight away. If you consent again, the club will verify your profile again.</p>
+                <p className="m-0 leading-relaxed">Withdrawing hides your profile from every company straight away. If you consent again, your club will verify your profile again.</p>
                 <div className="flex flex-wrap gap-2">
                   <button type="button" className="btn-small border-danger text-danger hover:border-danger hover:text-danger" onClick={withdraw}>Withdraw consent</button>
                   <button type="button" className="btn-small" onClick={() => setConfirmWithdraw(false)}>Keep sharing</button>
@@ -271,7 +271,7 @@ function StatusCard({ c }: { c: Candidate }) {
   const steps = [
     { label: 'Profile complete', done: isProfileComplete(c) },
     { label: 'Consent given', done: Boolean(c.consent) },
-    { label: 'Verified by the club', done: Boolean(c.verifiedAt) },
+    { label: 'Verified by your club', done: Boolean(c.verifiedAt) },
     { label: 'Visible to companies', done: isVisible(c) },
   ];
   const current = steps.findIndex((s) => !s.done);
@@ -279,7 +279,7 @@ function StatusCard({ c }: { c: Candidate }) {
     current === -1 ? ['Visible to companies', 'Invited companies can now see your profile.']
     : current === 0 ? ['Profile incomplete', 'Fill in your targets and upload your CV.']
     : current === 1 ? ['Not shared yet', 'Give your consent below to share your profile.']
-    : ['Waiting for verification', 'Companies will see your profile once the club has verified it.'];
+    : ['Waiting for verification', 'Companies will see your profile once your club has verified it.'];
 
   return (
     <div className="card flex flex-col gap-5 p-7">

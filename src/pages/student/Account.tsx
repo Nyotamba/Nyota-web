@@ -38,9 +38,9 @@ export default function StudentAccount() {
           </div>
         </div>
         <form onSubmit={redeem} className="card flex max-w-[520px] flex-col gap-4 p-7">
-          <h2 className="m-0 text-xl font-bold">I represent a company, or I am on the club team</h2>
+          <h2 className="m-0 text-xl font-bold">I represent a company, or I am on the Nyota team</h2>
           <p className="m-0 text-sm leading-relaxed text-muted">
-            Enter the access code the IESE Africa Business Club sent you. It only works with the e-mail address you were invited with.
+            Enter the access code we sent you. It only works with the email address you were invited with.
             Students do not need a code.
           </p>
           <label className="label" htmlFor="acc-code">Access code

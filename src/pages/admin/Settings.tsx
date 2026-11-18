@@ -6,13 +6,13 @@ import { useSettingsQuery } from '../../lib/useSettings';
 
 const FIELDS: { key: keyof SiteSettings; label: string; help?: string; long?: boolean }[] = [
   { key: 'forum_name', label: 'Fair name' },
-  { key: 'forum_date', label: 'Dates', help: 'Shown as written, e.g. 16–19 February 2027.' },
+  { key: 'forum_date', label: 'Dates', help: 'Shown as written, e.g. 16–17 February 2027.' },
   { key: 'forum_venue', label: 'Venue', help: 'e.g. Online, or Room | Campus | City.' },
   { key: 'forum_year', label: 'Year' },
-  { key: 'club_email', label: 'Club contact e-mail' },
-  { key: 'retention_months', label: 'Months before profiles are deleted after the fair', help: 'Must match the privacy notice approved by the DPO.' },
+  { key: 'club_email', label: 'Contact email' },
+  { key: 'instagram_url', label: 'Instagram link', help: 'Nyota’s own account. Leave empty to hide it from the footer.' },
   { key: 'hero_title', label: 'Homepage headline', help: 'The last two words are highlighted in orange.' },
-  { key: 'hero_text', label: 'Homepage introduction', long: true },
+  { key: 'hero_text', label: 'Homepage introduction', long: true, help: '{schools} is replaced by the organising schools (Lists > Schools > Show on homepage).' },
 ];
 
 /** Owners only: fair details, homepage texts and the consent text students accept. */

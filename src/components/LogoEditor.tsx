@@ -8,6 +8,8 @@ export function LogoEditor({ target, name, logoUrl, showOnSite, onNotice }: {
 }) {
   const input = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
+  // Organising schools can show by name before their logo arrives; companies need a confirmed logo.
+  const canShow = Boolean(logoUrl) || target.kind === 'school';
   const id = `logo-${target.kind}-${target.kind === 'company' ? target.id : target.name}`.replace(/\W+/g, '-');
 
   const upload = async (e: ChangeEvent<HTMLInputElement>) => {
@@ -43,8 +45,8 @@ export function LogoEditor({ target, name, logoUrl, showOnSite, onNotice }: {
       <button type="button" disabled={busy} className="btn-small text-[13px]" onClick={() => input.current?.click()}>
         {busy ? 'Uploading…' : logoUrl ? 'Replace logo' : 'Upload logo'}
       </button>
-      <label htmlFor={`${id}-show`} className={`flex min-h-[44px] items-center gap-2 text-[13px] font-semibold ${logoUrl ? '' : 'text-muted'}`}>
-        <input id={`${id}-show`} type="checkbox" className="size-[18px] accent-ink" disabled={!logoUrl}
+      <label htmlFor={`${id}-show`} className={`flex min-h-[44px] items-center gap-2 text-[13px] font-semibold ${canShow ? '' : 'text-muted'}`}>
+        <input id={`${id}-show`} type="checkbox" className="size-[18px] accent-ink" disabled={!canShow}
           checked={Boolean(showOnSite)} onChange={(e) => toggle(e.target.checked)} />
         Show on homepage
       </label>

@@ -10,6 +10,7 @@ import { useSession } from '../../App';
 import { applyFilters, emptyFilters } from '../../lib/candidate';
 import { PAGE_SIZE } from '../../config/constants';
 import { useProfileOptions } from '../../lib/useOptions';
+import { parseCountries } from '../../components/TalentPool';
 
 export default function CompanyCandidates() {
   const companyId = useSession()!.companyId!;
@@ -32,6 +33,7 @@ export default function CompanyCandidates() {
   const [page, setPage] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
 
+  const COUNTRIES = useMemo(() => [...new Set((all ?? []).flatMap((c) => [...parseCountries(c.countries), ...parseCountries(c.workedCountries)]))].sort(), [all]);
   const update = (patch: Partial<CandidateFilters>) => { setF({ ...f, ...patch }); setPage(1); };
   const pool = useMemo(() => (all ?? []).filter((c) =>
     view === 'shortlist' ? shortlist.includes(c.id) : view === 'interested' ? interest.has(c.id) : true), [all, shortlist, interest, view]);
@@ -39,17 +41,17 @@ export default function CompanyCandidates() {
   const pages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
   const current = Math.min(page, pages);
   const visible = rows.slice((current - 1) * PAGE_SIZE, current * PAGE_SIZE);
-  const activeCount = f.functions.length + (f.minYears ? 1 : 0) + [f.search, f.sector, f.language, f.availableBy].filter(Boolean).length + (f.positionType !== 'Any' ? 1 : 0);
+  const activeCount = f.functions.length + (f.minYears ? 1 : 0) + [f.search, f.sector, f.language, f.country, f.availableBy].filter(Boolean).length + (f.positionType !== 'Any' ? 1 : 0);
   // Insights: what companies search for, and whether they find it. The free-text search itself is never stored.
-  const structured = f.functions.length + (f.minYears ? 1 : 0) + [f.sector, f.language, f.availableBy].filter(Boolean).length + (f.positionType !== 'Any' ? 1 : 0);
+  const structured = f.functions.length + (f.minYears ? 1 : 0) + [f.sector, f.language, f.country, f.availableBy].filter(Boolean).length + (f.positionType !== 'Any' ? 1 : 0);
   useEffect(() => {
     if (!all || structured === 0) return;
     const t = setTimeout(() => db.logEvent('filter_search', null, {
-      functions: f.functions, sector: f.sector || null, language: f.language || null, minYears: f.minYears || null,
+      functions: f.functions, sector: f.sector || null, language: f.language || null, country: f.country || null, minYears: f.minYears || null,
       positionType: f.positionType, availableBy: f.availableBy || null, results: rows.length,
     }), 2500);
     return () => clearTimeout(t);
-  }, [f.functions, f.sector, f.language, f.minYears, f.positionType, f.availableBy, structured, rows.length, all]);
+  }, [f.functions, f.sector, f.language, f.country, f.minYears, f.positionType, f.availableBy, structured, rows.length, all]);
 
   return (
     <CompanyShell>
@@ -84,6 +86,11 @@ export default function CompanyCandidates() {
           <label className="label" htmlFor="f-lang">Language
             <select id="f-lang" className="field text-[15px]" value={f.language} onChange={(e) => update({ language: e.target.value })}>
               <option value="">Any language</option>{LANGUAGES.map((s) => <option key={s}>{s}</option>)}
+            </select>
+          </label>
+          <label className="label" htmlFor="f-country">Country
+            <select id="f-country" className="field text-[15px]" value={f.country} onChange={(e) => update({ country: e.target.value })}>
+              <option value="">Any country</option>{COUNTRIES.map((s) => <option key={s}>{s}</option>)}
             </select>
           </label>
           <div role="group" aria-label="Position type" className="flex flex-col gap-2.5">

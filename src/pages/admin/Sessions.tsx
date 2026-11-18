@@ -30,7 +30,7 @@ export default function AdminSessions() {
           </div>
           {sessions ? (
             <SessionList sessions={sessions} viewer="admin" onEdit={setEditing} onNotice={say} profileLinkBase="/admin/review"
-              empty="No session yet. Create the first one with the form." />
+              empty="No sessions yet. Use the form to create the first one." />
           ) : (
             <p className="text-muted">Loading…</p>
           )}

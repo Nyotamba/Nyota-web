@@ -6,7 +6,7 @@ import { useSession } from '../App';
 
 const HOME = { student: '/student/profile', company: '/company/candidates', admin: '/admin' } as const;
 
-/** Choose a new password: after a reset e-mail, or any time from the account. */
+/** Choose a new password: after a reset email, or any time from the account. */
 export default function SetPassword() {
   const session = useSession();
   const navigate = useNavigate();

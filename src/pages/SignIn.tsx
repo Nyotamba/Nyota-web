@@ -46,7 +46,7 @@ export default function SignIn() {
     if (mode === 'create') {
       return run(async () => {
         const { needsConfirmation } = await db.signUpWithPassword(email, password, code);
-        if (needsConfirmation) setInfo(`Account created. Confirm it with the e-mail we sent to ${email}, then sign in here.`);
+        if (needsConfirmation) setInfo(`Account created. Confirm it with the email we sent to ${email}, then sign in here.`);
         else await goHome();
       });
     }
@@ -76,8 +76,8 @@ export default function SignIn() {
           <div className="flex flex-col gap-3">
             <h1 className="m-0 font-display text-[40px] font-normal tracking-display">Sign in or create your account</h1>
             <p className="m-0 text-base leading-relaxed text-muted">
-              Students: create your account with your school e-mail. Companies and club team: use the e-mail you were invited with and
-              the access code the club gave you.
+              Students: create your account with your school email. Companies and club teams: use the email you registered with and
+              the access code we sent you.
             </p>
           </div>
 
@@ -91,7 +91,7 @@ export default function SignIn() {
                     </button>
                   ))}
                   <div className="flex items-center gap-3 text-[13px] text-muted">
-                    <span className="h-px flex-1 bg-line" />or with your e-mail<span className="h-px flex-1 bg-line" />
+                    <span className="h-px flex-1 bg-line" />or with your email<span className="h-px flex-1 bg-line" />
                   </div>
                 </div>
               )}
@@ -107,7 +107,7 @@ export default function SignIn() {
                     ))}
                   </div>
                 )}
-                <label className="label" htmlFor="signin-email">E-mail
+                <label className="label" htmlFor="signin-email">Email
                   <input id="signin-email" type="email" required autoComplete="email" className="field" placeholder="name@school.edu"
                     value={email} onChange={(e) => setEmail(e.target.value)} />
                 </label>

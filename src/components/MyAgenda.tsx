@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import type { FairSession, StudentInterview } from '../lib/db';
 import { fairDayKey, isoToFairInput, joinWindow } from '../lib/time';
 import { downloadIcs, type CalendarEvent } from '../lib/calendar';
-import { CLUB_NAME } from '../config/constants';
+import { ORGANISER_NAME } from '../config/constants';
 import { Badge } from './Badge';
 import { Calendar } from './icons';
 
@@ -36,7 +36,7 @@ const dayLabel = (iso: string, opts: Intl.DateTimeFormatOptions) =>
 export function agendaItems(sessions: FairSession[], interviews: StudentInterview[]): Item[] {
   return [
     ...sessions.filter((s) => s.isRegistered).map((s) => ({
-      key: s.id, kind: 'Session' as const, title: s.title, host: s.companyName ?? CLUB_NAME,
+      key: s.id, kind: 'Session' as const, title: s.title, host: s.companyName ?? ORGANISER_NAME,
       startsAt: s.startsAt, durationMin: s.durationMin, sessionId: s.id, attended: s.hasAttended,
     })),
     ...interviews.filter((i) => i.booked).map((i) => ({

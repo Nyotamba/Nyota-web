@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { db, type Company, type FairSession, type SessionKind } from '../lib/db';
 import { fairInputToIso, isoToFairInput, tzLabel } from '../lib/time';
-import { CLUB_NAME } from '../config/constants';
+import { ORGANISER_NAME } from '../config/constants';
 
 const KINDS: SessionKind[] = ['Presentation', 'Panel', 'Workshop', 'Networking'];
 const DURATIONS = [30, 45, 60, 90, 120];
@@ -55,7 +55,7 @@ export function SessionForm({ editing, companyId, companies, onDone }: {
       {companies && (
         <label className="label" htmlFor="ses-org">Organised by
           <select id="ses-org" className="field text-[15px]" value={f.organiser} onChange={(e) => set('organiser', e.target.value)}>
-            <option value="">{CLUB_NAME}</option>
+            <option value="">{ORGANISER_NAME}</option>
             {companies.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
         </label>

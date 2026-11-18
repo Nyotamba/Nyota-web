@@ -9,7 +9,7 @@ export function SendCodeButton({ email, kind, onNotice }: {
     setBusy(true);
     try {
       await db.sendAccessCode(email, kind);
-      onNotice(`Access code e-mailed to ${email}`);
+      onNotice(`Access code emailed to ${email}`);
     } catch (err) {
       onNotice((err as Error).message, 'danger');
     } finally {
@@ -18,7 +18,7 @@ export function SendCodeButton({ email, kind, onNotice }: {
   };
   return (
     <button type="button" disabled={busy} onClick={send} className="btn-small px-3 text-[12px]">
-      {busy ? 'Sending…' : 'Send by e-mail'}
+      {busy ? 'Sending…' : 'Send by email'}
     </button>
   );
 }

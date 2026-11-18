@@ -54,7 +54,7 @@ export function ReachAndOutcomes() {
           <Big label="Hired" value={hires} />
         </div>
         <p className="m-0 text-[13px] leading-relaxed text-muted">
-          Companies tick “Offer made” or “Hired” on a candidate’s page after the fair. Remind them in the closing e-mail: it is the
+          Companies tick “Offer made” or “Hired” on a candidate’s page after the fair. Remind them in the closing email: it is the
           number sponsors ask for.
         </p>
       </section>

@@ -26,7 +26,7 @@ export default function CompanyMeetings() {
           <div className="flex flex-col gap-1">
             <h1 className="m-0 font-display text-[40px] tracking-display">Your sessions</h1>
             <div className="max-w-[75ch] text-[15px] text-muted">
-              Sessions the IESE Africa Business Club scheduled with you. Open “Registrants” to see who signed up and who clicked
+              Sessions we scheduled with you. Open “Registrants” to see who signed up and who clicked
               “Join”. To add or change a session, write to <span className="select-all font-semibold text-ink">{CLUB_EMAIL}</span>.
               Students register from the <Link to="/sessions">public programme</Link>.
             </div>

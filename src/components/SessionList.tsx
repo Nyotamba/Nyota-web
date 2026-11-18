@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { db, type FairSession, type Registrant, type Role } from '../lib/db';
 import { fairDay, fairDayKey, fairTimeRange, joinWindow } from '../lib/time';
-import { CLUB_NAME } from '../config/constants';
+import { ORGANISER_NAME } from '../config/constants';
 import { Badge } from './Badge';
 import { Calendar } from './icons';
 import { AddToCalendar } from './AddToCalendar';
@@ -74,7 +74,7 @@ function SessionCard({ s, viewer, onEdit, onNotice, profileLinkBase }: {
           {full && !s.isRegistered && <Badge tone="orange">Full</Badge>}
         </div>
         <h3 className="m-0 text-lg font-bold leading-snug">{s.title}</h3>
-        <div className="text-sm font-semibold text-muted">{s.companyName ?? CLUB_NAME}</div>
+        <div className="text-sm font-semibold text-muted">{s.companyName ?? ORGANISER_NAME}</div>
         {s.description && <p className="m-0 max-w-[65ch] text-[15px] leading-relaxed text-muted">{s.description}</p>}
         <div className="text-[13px] tabular-nums text-muted">
           {s.registered} registered{s.capacity !== null ? ` · ${Math.max(0, s.capacity - s.registered)} of ${s.capacity} seats left` : ''}
@@ -96,7 +96,7 @@ function SessionCard({ s, viewer, onEdit, onNotice, profileLinkBase }: {
               {full ? 'Full' : 'Register'}
             </button>
             <span className="text-[12px] leading-snug text-muted">
-              {s.companyName ?? CLUB_NAME} will see your name, school and LinkedIn.
+              {s.companyName ?? ORGANISER_NAME} will see your name, school and LinkedIn.
             </span>
           </>
         )}
@@ -107,7 +107,7 @@ function SessionCard({ s, viewer, onEdit, onNotice, profileLinkBase }: {
         {viewer === 'student' && s.isRegistered && !w.over && (
           <AddToCalendar event={{
             title: s.title, startsAt: s.startsAt, durationMin: s.durationMin, pagePath: '/student/sessions',
-            details: `${s.kind} by ${s.companyName ?? CLUB_NAME} at the Nyota Africa Career Fair.`,
+            details: `${s.kind} by ${s.companyName ?? ORGANISER_NAME} at the Nyota Africa Career Fair.`,
           }} />
         )}
         {viewer === 'student' && s.isRegistered && !w.over && (
@@ -188,7 +188,7 @@ function JoinButton({ s, organiser = false, canEdit = false }: { s: FairSession;
     );
   }
   if (organiser) {
-    return <span className="text-[13px] text-danger">{canEdit ? 'No video link yet. Edit the session to add it.' : 'No video link yet. The club will add it.'}</span>;
+    return <span className="text-[13px] text-danger">{canEdit ? 'No video link yet. Edit the session to add it.' : 'No video link yet. We will add it.'}</span>;
   }
   return (
     <span className="text-[13px] leading-snug text-muted">

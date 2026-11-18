@@ -1,10 +1,10 @@
 // Live implementation of NyotaDb on Supabase. Access rules are enforced by the database
 // (row-level security in supabase/schema.sql); this file only maps rows to the UI types.
 import { createClient, FunctionsHttpError, type EmailOtpType, type SupabaseClient } from '@supabase/supabase-js';
-import type { Candidate, CompanyBenchmark, CompanyDashboard, InsightSignal, MyProfileStats, Outcome, Consent, Contract, FairCompany, FairSession, Gender, TalentRow, InterviewSlot, InvitationStatus, NyotaDb, OAuthProvider, PositionType, Session, StudentInterview } from './types';
+import type { Candidate, CompanyBenchmark, CompanyRegistration, Partner, CompanyDashboard, InsightSignal, MyProfileStats, Outcome, Consent, Contract, FairCompany, FairSession, Gender, TalentRow, InterviewSlot, InvitationStatus, NyotaDb, OAuthProvider, PositionType, Session, StudentInterview } from './types';
 import { BUILTIN_OPTIONS, CONSENT_VERSION, CV_LINK_TTL_SECONDS, SCHOOLS } from '../../config/constants';
 
-// Every candidate column except e-mail, which companies may not read (column privileges).
+// Every candidate column except email, which companies may not read (column privileges).
 const BASE_COLS =
   'id,user_id,first_name,last_name,school,programme,graduation_year,linkedin_url,functions,sectors,regions,countries,' +
   'languages,position_type,available_from,story,cv_path,cv_size_bytes,cv_uploaded_at,verified_at,updated_at';
@@ -108,7 +108,7 @@ function maybe<T = any>(res: { data: unknown; error: { message: string } | null 
 
 export function createSupabaseDb(url: string, key: string): NyotaDb {
   // Visitors come back signed in from two kinds of links:
-  //  - ?token_hash=…&type=… : e-mail links (magic link, invitation). Work on any device or browser.
+  //  - ?token_hash=…&type=… : email links (magic link, invitation). Work on any device or browser.
   //  - ?code=…              : Google / Microsoft (PKCE), exchanged by the client automatically.
   const params = new URLSearchParams(window.location.search);
   const tokenHash = params.get('token_hash');
@@ -214,8 +214,8 @@ export function createSupabaseDb(url: string, key: string): NyotaDb {
       const { error } = await sb.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
       if (error) {
         throw new Error(/invalid login/i.test(error.message)
-          ? 'Wrong e-mail or password. New here? Choose “Create my account”.'
-          : /not confirmed/i.test(error.message) ? 'Confirm your e-mail address first (check your inbox), or ask the club.' : error.message);
+          ? 'Wrong email or password. New here? Choose “Create my account”.'
+          : /not confirmed/i.test(error.message) ? 'Confirm your email address first (check your inbox), or write to us.' : error.message);
       }
       session = undefined;
       emit();
@@ -224,10 +224,10 @@ export function createSupabaseDb(url: string, key: string): NyotaDb {
       const { data, error } = await sb.auth.signUp({ email: email.trim().toLowerCase(), password });
       if (error) {
         throw new Error(/already registered|exists/i.test(error.message)
-          ? 'An account already exists with this e-mail. Choose “I have an account”.' : error.message);
+          ? 'An account already exists with this email. Choose “I have an account”.' : error.message);
       }
       // Supabase returns a user with no identities when the address is already taken (anti-enumeration).
-      if (data.user && data.user.identities?.length === 0) throw new Error('An account already exists with this e-mail. Choose “I have an account”.');
+      if (data.user && data.user.identities?.length === 0) throw new Error('An account already exists with this email. Choose “I have an account”.');
       if (!data.session) return { needsConfirmation: true };
       if (accessCode?.trim()) {
         session = undefined;
@@ -243,7 +243,7 @@ export function createSupabaseDb(url: string, key: string): NyotaDb {
       });
       if (error) {
         throw new Error(/rate limit/i.test(error.message)
-          ? 'Too many e-mails were sent in the last hour. Try again later.' : `The e-mail could not be sent: ${error.message}`);
+          ? 'Too many emails were sent in the last hour. Try again later.' : `The email could not be sent: ${error.message}`);
       }
     },
     takePasswordReset() {
@@ -553,6 +553,8 @@ export function createSupabaseDb(url: string, key: string): NyotaDb {
     },
     async bookSlot(slotId) {
       maybe(await sb.rpc('book_slot', { slot: slotId }));
+      // Calendar invites by email. The booking stands even if the email fails.
+      void sb.functions.invoke('send-interview-invite', { body: { slotId } }).catch(() => undefined);
       emit();
     },
     async cancelBooking(slotId) {
@@ -567,10 +569,10 @@ export function createSupabaseDb(url: string, key: string): NyotaDb {
       if (!error) return;
       const status = error instanceof FunctionsHttpError ? error.context.status : 0;
       if (status === 404 && !(error instanceof FunctionsHttpError && (await error.context.clone().json().catch(() => null))?.error)) {
-        throw new Error('E-mail sending is not installed yet. Copy the code and send it yourself for now.');
+        throw new Error('Email sending is not installed yet. Copy the code and send it yourself for now.');
       }
       const body = error instanceof FunctionsHttpError ? await error.context.json().catch(() => null) : null;
-      throw new Error(body?.error ?? 'E-mail sending is not installed yet. Copy the code and send it yourself for now.');
+      throw new Error(body?.error ?? 'Email sending is not installed yet. Copy the code and send it yourself for now.');
     },
     async listAdmins() {
       const rows = check<{ email: string; signed_in: boolean; access_code: string | null; is_owner?: boolean }[]>(await sb.rpc('list_admins'));
@@ -700,7 +702,7 @@ export function createSupabaseDb(url: string, key: string): NyotaDb {
     async getPartners() {
       const { data, error } = await sb.rpc('public_partners');
       if (error || !data) return { companies: [], schools: [] };
-      return data as { companies: { name: string; logoUrl: string }[]; schools: { name: string; logoUrl: string }[] };
+      return data as { companies: Partner[]; schools: Partner[] };
     },
     async addCompany(name) {
       const res = await sb.from('companies').insert({ name: name.trim() }).select('id,name').single();
@@ -714,6 +716,32 @@ export function createSupabaseDb(url: string, key: string): NyotaDb {
       }
       // Before migration 010: no logo columns yet.
       return check(await sb.from('companies').select('id,name').order('name'));
+    },
+    async registerCompany(r) {
+      maybe(await sb.rpc('register_company', {
+        p_company: r.companyName, p_contact: r.contactName, p_email: r.email, p_job_title: r.jobTitle,
+        p_website: r.website, p_sector: r.sector, p_countries: r.hiringCountries, p_message: r.message,
+      }));
+    },
+    async listCompanyRegistrations() {
+      const rows = check<{
+        id: string; company_name: string; contact_name: string; email: string; job_title: string; website: string; sector: string;
+        hiring_countries: string; message: string; status: CompanyRegistration['status']; created_at: string;
+      }[]>(await sb.from('company_registrations').select('id,company_name,contact_name,email,job_title,website,sector,hiring_countries,message,status,created_at').order('created_at', { ascending: false }));
+      return rows.map((r) => ({
+        id: r.id, companyName: r.company_name, contactName: r.contact_name, email: r.email, jobTitle: r.job_title, website: r.website,
+        sector: r.sector, hiringCountries: r.hiring_countries, message: r.message, status: r.status, createdAt: r.created_at,
+      }));
+    },
+    async approveCompanyRegistration(id) {
+      const { email } = check<{ email: string }>(await sb.rpc('approve_company_registration', { rid: id }));
+      emit();
+      const emailSent = await this.sendAccessCode(email, 'company').then(() => true, () => false);
+      return { email, emailSent };
+    },
+    async rejectCompanyRegistration(id) {
+      maybe(await sb.rpc('reject_company_registration', { rid: id }));
+      emit();
     },
     async getCompany(id) {
       const full = await sb.from('companies').select('id,name,logo_url,about,website,sector,locations,hiring_for,hiring_countries,size,premium').eq('id', id).maybeSingle();
@@ -777,10 +805,6 @@ export function createSupabaseDb(url: string, key: string): NyotaDb {
         lastActivity: r.last_activity,
       }));
     },
-    async setPremium(companyId, premium) {
-      ok(await sb.from('companies').update({ premium }).eq('id', companyId));
-      emit();
-    },
     async getCompanyBenchmark(companyId) {
       return check<CompanyBenchmark>(await sb.rpc('company_benchmark', { cid: companyId }));
     },
@@ -824,7 +848,7 @@ export function createSupabaseDb(url: string, key: string): NyotaDb {
       return rows.map((r) => ({ id: r.id, email: r.email, companyId: r.company_id, status: r.status, createdAt: r.created_at, accessCode: r.access_code }));
     },
     async inviteCompanyMember({ companyId, newCompanyName, email }) {
-      // Preferred: the invite-company-member function records the invitation AND e-mails the link.
+      // Preferred: the invite-company-member function records the invitation AND emails the link.
       const { data, error } = await sb.functions.invoke('invite-company-member', {
         body: { companyId, newCompanyName, email, redirectTo: window.location.origin + window.location.pathname },
       });
@@ -840,7 +864,7 @@ export function createSupabaseDb(url: string, key: string): NyotaDb {
         const body = error instanceof FunctionsHttpError ? await error.context.json().catch(() => null) : null;
         throw new Error(body?.error ?? error.message);
       }
-      // Function not deployed yet: record the invitation only (no e-mail).
+      // Function not deployed yet: record the invitation only (no email).
       let id = companyId;
       if (!id) id = check(await sb.from('companies').insert({ name: newCompanyName!.trim() }).select('id').single()).id as string;
       const r = check(

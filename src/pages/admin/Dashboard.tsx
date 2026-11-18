@@ -42,7 +42,7 @@ function Body({ d }: { d: Dashboard }) {
           value={s.waiting}
           sub={
             s.waiting === 0
-              ? 'Nothing to verify'
+              ? undefined
               : `Oldest waiting ${d.oldestWaitingDays ?? 0} day${d.oldestWaitingDays === 1 ? '' : 's'}`
           }
           tone={waitingTone}
@@ -68,7 +68,7 @@ function Body({ d }: { d: Dashboard }) {
             steps={[
               ['Signed up', s.signedUp],
               ['Profile complete', s.complete],
-              ['Complete and consent given', s.readyForReview],
+              ['Consent given', s.consented],
               ['Verified and visible', s.visible],
             ]}
           />
@@ -144,7 +144,7 @@ const toneStyles = {
 const toneLabel = { ok: 'Up to date', pending: 'To do', late: 'Overdue' };
 
 function Tile({ label, value, sub, tone, action }: {
-  label: string; value: number; sub: string; tone?: keyof typeof toneStyles; action?: React.ReactNode;
+  label: string; value: number; sub?: string; tone?: keyof typeof toneStyles; action?: React.ReactNode;
 }) {
   return (
     <div className="card flex flex-col gap-2 p-5">
@@ -153,7 +153,7 @@ function Tile({ label, value, sub, tone, action }: {
         {tone && <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${toneStyles[tone]}`}>{toneLabel[tone]}</span>}
       </div>
       <span className="font-display text-[44px] leading-none tabular-nums">{value}</span>
-      <span className="text-[13px] text-muted">{sub}</span>
+      {sub && <span className="text-[13px] text-muted">{sub}</span>}
       {action}
     </div>
   );

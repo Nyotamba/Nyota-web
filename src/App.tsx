@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { BrowserRouter, HashRouter, Navigate, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { db, isPreview, type Role, type Session } from './lib/db';
-import { exitPreview, previewRole, startPreview } from './lib/preview';
+import { exitPreview, previewRole, switchPreview } from './lib/preview';
 import { useDbQuery } from './lib/useDb';
 import Landing from './pages/Landing';
 import SignIn from './pages/SignIn';
@@ -20,6 +20,8 @@ import { AdminDashboardTabs, AdminSettingsTabs } from './pages/admin/Tabbed';
 import { ProfileEditor } from './pages/student/Profile';
 import SetPassword from './pages/SetPassword';
 import PublicSessions from './pages/Sessions';
+import Privacy from './pages/Privacy';
+import RegisterCompany from './pages/RegisterCompany';
 import StudentSessions from './pages/student/Sessions';
 import StudentInterviews from './pages/student/Interviews';
 import StudentAccount from './pages/student/Account';
@@ -63,6 +65,8 @@ export default function App() {
           <Route path="/sign-in" element={<SignIn />} />
           <Route path="/sessions" element={<PublicSessions />} />
           <Route path="/set-password" element={<SetPassword />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/register-company" element={<RegisterCompany />} />
 
           <Route path="/student/profile" element={<Guard role="student"><StudentProfile /></Guard>} />
           <Route path="/student/preview" element={<Guard role="student"><StudentPreview /></Guard>} />
@@ -134,21 +138,26 @@ function PreviewBar() {
   const role = previewRole();
   const other = role === 'student' ? 'company' : 'student';
   return (
+    <>
+    <div className="fixed inset-x-0 top-0 z-50 bg-orange px-4 py-1 text-center text-[13px] font-bold text-ink">
+      SAMPLE DATA · This tab is a preview, not the real site
+    </div>
     <div role="region" aria-label="Preview" className="fixed inset-x-0 bottom-0 z-40 border-t border-ink-line bg-ink text-offwhite"
       style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
       <div className="mx-auto flex max-w-page flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 md:px-10">
         <span className="flex-1 text-sm">
           <strong>Preview · what a {role} sees.</strong> <span className="text-ink-muted">Sample data: nothing you do here is saved or sent.</span>
         </span>
-        <button type="button" onClick={() => startPreview(other)}
+        <button type="button" onClick={() => switchPreview(other)}
           className="min-h-[40px] rounded-full border border-ink-border px-4 text-sm font-semibold hover:border-offwhite">
           See the {other} side
         </button>
         <button type="button" onClick={exitPreview} className="min-h-[40px] rounded-full bg-orange px-4 text-sm font-bold text-ink hover:bg-offwhite">
-          Back to admin
+          Close preview
         </button>
       </div>
     </div>
+    </>
   );
 }
 

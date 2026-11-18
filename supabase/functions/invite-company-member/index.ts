@@ -1,5 +1,5 @@
 // Supabase Edge Function: a club admin invites a company member.
-// Records the invitation (and the company if new), then e-mails the person a sign-in link.
+// Records the invitation (and the company if new), then emails the person a sign-in link.
 // Deploy: npx supabase functions deploy invite-company-member --project-ref <ref>
 // SUPABASE_URL, SUPABASE_ANON_KEY and SUPABASE_SERVICE_ROLE_KEY are provided by Supabase at runtime.
 import { createClient } from 'npm:@supabase/supabase-js@2';
@@ -27,7 +27,7 @@ Deno.serve(async (req) => {
     // 2. Validate input.
     const body = await req.json();
     const email = String(body.email ?? '').trim().toLowerCase();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return json({ error: 'Enter a valid work e-mail address.' }, 400);
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return json({ error: 'Enter a valid work email address.' }, 400);
     const redirectTo = typeof body.redirectTo === 'string' ? body.redirectTo : undefined; // checked against Supabase's allowed redirect URLs
 
     // 3. Record the company (if new) and the invitation, with full rights.
@@ -47,7 +47,7 @@ Deno.serve(async (req) => {
       .single();
     if (invError) return json({ error: invError.message }, 400);
 
-    // 4. E-mail the person. New address → "Invite user" e-mail (creates the account);
+    // 4. Email the person. New address → "Invite user" email (creates the account);
     //    existing account → ordinary sign-in link.
     let emailSent = false;
     let note: string | undefined;

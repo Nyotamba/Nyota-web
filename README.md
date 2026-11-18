@@ -14,7 +14,7 @@ This README is written for **the next team running Nyota**. Read sections 1 to 4
 ## 1. How it works, in one picture
 
 ```
-Browser (React app)  ──►  Supabase (database, sign-in, file storage, e-mail functions)
+Browser (React app)  ──►  Supabase (database, sign-in, file storage, email functions)
         ▲
         └── Vercel hosts the site and rebuilds it on every push to GitHub (branch main)
 ```
@@ -23,9 +23,9 @@ Browser (React app)  ──►  Supabase (database, sign-in, file storage, e-mai
 |---|---|---|
 | **Front end** | React 18 + TypeScript + Tailwind (Vite). All pages. | `src/` |
 | **Database** | PostgreSQL on Supabase. Privacy rules live **in the database** (row-level security), not only in the pages. | `supabase/schema.sql` + `supabase/migrations/` |
-| **Sign-in** | Supabase Auth: password, e-mail links, access codes for companies and admins. | Supabase → Authentication |
+| **Sign-in** | Supabase Auth: password, email links, access codes for companies and admins. | Supabase → Authentication |
 | **Files** | CVs (private, links expire after 5 min) and logos (public). | Supabase → Storage (`cvs`, `logos`) |
-| **E-mails** | Edge functions send access codes through the Nyota Gmail. | `supabase/functions/` |
+| **Emails** | Edge functions send access codes through the Nyota Gmail. | `supabase/functions/` |
 | **Hosting** | Vercel builds `npm run build` and serves `dist/`. | Vercel project `nyota-mba` |
 
 The pages never talk to Supabase directly: everything goes through one interface, `NyotaDb`
@@ -48,7 +48,7 @@ Never leave a service on one student's personal address: when they graduate, the
 |---|---|---|---|---|
 | Nyota Gmail `nyotamba2027@gmail.com` | Sends access codes, owns the other accounts | club | | 2-step verification on: keep the recovery phone and codes in the club's password manager. The "app password" used by Supabase is in Supabase secrets. |
 | GitHub org **Nyotamba** | The code | `nyotamba2027-stack` (club) | `Sirdec973` (2026–27 team) | Organisation owners can add people. Repository `Nyota-web`. |
-| Supabase org **Nyotamba**, project “Nyota Website” `zucuuwsisyyixjamtpep` | Database, sign-in, files, e-mail functions | nyotamba2027@gmail.com (club) | 2026–27 team | Free plan. Invite people under Organization → Team. |
+| Supabase org **Nyotamba**, project “Nyota Website” `zucuuwsisyyixjamtpep` | Database, sign-in, files, email functions | nyotamba2027@gmail.com (club) | 2026–27 team | Free plan. Invite people under Organization → Team. |
 | Vercel project `nyota-mba` | Hosting, auto-deploy from GitHub | _fill in_ | | Free (Hobby) plan = one owner. Do not pick Pro. |
 | Namecheap | Domain `nyota.mba` | _fill in_ | | Renew every year. See section 6. |
 
@@ -95,7 +95,7 @@ If the Vercel build fails, the previous version stays online. Read the error in 
 
 ## 4. Changing the database
 
-Database changes are numbered files in `supabase/migrations/` (`002_…` to `025_…` today). Each one is written to be
+Database changes are numbered files in `supabase/migrations/` (`002_…` to `027_…` today). Each one is written to be
 safe to run again. **The history is tracked by Supabase**, so you always know what is applied:
 
 ```bash
@@ -106,7 +106,7 @@ npx supabase migration list --linked                 # what is applied (local vs
 
 To add a change:
 
-1. Create the next file, e.g. `supabase/migrations/026_short_name.sql`.
+1. Create the next file, e.g. `supabase/migrations/028_short_name.sql`.
 2. Apply it: `npx supabase db push --linked` (applies only the files not yet applied).
 3. Then deploy the code that uses it. **Database first, code second**, or the live site breaks.
 
@@ -117,7 +117,7 @@ Rules that keep the platform legal and safe (see `../DESIGN.md` and the privacy 
 - Admin insights show **anonymous totals**, never "company X looked at student Y". Activity is deleted after 12 months.
 - New tables: enable row-level security and add policies in the same file.
 
-### E-mail functions
+### Email functions
 
 ```bash
 npx supabase functions deploy send-access-code --project-ref zucuuwsisyyixjamtpep --use-api
@@ -137,15 +137,18 @@ Admin area (sign in with an admin account):
 | Verification | Check and verify student profiles (a CV is required). |
 | Candidates | All students; open, edit a profile (not consent, CV or gender). |
 | Sessions | Create sessions, paste the Teams link; attendance is counted by the Nyota room. |
-| Companies | Invite company members (access codes by e-mail), logos, **Premium** switch, "Open company space" to edit a company. |
+| Companies | Approve or decline **new registrations**, add colleagues (access codes by email), logos, "Open company space" to edit a company. |
 | Dashboard | Overview, Follow-up (who to nudge), Talent pool, Market insights. |
 | Admins | Add admins and owners (owners only). |
 | Settings | Lists (schools, roles, sectors, languages) and, for owners, the site texts, dates and consent text. |
 
 "Preview with sample data" shows the student or company side without changing account.
 
-**Nyota Premium**: the advanced company insights (benchmark, matching profiles not opened, talent pool) only show
-for companies with the Premium switch on. This is enforced in the database (migration 025).
+**Company registration**: companies sign up at `/#/register-company`. Nothing opens until an admin approves them in Companies; the access code is then emailed to them.
+
+**Organising schools**: Settings > Lists > Schools > "Show on homepage". They appear in the homepage text and the "Run by the clubs of" strip.
+
+The advanced company insights (benchmark, matching profiles, talent pool) are switched off for companies for now. Admins still see them in "Open company space".
 
 ---
 
@@ -153,7 +156,7 @@ for companies with the Premium switch on. This is enforced in the database (migr
 
 **Before the fair**
 
-- [ ] Settings → Site settings: fair dates, year, venue, club e-mail, homepage text.
+- [ ] Settings → Site settings: fair dates, year, venue, club email, homepage text.
 - [ ] Consent text: if it changes, give it a **new version** (v2, v3…). Have it approved by the DPO.
 - [ ] Settings → Lists: schools, roles, sectors, languages.
 - [ ] Invite companies (Companies), ask them to fill in their **Profile** (sector, countries and roles they hire for):
@@ -166,9 +169,8 @@ for companies with the Premium switch on. This is enforced in the database (migr
 
 - [ ] Remind companies to tick "Offer made" / "Hired" on candidate pages: it gives the result for sponsors.
 - [ ] Export what you need (registrant CSVs, dashboard screenshots).
-- [ ] Delete personal data after the period promised on the homepage (Settings → retention months).
-      `supabase/maintenance/remove_demo_data.sql` shows how test data is removed; deleting real profiles must follow
-      the privacy notice. Ask before running anything you do not understand.
+- [ ] Profiles are kept after the fair (decision of November 2026). Handle every deletion request sent to the contact
+      address: an owner deletes the student from Admin > Candidates. Have the retention choice reviewed by the DPO each year.
 
 ---
 
@@ -187,8 +189,8 @@ src/
 supabase/
   schema.sql              the base database (first install)
   migrations/             every change since, in order
-  functions/              e-mail sending (Deno)
-  email-templates/        sign-in e-mails to paste in Supabase → Authentication → Templates
+  functions/              email sending (Deno)
+  email-templates/        sign-in emails to paste in Supabase → Authentication → Templates
 ```
 
 Brand: IESE Africa Business Club brand book (colours and fonts in `tailwind.config.ts`; logo in `components/Logo.tsx`).
@@ -201,7 +203,7 @@ Brand: IESE Africa Business Club brand book (colours and fonts in `tailwind.conf
 |---|---|
 | Site does not update | Vercel → Deployments: last build red? Read the log. |
 | "Could not load…" messages | Supabase → Logs (API / Postgres). Often: code deployed before its migration. |
-| Access-code e-mails not arriving | Supabase → Edge Functions → `send-access-code` logs. Gmail app password revoked? |
+| Access-code emails not arriving | Supabase → Edge Functions → `send-access-code` logs. Gmail app password revoked? |
 | Nobody can sign in | Supabase → Authentication → URL configuration: Site URL and redirect URLs must include the live domain. |
 
 Keep this README up to date when you change how things work.

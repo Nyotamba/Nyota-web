@@ -6,7 +6,7 @@ import { CopyCode } from '../../components/CopyCode';
 import { LogoEditor } from '../../components/LogoEditor';
 import { SendCodeButton } from '../../components/SendCodeButton';
 import { Notice } from '../../components/Notice';
-import { db, type Company, type Invitation } from '../../lib/db';
+import { db, type Company, type CompanyRegistration, type Invitation } from '../../lib/db';
 import { useDbQuery } from '../../lib/useDb';
 import { useSession } from '../../App';
 
@@ -21,7 +21,7 @@ export default function AdminCompanies() {
     try {
       const co = await db.addCompany(name);
       setName('');
-      setNotice({ msg: `${co.name} added. Invite its members below.` });
+      setNotice({ msg: `${co.name} added. Add its colleagues below.` });
     } catch (err) {
       setNotice({ msg: (err as Error).message, tone: 'danger' });
     }
@@ -34,10 +34,11 @@ export default function AdminCompanies() {
           <div className="flex flex-col gap-1">
             <h1 className="m-0 font-display text-[34px] tracking-display md:text-[40px]">Companies</h1>
             <div className="text-[15px] text-muted">
-              Companies taking part in the fair: logos, invited members and the access codes to send them. Show a logo on the homepage
-              only once the company has confirmed its participation in writing.
+              Review new registrations, then manage the companies taking part: logos, colleagues and access codes. Show a logo on the
+              homepage only once the company has confirmed its participation in writing.
             </div>
           </div>
+          <NewRegistrations companies={companies ?? []} onNotice={(msg, tone) => setNotice({ msg, tone })} />
           {companies?.length === 0 && <div className="card p-7 text-[15px] text-muted">No company yet. Add the first one with the form.</div>}
           <ul className="m-0 flex list-none flex-col gap-4 p-0">
             {companies?.map((co) => (
@@ -56,13 +57,59 @@ export default function AdminCompanies() {
             </label>
             <button type="submit" className="btn rounded-xl bg-ink text-[15px] text-offwhite hover:bg-green">Add company</button>
             <p className="m-0 text-[13px] leading-normal text-muted">
-              Then invite its members: each gets an access code to create their account with their work e-mail.
+              For a company that did not register itself. Each colleague you add gets an access code to create their account.
             </p>
           </form>
         </aside>
       </div>
       <Notice message={notice?.msg ?? null} tone={notice?.tone} onDone={() => setNotice(null)} />
     </AdminShell>
+  );
+}
+
+/** Companies that signed up on the site. Nothing opens for them until an admin approves. */
+function NewRegistrations({ companies, onNotice }: { companies: Company[]; onNotice: (msg: string, tone?: 'green' | 'danger') => void }) {
+  const { data: rows = [] } = useDbQuery(() => db.listCompanyRegistrations());
+  const [busy, setBusy] = useState<string | null>(null);
+  const pending = rows.filter((r) => r.status === 'pending');
+  const decide = async (id: string, fn: () => Promise<void>) => {
+    setBusy(id);
+    try {
+      await fn();
+    } catch (err) {
+      onNotice((err as Error).message, 'danger');
+    } finally {
+      setBusy(null);
+    }
+  };
+  const approve = (r: CompanyRegistration) => decide(r.id, async () => {
+    const { email, emailSent } = await db.approveCompanyRegistration(r.id);
+    onNotice(emailSent ? `${r.companyName} approved. Access code sent to ${email}.` : `${r.companyName} approved, but the email failed. Send the access code from its card below.`, emailSent ? 'green' : 'danger');
+  });
+  return (
+    <section aria-labelledby="new-reg" className="flex flex-col gap-3">
+      <h2 id="new-reg" className="m-0 text-xl font-bold">New registrations · {pending.length}</h2>
+      {pending.length === 0 && <p className="card m-0 p-5 text-[15px] text-muted">No registration waiting for review.</p>}
+      {pending.map((r) => {
+        const known = companies.some((c) => c.name.toLowerCase() === r.companyName.toLowerCase());
+        return (
+          <article key={r.id} className="card flex flex-col gap-3 border-orange p-5">
+            <div className="flex flex-col gap-0.5">
+              <h3 className="m-0 text-lg font-bold">{r.companyName}</h3>
+              <span className="text-sm text-muted">{[r.contactName, r.jobTitle].filter(Boolean).join(' · ')} · <span className="select-all">{r.email}</span></span>
+              <span className="text-sm text-muted">{[r.sector, r.hiringCountries].filter(Boolean).join(' · ')}</span>
+              {r.website && <a href={r.website} target="_blank" rel="noreferrer noopener" className="self-start text-sm font-semibold">{r.website}</a>}
+            </div>
+            {r.message && <p className="m-0 rounded-xl bg-offwhite px-4 py-3 text-sm leading-relaxed">{r.message}</p>}
+            {known && <p className="m-0 text-sm font-semibold text-danger">This company is already on Nyota. Approving adds this person to it: check the email address first.</p>}
+            <div className="flex flex-wrap gap-2">
+              <button type="button" disabled={busy === r.id} className="btn rounded-xl bg-green px-4 text-[15px] text-white hover:bg-ink hover:text-white" onClick={() => approve(r)}>Approve and send access code</button>
+              <button type="button" disabled={busy === r.id} className="btn-small" onClick={() => decide(r.id, () => db.rejectCompanyRegistration(r.id))}>Decline</button>
+            </div>
+          </article>
+        );
+      })}
+    </section>
   );
 }
 
@@ -79,7 +126,7 @@ function CompanyCard({ company, members, onNotice }: {
     try {
       const inv = await db.inviteCompanyMember({ companyId: company.id, email });
       setEmail('');
-      onNotice(inv.accessCode ? `${inv.email} invited. Send them their access code ${inv.accessCode}.` : `${inv.email} invited.`);
+      onNotice(inv.accessCode ? `${inv.email} added. Send them their access code ${inv.accessCode}.` : `${inv.email} added.`);
     } catch (err) {
       onNotice((err as Error).message, 'danger');
     } finally {
@@ -91,13 +138,6 @@ function CompanyCard({ company, members, onNotice }: {
     <article className="card flex flex-col gap-4 p-6">
       <div className="flex flex-wrap items-baseline gap-3">
         <h2 className="m-0 flex-1 text-lg font-bold">{company.name}</h2>
-        <label className="flex min-h-[36px] cursor-pointer items-center gap-2 rounded-full border border-line-strong px-3 text-[13px] font-semibold">
-          <input type="checkbox" className="size-4 accent-ink" checked={Boolean(company.premium)}
-            onChange={(e) => db.setPremium(company.id, e.target.checked).then(
-              () => onNotice(e.target.checked ? `${company.name} now has Nyota Premium` : `${company.name} is back to the free plan`),
-              (err: Error) => onNotice(err.message, 'danger'))} />
-          Premium
-        </label>
         <Link to={`/admin/companies/${company.id}`} className="btn-small text-[13px]">Open company space</Link>
         <span className="text-sm tabular-nums text-muted">{accepted} of {members.length} members signed in</span>
         {isOwner && (confirmDelete ? (
@@ -127,10 +167,10 @@ function CompanyCard({ company, members, onNotice }: {
         </ul>
       )}
       <form onSubmit={invite} className="flex flex-wrap gap-2">
-        <label htmlFor={`inv-${company.id}`} className="sr-only">Work e-mail to invite to {company.name}</label>
+        <label htmlFor={`inv-${company.id}`} className="sr-only">Work email of a colleague at {company.name}</label>
         <input id={`inv-${company.id}`} type="email" required placeholder="name@company.com" className="field min-w-0 flex-1 text-[15px]"
           value={email} onChange={(e) => setEmail(e.target.value)} />
-        <button type="submit" disabled={busy} className="btn-small">Invite member</button>
+        <button type="submit" disabled={busy} className="btn-small">Add colleague</button>
       </form>
     </article>
   );

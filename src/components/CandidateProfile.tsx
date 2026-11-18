@@ -32,7 +32,7 @@ export function CandidateProfile({ c, top, actions, onOpenCv }: {
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          {c.verifiedAt ? <Badge tone="green" check>Verified by the club</Badge> : <Badge tone="orange">Waiting for verification</Badge>}
+          {c.verifiedAt ? <Badge tone="green" check>Verified</Badge> : <Badge tone="orange">Waiting for verification</Badge>}
           {c.linkedinUrl && <a href={c.linkedinUrl} target="_blank" rel="noreferrer" className="text-sm font-semibold">LinkedIn profile</a>}
         </div>
         {actions}

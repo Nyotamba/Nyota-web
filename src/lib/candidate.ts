@@ -39,6 +39,7 @@ export const emptyFilters: CandidateFilters = {
   language: '',
   positionType: 'Any',
   availableBy: '',
+  country: '',
   minYears: 0,
   sort: 'updated',
 };
@@ -58,6 +59,10 @@ export function applyFilters(list: Candidate[], f: CandidateFilters) {
     if (f.positionType !== 'Any' && c.positionType !== f.positionType && c.positionType !== 'Both') return false;
     if (f.availableBy && c.availableFrom > f.availableBy) return false;
     if (f.minYears && (c.yearsExperience ?? 0) < f.minYears) return false;
+    if (f.country) {
+      const places = `${c.countries},${c.workedCountries}`.toLowerCase();
+      if (!places.includes(f.country.toLowerCase()) && !places.includes('open to any country')) return false;
+    }
     return true;
   });
   const by = {

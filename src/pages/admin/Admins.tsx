@@ -48,7 +48,7 @@ export default function AdminAdmins() {
             <h1 className="m-0 font-display text-[34px] tracking-display md:text-[40px]">Admins</h1>
             <div className="max-w-[75ch] text-[15px] text-muted">
               Admins verify profiles, run sessions and invite companies. <strong className="text-ink">Owners</strong> are admins who can
-              also add or remove admins, delete data and edit the site settings. Keep at least two owners, so the club never depends on one person.
+              also add or remove admins, delete data and edit the site settings. Keep at least two owners, so Nyota never depends on one person.
             </div>
           </div>
           {error && <p className="card m-0 p-6 text-danger">The list could not load: {error.message}</p>}
@@ -92,14 +92,14 @@ export default function AdminAdmins() {
           )}
           {canManage && <form onSubmit={add} className="flex flex-col gap-4 rounded-2xl border border-line bg-surface p-6">
             <h2 className="m-0 text-xl font-bold">Add an admin</h2>
-            <label className="label" htmlFor="adm-email">E-mail
+            <label className="label" htmlFor="adm-email">Email
               <input id="adm-email" type="email" required placeholder="first.last@iese.net" className="field text-[15px]"
                 value={email} onChange={(e) => setEmail(e.target.value)} />
             </label>
             <button type="submit" disabled={busy} className="btn rounded-xl bg-ink text-[15px] text-offwhite hover:bg-green">Add admin</button>
             <p className="m-0 text-[13px] leading-normal text-muted">
-              Send them the access code that appears next to their address. They create their account with this e-mail and the code (or
-              sign in with an e-mail link). If they already have an account, it becomes an admin account right away.
+              Send them the access code that appears next to their address. They create their account with this email and the code (or
+              sign in with an email link). If they already have an account, it becomes an admin account right away.
             </p>
           </form>}
         </aside>

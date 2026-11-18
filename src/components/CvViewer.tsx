@@ -74,7 +74,7 @@ export function CvViewer({ name, cv, onOpen, loadUrl }: {
         )}
       </div>
       <div className="border-t border-line px-5 py-3.5 text-[13px] text-muted">
-        This view is recorded and shared with the club. Please do not forward or store the CV outside Nyota.
+        This view is recorded. Please do not forward or store the CV outside Nyota.
       </div>
     </section>
   );

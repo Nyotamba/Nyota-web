@@ -1,6 +1,6 @@
 import { db, type SiteSettings } from './db';
 import { useDbQuery } from './useDb';
-import { CLUB_EMAIL, CONSENT_TEXT, CONSENT_VERSION, FORUM_DATE, FORUM_NAME, FORUM_VENUE, FORUM_YEAR, RETENTION_MONTHS } from '../config/constants';
+import { CLUB_EMAIL, CONSENT_TEXT, CONSENT_VERSION, FORUM_DATE, FORUM_NAME, FORUM_VENUE, FORUM_YEAR } from '../config/constants';
 
 export const DEFAULT_SETTINGS: SiteSettings = {
   forum_name: FORUM_NAME,
@@ -8,12 +8,12 @@ export const DEFAULT_SETTINGS: SiteSettings = {
   forum_venue: FORUM_VENUE,
   forum_year: FORUM_YEAR,
   club_email: CLUB_EMAIL,
-  retention_months: RETENTION_MONTHS,
+  instagram_url: '',
   consent_version: CONSENT_VERSION,
   consent_text: CONSENT_TEXT,
-  hero_title: 'Europe’s MBA talent, meeting Africa’s next decade.',
+  hero_title: 'Where Europe’s MBA talent meets Africa’s employers.',
   hero_text:
-    'Nyota connects MBA students from European business schools with companies that operate in Africa or plan to. Build one verified profile. Only invited companies can see it, and only once you say yes.',
+    'Two days of company sessions, open roles and interviews, run by the Africa and Black business clubs of {schools}. Free for students and alumni.',
 };
 
 /** Site texts and fair details edited by owners (Owner → Settings), with the built-in defaults as fallback. */

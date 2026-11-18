@@ -442,7 +442,7 @@ export function createDemoDb(space = ''): NyotaDb {
     },
 
     async sendAccessCode() {
-      throw new Error('E-mails are not sent in the demo: copy the code instead.');
+      throw new Error('Emails are not sent in the demo: copy the code instead.');
     },
     async listAdmins() {
       const owners = state.owners ?? [DEMO_ACCOUNTS.admin.email];
@@ -477,7 +477,7 @@ export function createDemoDb(space = ''): NyotaDb {
     },
     async addAdmin(email) {
       const em = email.trim().toLowerCase();
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) throw new Error('Enter a valid e-mail address');
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) throw new Error('Enter a valid email address');
       state.admins = Array.from(new Set([...(state.admins ?? []), em]));
       commit();
     },
@@ -586,7 +586,7 @@ export function createDemoDb(space = ''): NyotaDb {
       const logos = state.schoolLogos ?? {};
       return {
         companies: state.companies.filter((c) => c.showOnSite && c.logoUrl).map((c) => ({ name: c.name, logoUrl: c.logoUrl! })),
-        schools: Object.entries(logos).filter(([, v]) => v.showOnSite && v.logoUrl).map(([name, v]) => ({ name, logoUrl: v.logoUrl! })),
+        schools: Object.entries(logos).filter(([, v]) => v.showOnSite).map(([name, v]) => ({ name, logoUrl: v.logoUrl })),
       };
     },
     async addCompany(name) {
@@ -613,6 +613,33 @@ export function createDemoDb(space = ''): NyotaDb {
     },
     async listCompanies() {
       return clone(state.companies);
+    },
+    async registerCompany(r) {
+      const email = r.email.trim().toLowerCase();
+      const list = (state.registrations2027 ??= []);
+      if (!list.some((x) => x.email === email && x.status === 'pending')) list.unshift({ ...r, email, id: uid('r'), status: 'pending', createdAt: now() });
+      commit();
+    },
+    async listCompanyRegistrations() {
+      return clone(state.registrations2027 ?? []);
+    },
+    async approveCompanyRegistration(id) {
+      const r = (state.registrations2027 ?? []).find((x) => x.id === id);
+      if (!r || r.status !== 'pending') throw new Error('This registration has already been decided');
+      let co = state.companies.find((c) => c.name.toLowerCase() === r.companyName.toLowerCase());
+      if (!co) {
+        co = { id: uid('co'), name: r.companyName, website: r.website, sector: r.sector, hiringCountries: r.hiringCountries };
+        state.companies.push(co);
+      }
+      state.invitations.push({ id: uid('i'), email: r.email, companyId: co.id, status: 'Invited', createdAt: now() });
+      r.status = 'approved';
+      commit();
+      return { email: r.email, emailSent: false };
+    },
+    async rejectCompanyRegistration(id) {
+      const r = (state.registrations2027 ?? []).find((x) => x.id === id);
+      if (r) r.status = 'rejected';
+      commit();
     },
     async getCompany(id) {
       return clone(state.companies.find((x) => x.id === id) ?? null);
@@ -735,10 +762,6 @@ export function createDemoDb(space = ''): NyotaDb {
           lastActivity: dates[dates.length - 1] ?? null,
         };
       });
-    },
-    async setPremium(companyId, premium) {
-      Object.assign(state.companies.find((c) => c.id === companyId) ?? {}, { premium });
-      commit();
     },
     async getCompanyBenchmark(companyId) {
       if (session?.role === 'company' && !state.companies.find((c) => c.id === companyId)?.premium) throw new Error('premium');

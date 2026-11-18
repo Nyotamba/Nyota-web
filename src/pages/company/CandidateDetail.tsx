@@ -57,13 +57,13 @@ export default function CompanyCandidateDetail() {
           const active = outcomes[c.id] === v;
           return (
             <button key={v} type="button" aria-pressed={active}
-              onClick={async () => { await db.setOutcome(companyId, c.id, active ? null : v); setNotice(active ? 'Outcome cleared' : `Marked: ${label.toLowerCase()}. Thank you, it helps the club.`); }}
+              onClick={async () => { await db.setOutcome(companyId, c.id, active ? null : v); setNotice(active ? 'Outcome cleared' : `Marked: ${label.toLowerCase()}. Thank you.`); }}
               className={`min-h-[36px] rounded-full border px-3 text-[13px] font-semibold ${active ? 'border-green bg-green text-white' : 'border-line-strong bg-surface text-ink hover:border-ink'}`}>
               {label}
             </button>
           );
         })}
-        <span className="w-full text-[12px] text-muted">Only the club sees it, as a total. The candidate is not told.</span>
+        <span className="w-full text-[12px] text-muted">Only the Nyota team sees it, as a total. The candidate is not told.</span>
       </div>
     </div>
   );
