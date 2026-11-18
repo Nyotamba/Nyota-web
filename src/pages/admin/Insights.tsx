@@ -74,7 +74,7 @@ export default function AdminInsights({ embedded = false }: { embedded?: boolean
           <div className="flex flex-1 flex-col gap-1">
             <h1 className="m-0 font-display text-[34px] tracking-display md:text-[40px]">Market insights</h1>
             <div className="max-w-[75ch] text-[15px] text-muted">
-              Who attracts whom, and why. Pick a company for its details. Anonymous counts over the last 12 months; no name is ever shown.
+              Which profiles companies look at, and which companies students choose. Pick a company for its details. Anonymous counts over the last 12 months; no name is ever shown.
             </div>
           </div>
           <label className="label" htmlFor="in-company">Company
@@ -200,7 +200,7 @@ function Matrix({ title, rows, col, sig, pool, w }: { title: string; rows: CTrai
 function CountryTies({ sig, pool, w }: { sig: InsightSignal[]; pool: Person[]; w: Weights }) {
   const countries = [...new Set(sig.flatMap((s) => parseCountries(s.companyCountries)))].slice(0, 10);
   if (countries.length === 0) {
-    return <Empty>Countries companies hire for are not filled in yet (Company → Profile). They unlock “who has worked in or wants to work in the company’s country”.</Empty>;
+    return <Empty>Countries companies hire for are not filled in yet (Company → Profile). Once they are filled in, this table shows who has worked in or wants to work in each country.</Empty>;
   }
   return (
     <div className="card overflow-x-auto p-0">

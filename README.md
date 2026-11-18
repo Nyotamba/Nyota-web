@@ -95,7 +95,7 @@ If the Vercel build fails, the previous version stays online. Read the error in 
 
 ## 4. Changing the database
 
-Database changes are numbered files in `supabase/migrations/` (`002_…` to `027_…` today). Each one is written to be
+Database changes are numbered files in `supabase/migrations/` (`002_…` to `028_…` today). Each one is written to be
 safe to run again. **The history is tracked by Supabase**, so you always know what is applied:
 
 ```bash
@@ -106,7 +106,7 @@ npx supabase migration list --linked                 # what is applied (local vs
 
 To add a change:
 
-1. Create the next file, e.g. `supabase/migrations/028_short_name.sql`.
+1. Create the next file, e.g. `supabase/migrations/029_short_name.sql`.
 2. Apply it: `npx supabase db push --linked` (applies only the files not yet applied).
 3. Then deploy the code that uses it. **Database first, code second**, or the live site breaks.
 

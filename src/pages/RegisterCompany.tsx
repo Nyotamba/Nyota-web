@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
-import { Logo } from '../components/Logo';
+import { PublicShell } from '../components/PublicShell';
 import { db, type CompanyRegistrationInput } from '../lib/db';
 import { COMPANY_DEADLINE, PROFILES_OPEN } from '../config/constants';
 
@@ -29,9 +29,8 @@ export default function RegisterCompany() {
   };
 
   return (
-    <div className="mx-auto flex min-h-full max-w-page flex-col">
-      <header className="flex h-[72px] items-center border-b border-line px-4 md:px-10"><Logo /></header>
-      <main className="flex flex-1 justify-center px-4 py-12 md:py-16">
+    <PublicShell>
+      <div className="flex flex-1 justify-center px-4 py-12 md:py-16">
         <div className="flex w-full max-w-[600px] flex-col gap-8">
           {done ? (
             <section role="status" className="card flex flex-col items-start gap-4 p-7">
@@ -76,7 +75,7 @@ export default function RegisterCompany() {
                 <label className="label" htmlFor="rc-countries">Countries you hire for
                   <input id="rc-countries" maxLength={300} placeholder="Kenya, Nigeria, Senegal" className="field" value={f.hiringCountries} onChange={(e) => set('hiringCountries', e.target.value)} />
                 </label>
-                <label className="label" htmlFor="rc-msg">Anything we should know? <span className="font-normal text-muted">(optional)</span>
+                <label className="label" htmlFor="rc-msg">Message <span className="font-normal text-muted">(optional)</span>
                   <textarea id="rc-msg" rows={3} maxLength={1000} className="field" value={f.message} onChange={(e) => set('message', e.target.value)} />
                 </label>
                 <button type="submit" disabled={busy} className="btn-primary">{busy ? 'Sending…' : 'Register your company'}</button>
@@ -86,7 +85,7 @@ export default function RegisterCompany() {
             </>
           )}
         </div>
-      </main>
-    </div>
+      </div>
+    </PublicShell>
   );
 }

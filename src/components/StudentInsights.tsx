@@ -49,14 +49,14 @@ export function ReachCard({ c }: { c: Candidate }) {
           </div>
         ))}
       </div>
-      <p className="m-0 text-[12px] text-muted">How many times companies opened your profile. Nyota never tells you which company, and never tells them who you are looking at.</p>
+      <p className="m-0 text-[12px] text-muted">How many times companies opened your profile. We do not show which companies.</p>
       {gaps.length > 0 && (
         <div className="flex flex-col gap-1.5 border-t border-line-soft pt-3">
           <span className="text-sm font-semibold">Most asked for, not in your profile</span>
           <div className="flex flex-wrap gap-1.5">
             {gaps.map(([s, n]) => <span key={s} className="rounded-full bg-sand px-2.5 py-1 text-[12px] font-semibold">{s} <span className="text-muted">· {n}</span></span>)}
           </div>
-          <span className="text-[12px] text-muted">If it is true for you, add it below: you will show up in more company searches.</span>
+          <span className="text-[12px] text-muted">If this applies to you, add it to your profile below.</span>
         </div>
       )}
     </section>

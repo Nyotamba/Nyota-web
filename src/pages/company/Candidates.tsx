@@ -55,9 +55,9 @@ export default function CompanyCandidates() {
 
   return (
     <CompanyShell>
-      <div className="flex flex-col lg:min-h-[calc(100vh-72px)] lg:flex-row">
-        <aside aria-label="Filters" className={`${showFilters ? 'flex' : 'hidden'} shrink-0 flex-col gap-6 border-b border-line bg-surface px-4 py-8 sm:px-7 lg:flex lg:w-[320px] lg:border-b-0 lg:border-r`}>
-          <div className="flex items-center justify-between lg:hidden">
+      <div className="flex flex-col xl:min-h-screen xl:flex-row">
+        <aside aria-label="Filters" className={`${showFilters ? 'flex' : 'hidden'} shrink-0 flex-col gap-6 border-b border-line bg-surface px-4 py-8 sm:px-7 xl:flex xl:w-[320px] xl:border-b-0 xl:border-r`}>
+          <div className="flex items-center justify-between xl:hidden">
             <span className="text-lg font-bold">Filters</span>
             <button type="button" className="btn-small" aria-label="Hide filters" onClick={() => setShowFilters(false)}><Close /></button>
           </div>
@@ -125,7 +125,7 @@ export default function CompanyCandidates() {
                 </button>
               ))}
             </div>
-            <button type="button" className="btn-small lg:hidden" aria-expanded={showFilters} onClick={() => setShowFilters((s) => !s)}>
+            <button type="button" className="btn-small xl:hidden" aria-expanded={showFilters} onClick={() => setShowFilters((s) => !s)}>
               <Filter />Filters{activeCount ? ` · ${activeCount}` : ''}
             </button>
             <label htmlFor="f-sort" className="flex items-center gap-2 text-sm font-semibold">Sort

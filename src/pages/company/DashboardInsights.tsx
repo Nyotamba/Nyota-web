@@ -128,7 +128,7 @@ function WhoLikesYou({ people }: { people: Candidate[] }) {
     ['Schools', tally(people.map((p) => shortSchool(p.school)))],
   ];
   return (
-    <Card title={`Who is interested in you · ${people.length}`} sub="Verified students interested in your openings, in numbers. Check it is the public you want.">
+    <Card title={`Who is interested in you · ${people.length}`} sub="Verified students interested in your openings, in numbers.">
       {people.length === 0 ? <p className="m-0 text-sm text-muted">No verified student has shown interest yet.</p> : groups.map(([label, rows]) => rows.length > 0 && (
         <div key={label} className="flex flex-col gap-1.5">
           <span className="text-[12px] font-semibold uppercase tracking-overline text-muted">{label}</span>
@@ -156,7 +156,7 @@ function ResponseTime({ interest, requests, cands }: { interest: { candidateId: 
   const median = delays.length ? delays[Math.floor(delays.length / 2)] : null;
   const fmt = (h: number) => (h < 24 ? `${Math.round(h)} h` : `${Math.round(h / 24)} days`);
   return (
-    <Card title="Your response time" sub="From a student’s interest to your interview request. The best profiles do not wait.">
+    <Card title="Your response time" sub="Time between a student’s interest and your interview request.">
       <div className="flex flex-wrap gap-6">
         <span className="flex flex-col"><span className="text-[13px] font-semibold text-muted">Median</span><span className="font-display text-[32px] leading-none">{median === null ? '—' : fmt(median)}</span></span>
         <span className="flex flex-col"><span className="text-[13px] font-semibold text-muted">Answered</span><span className="font-display text-[32px] leading-none">{delays.length}</span></span>

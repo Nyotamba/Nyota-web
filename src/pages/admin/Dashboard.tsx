@@ -117,7 +117,7 @@ function Body({ d }: { d: Dashboard }) {
             </thead>
             <tbody className="tabular-nums">
               {d.perCompany.length === 0 && (
-                <tr><td colSpan={5} className="px-5 py-8 text-center text-muted">No company yet. Invite one from the Verification tab.</td></tr>
+                <tr><td colSpan={5} className="px-5 py-8 text-center text-muted">No company yet. Add one from the Companies tab.</td></tr>
               )}
               {d.perCompany.map((c) => (
                 <tr key={c.name} className="border-b border-line-soft last:border-b-0">

@@ -4,25 +4,32 @@ import { useSession } from '../../App';
 import { startPreview } from '../../lib/preview';
 
 export function AdminShell({ children }: { children: ReactNode }) {
+  const isOwner = useSession()?.isOwner;
   const tabs = [
     { to: '/admin', label: 'Verification', end: true },
     { to: '/admin/candidates', label: 'Candidates' },
     { to: '/admin/sessions', label: 'Sessions' },
     { to: '/admin/companies', label: 'Companies' },
-    { to: '/admin/dashboard', label: 'Dashboard' },
+    { to: '/admin/dashboard', label: 'Dashboard', children: [
+      { to: '/admin/dashboard', label: 'Overview' },
+      { to: '/admin/dashboard?view=follow-up', label: 'Follow-up' },
+      { to: '/admin/dashboard?view=pool', label: 'Talent pool' },
+      { to: '/admin/dashboard?view=insights', label: 'Market insights' },
+    ] },
     { to: '/admin/admins', label: 'Admins' },
-    { to: '/admin/settings', label: 'Settings' },
+    { to: '/admin/settings', label: 'Settings', children: [
+      { to: '/admin/settings', label: 'Lists' },
+      ...(isOwner ? [{ to: '/admin/settings?view=site', label: 'Site settings' }] : []),
+    ] },
   ];
-  return (
-    <AppShell variant="light" badge={useSession()?.isOwner ? 'Owner' : 'Admin'} tabs={tabs}>
-      <div className="border-b border-line bg-offwhite">
-        <div className="mx-auto flex max-w-page flex-wrap items-center gap-2 px-4 py-2 text-sm md:px-10">
-          <span className="mr-1 text-muted">Preview with sample data:</span>
-          <button type="button" className="btn-small text-[13px]" onClick={() => startPreview('student')}>Student side</button>
-          <button type="button" className="btn-small text-[13px]" onClick={() => startPreview('company')}>Company side</button>
-        </div>
+  const preview = (
+    <div className="flex flex-col gap-1.5 border-b border-line-soft pb-3">
+      <span className="text-[12px] text-muted">Preview with sample data</span>
+      <div className="grid grid-cols-2 gap-1.5">
+        <button type="button" className="btn-small px-2 text-[13px]" onClick={() => startPreview('student')}>Student</button>
+        <button type="button" className="btn-small px-2 text-[13px]" onClick={() => startPreview('company')}>Company</button>
       </div>
-      {children}
-    </AppShell>
+    </div>
   );
+  return <AppShell variant="light" badge={isOwner ? 'Owner' : 'Admin'} tabs={tabs} extra={preview}>{children}</AppShell>;
 }

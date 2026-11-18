@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Logo } from '../components/Logo';
+import { PublicShell } from '../components/PublicShell';
 import { db } from '../lib/db';
 import { useSession } from '../App';
 
@@ -32,9 +32,8 @@ export default function SetPassword() {
   };
 
   return (
-    <div className="mx-auto flex min-h-full max-w-page flex-col">
-      <header className="flex h-[72px] items-center border-b border-line px-4 md:px-10"><Logo /></header>
-      <main className="flex flex-1 justify-center px-4 py-12 md:py-20">
+    <PublicShell>
+      <div className="flex flex-1 justify-center px-4 py-12 md:py-20">
         <div className="flex w-full max-w-[480px] flex-col gap-6">
           <h1 className="m-0 font-display text-[40px] tracking-display">Choose a new password</h1>
           {!session ? (
@@ -59,7 +58,7 @@ export default function SetPassword() {
             </form>
           )}
         </div>
-      </main>
-    </div>
+      </div>
+    </PublicShell>
   );
 }

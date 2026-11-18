@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { Logo } from '../components/Logo';
+import { PublicShell } from '../components/PublicShell';
 import { db, type OAuthProvider, type Role } from '../lib/db';
 import { useDbQuery } from '../lib/useDb';
 
@@ -69,9 +69,8 @@ export default function SignIn() {
   const tabs: [Mode, string][] = [['signin', 'I have an account'], ['create', 'Create my account']];
 
   return (
-    <div className="mx-auto flex min-h-full max-w-page flex-col">
-      <header className="flex h-[72px] items-center border-b border-line px-4 md:px-10"><Logo /></header>
-      <main className="flex flex-1 justify-center px-4 py-12 md:py-20">
+    <PublicShell>
+      <div className="flex flex-1 justify-center px-4 py-12 md:py-20">
         <div className="flex w-full max-w-[480px] flex-col gap-8">
           <div className="flex flex-col gap-3">
             <h1 className="m-0 font-display text-[40px] font-normal tracking-display">Sign in or create your account</h1>
@@ -154,7 +153,7 @@ export default function SignIn() {
             </section>
           )}
         </div>
-      </main>
-    </div>
+      </div>
+    </PublicShell>
   );
 }

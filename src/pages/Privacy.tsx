@@ -1,18 +1,17 @@
 import { Link } from 'react-router-dom';
 import type { ReactNode } from 'react';
-import { Logo } from '../components/Logo';
+import { PublicShell } from '../components/PublicShell';
 import { useSettings } from '../lib/useSettings';
 
 /** The full privacy notice. The homepage only carries one line and links here. */
 export default function Privacy() {
   const S = useSettings();
   return (
-    <div className="mx-auto flex min-h-full max-w-page flex-col">
-      <header className="flex h-[72px] items-center border-b border-line px-4 md:px-10"><Logo /></header>
-      <main className="mx-auto flex w-full max-w-[760px] flex-col gap-10 px-4 py-12 md:py-16">
+    <PublicShell>
+      <div className="mx-auto flex w-full max-w-[760px] flex-col gap-10 px-4 py-12 md:py-16">
         <div className="flex flex-col gap-3">
           <h1 className="m-0 font-display text-[44px] leading-[0.95] tracking-display md:text-[56px]">Privacy notice</h1>
-          <p className="m-0 text-[17px] leading-relaxed text-muted">What we collect for the {S.forum_name}, who sees it, and how you stay in control.</p>
+          <p className="m-0 text-[17px] leading-relaxed text-muted">What we collect for the {S.forum_name} and who can see it.</p>
         </div>
         <Block title="Visible only with your consent">
           Companies see your profile only after you opt in and your club has verified it. Withdrawing your consent hides your profile
@@ -42,8 +41,8 @@ export default function Privacy() {
           writing to <a href={`mailto:${S.club_email}`} className="font-semibold">{S.club_email}</a>.
         </Block>
         <Link to="/" className="self-start text-sm font-semibold">← Back to the homepage</Link>
-      </main>
-    </div>
+      </div>
+    </PublicShell>
   );
 }
 

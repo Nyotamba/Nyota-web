@@ -21,6 +21,7 @@ import { ProfileEditor } from './pages/student/Profile';
 import SetPassword from './pages/SetPassword';
 import PublicSessions from './pages/Sessions';
 import Privacy from './pages/Privacy';
+import { ForCompanies, ForStudents } from './pages/Audience';
 import RegisterCompany from './pages/RegisterCompany';
 import StudentSessions from './pages/student/Sessions';
 import StudentInterviews from './pages/student/Interviews';
@@ -65,6 +66,8 @@ export default function App() {
           <Route path="/sign-in" element={<SignIn />} />
           <Route path="/sessions" element={<PublicSessions />} />
           <Route path="/set-password" element={<SetPassword />} />
+          <Route path="/students" element={<ForStudents />} />
+          <Route path="/companies" element={<ForCompanies />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/register-company" element={<RegisterCompany />} />
 

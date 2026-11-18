@@ -13,7 +13,7 @@ export const CLUB_EMAIL = 'contact@nyota.mba';
 export const COMPANY_DEADLINE = 'the end of December';
 export const PROFILES_OPEN = 'mid-January';
 export const EDITION_2026: [string, string][] = [
-  ['249', 'MBA professionals'], ['12', 'business schools'], ['16', 'employers'], ['921', 'session registrations'],
+  ['250', 'MBA professionals'], ['12', 'business schools'], ['16', 'employers'], ['920', 'session registrations'],
 ];
 /**
  * Employers of the 2026 edition, shown on the homepage. Add one only once it has agreed to appear, with its official logo:
@@ -21,10 +21,17 @@ export const EDITION_2026: [string, string][] = [
  * AXIAN Group, CMA CGM, Sanofi, Mohinani Group, Big5 Search, Sucafina, Nepal Energies, Moneda Invest, JESA, 234 Finance.
  */
 export const PAST_EMPLOYERS: { name: string; logoUrl: string | null }[] = [];
-/** "IESE Business School and Esade Business School": the organising schools in a sentence. */
+/** Shown until the list loads; the real list is Settings > Lists > Schools > "Show on homepage". */
+export const ORGANISING_SCHOOLS = ['IESE Business School', 'Esade Business School', 'HEC Paris', 'INSEAD'];
+/** IESE always comes first, then alphabetical order. */
+export function orderSchools<T extends { name: string }>(list: T[]) {
+  const rank = (n: string) => (n.startsWith('IESE') ? 0 : 1);
+  return [...list].sort((a, b) => rank(a.name) - rank(b.name) || a.name.localeCompare(b.name));
+}
+/** "IESE, Esade, HEC Paris and INSEAD": the organising schools in a sentence. */
 export function schoolList(names: string[]) {
-  if (!names.length) return 'Europe’s leading business schools';
-  return names.length === 1 ? names[0] : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
+  const short = orderSchools((names.length ? names : ORGANISING_SCHOOLS).map((name) => ({ name }))).map((s) => s.name.replace(/ Business School$/, ''));
+  return short.length === 1 ? short[0] : `${short.slice(0, -1).join(', ')} and ${short[short.length - 1]}`;
 }
 export const CONSENT_VERSION = 'v1';
 export const CONSENT_TEXT = '[CONSENT TEXT v1 — to be pasted from the DPO-approved version.]';

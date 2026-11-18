@@ -13,7 +13,7 @@ export const DEFAULT_SETTINGS: SiteSettings = {
   consent_text: CONSENT_TEXT,
   hero_title: 'Where Europe’s MBA talent meets Africa’s employers.',
   hero_text:
-    'Two days of company sessions, open roles and interviews, run by the Africa and Black business clubs of {schools}. Free for students and alumni.',
+    'Nyota is an association of MBA students from business schools across Europe, including {schools}. Over two days, companies hiring for Africa present their work and meet candidates.',
 };
 
 /** Site texts and fair details edited by owners (Owner → Settings), with the built-in defaults as fallback. */

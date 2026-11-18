@@ -20,34 +20,14 @@ function TalentPoolPage() {
   );
 }
 
-/** Sub-tabs under one admin tab, kept in the URL (?view=…) so links and reloads land on the right one. */
-function SubTabs<T extends string>({ tabs, current }: { tabs: [T, string][]; current: T }) {
-  const [, setParams] = useSearchParams();
-  return (
-    <div className="border-b border-line bg-surface">
-      <nav aria-label="Sub-sections" className="mx-auto flex max-w-page gap-1 overflow-x-auto px-4 text-[15px] font-semibold md:px-10">
-        {tabs.map(([t, label], n) => (
-          <button key={t} type="button" aria-current={current === t ? 'page' : undefined}
-            onClick={() => setParams(n === 0 ? {} : { view: t }, { replace: true })}
-            className={`shrink-0 border-b-2 px-4 py-3 ${current === t ? 'border-orange text-ink' : 'border-transparent text-muted hover:text-ink'}`}>
-            {label}
-          </button>
-        ))}
-      </nav>
-    </div>
-  );
-}
-
-type DashView = 'overview' | 'follow-up' | 'pool' | 'insights';
-const DASH_TABS: [DashView, string][] = [['overview', 'Overview'], ['follow-up', 'Follow-up'], ['pool', 'Talent pool'], ['insights', 'Market insights']];
+const DASH_VIEWS = ['overview', 'follow-up', 'pool', 'insights'] as const;
 
 /** Admin → Dashboard: how the fair goes, who to nudge, who the students are, and who attracts whom. */
 export function AdminDashboardTabs() {
   const [params] = useSearchParams();
-  const view = (DASH_TABS.find(([t]) => t === params.get('view'))?.[0] ?? 'overview') as DashView;
+  const view = DASH_VIEWS.find((v) => v === params.get('view')) ?? 'overview';
   return (
     <AdminShell>
-      <SubTabs tabs={DASH_TABS} current={view} />
       {view === 'overview' && <AdminDashboard embedded />}
       {view === 'follow-up' && <FollowUp />}
       {view === 'pool' && <TalentPoolPage />}
@@ -63,7 +43,6 @@ export function AdminSettingsTabs() {
   const view = isOwner && params.get('view') === 'site' ? 'site' : 'lists';
   return (
     <AdminShell>
-      <SubTabs tabs={isOwner ? [['lists', 'Lists'], ['site', 'Site settings']] : [['lists', 'Lists']]} current={view} />
       {view === 'site' ? <OwnerSettings embedded /> : <AdminLists embedded />}
     </AdminShell>
   );

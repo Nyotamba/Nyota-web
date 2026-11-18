@@ -33,7 +33,7 @@ export function ReachAndOutcomes() {
       <section className="card flex flex-col gap-4 p-6 xl:col-span-8">
         <div className="flex flex-col gap-1">
           <h2 className="m-0 text-lg font-bold">From verified profile to job</h2>
-          <p className="m-0 text-sm text-muted">Each step as a share of the previous one: where candidates stop.</p>
+          <p className="m-0 text-sm text-muted">Each step as a share of the previous one.</p>
         </div>
         <ol className="m-0 flex list-none flex-col gap-2 p-0">
           {steps.map(([label, n], i) => (
@@ -79,7 +79,7 @@ export function DailyActivity({ signals }: { signals: InsightSignal[] }) {
       <div className="flex flex-wrap items-end gap-3">
         <div className="flex flex-1 flex-col gap-1">
           <h2 className="m-0 text-lg font-bold">Activity day by day</h2>
-          <p className="m-0 text-sm text-muted">Last 21 active days. Spot which day or session drives activity.</p>
+          <p className="m-0 text-sm text-muted">Number of actions per day, over the last 21 active days.</p>
         </div>
         <span className="flex items-center gap-3 text-[12px] text-muted">
           <span className="flex items-center gap-1.5"><span className="size-2.5 rounded-sm bg-ink" />Companies</span>
@@ -120,7 +120,7 @@ export function SessionAttendance() {
     <section className="card flex flex-col gap-4 p-6">
       <div className="flex flex-col gap-1">
         <h2 className="m-0 text-lg font-bold">Session attendance</h2>
-        <p className="m-0 text-sm text-muted">Registered against present, counted by the Nyota room. Which formats and time slots work.</p>
+        <p className="m-0 text-sm text-muted">Registered students and those counted present in the Nyota room.</p>
       </div>
       {past.length === 0 ? <p className="m-0 text-sm text-muted">No session has taken place yet.</p> : (
         <>
@@ -175,7 +175,7 @@ export function FollowUp() {
     <div className="mx-auto flex max-w-page flex-col gap-8 px-4 py-10 md:px-10">
       <div className="flex flex-col gap-1">
         <h1 className="m-0 font-display text-[34px] tracking-display md:text-[40px]">Follow-up</h1>
-        <div className="text-[15px] text-muted">Who to nudge now: companies that are not active, and verified profiles nobody has opened.</div>
+        <div className="text-[15px] text-muted">Companies that are not active, and verified profiles no company has opened.</div>
       </div>
       <section className="flex flex-col gap-3">
         <h2 className="m-0 text-lg font-bold">Companies · {rows.filter((r) => r.issue).length} to follow up</h2>
@@ -211,7 +211,7 @@ export function FollowUp() {
       <section className="flex flex-col gap-3">
         <div className="flex flex-col gap-1">
           <h2 className="m-0 text-lg font-bold">Verified profiles nobody opened · {unseen.length}</h2>
-          <p className="m-0 text-sm text-muted">Help them: a clearer story, another target role, or point a matching company to them.</p>
+          <p className="m-0 text-sm text-muted">These students may need a fuller profile or an introduction to a matching company.</p>
         </div>
         {unseen.length === 0 ? <p className="card m-0 p-6 text-[15px] text-muted">Every verified profile has been opened at least once.</p> : (
           <ul className="m-0 grid list-none gap-3 p-0 md:grid-cols-2">
