@@ -28,9 +28,9 @@ export function orderSchools<T extends { name: string }>(list: T[]) {
   const rank = (n: string) => (n.startsWith('IESE') ? 0 : 1);
   return [...list].sort((a, b) => rank(a.name) - rank(b.name) || a.name.localeCompare(b.name));
 }
-/** "IESE, Esade, HEC Paris and INSEAD": the organising schools in a sentence. */
+/** "IESE, Esade, HEC Paris and INSEAD": the organising schools in a sentence. Names that need "Business School" keep it. */
 export function schoolList(names: string[]) {
-  const short = orderSchools((names.length ? names : ORGANISING_SCHOOLS).map((name) => ({ name }))).map((s) => s.name.replace(/ Business School$/, ''));
+  const short = orderSchools((names.length ? names : ORGANISING_SCHOOLS).map((name) => ({ name }))).map((s) => s.name.replace(/^(IESE|Esade|IE|IMD) Business School$/, '$1'));
   return short.length === 1 ? short[0] : `${short.slice(0, -1).join(', ')} and ${short[short.length - 1]}`;
 }
 export const CONSENT_VERSION = 'v1';
