@@ -41,6 +41,9 @@ const c = (s: Seed): Candidate => ({
 export function createSeed(): DemoState {
   return {
     admins: ['admin@nyota.example'],
+    // The schools shown on the live site.
+    schoolLogos: Object.fromEntries(['IESE Business School', 'Esade Business School', 'HEC Paris', 'INSEAD', 'London Business School']
+      .map((name) => [name, { logoUrl: null, showOnSite: true }])),
     // Fair: 16–19 February 2027 (CET = UTC+1). Times below are UTC.
     sessions: [
       { id: 's1', companyId: null, title: 'Opening of the Nyota Africa Career Fair', kind: 'Panel', description: 'Welcome from the IESE Africa Business Club and how the fair works: sessions, shortlists and interviews.', startsAt: '2027-02-16T17:00:00Z', durationMin: 45, capacity: null, meetingUrl: 'https://example.com/demo-opening' },

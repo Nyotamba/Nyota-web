@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { Logo } from './Logo';
-import { db, isPreview } from '../lib/db';
+import { db, isPreview, isSampleData } from '../lib/db';
 import { exitPreview } from '../lib/preview';
 
 export interface Tab {
@@ -20,7 +20,7 @@ export function SideLayout({ ink = false, badge, tabs, footer, children }: {
   const { pathname, search } = useLocation();
   useEffect(() => setOpen(false), [pathname, search]);
   return (
-    <div className={`flex min-h-full flex-col lg:flex-row ${isPreview ? 'pt-7' : ''}`}>
+    <div className={`flex min-h-full flex-col lg:flex-row ${isSampleData ? 'pt-7' : ''}`}>
       <aside className={`z-30 flex shrink-0 flex-col border-b lg:sticky lg:top-0 lg:h-screen lg:w-[248px] lg:overflow-y-auto lg:border-b-0 lg:border-r ${ink ? 'on-ink border-ink bg-ink text-offwhite' : 'border-line bg-surface'}`}>
         <div className="flex h-[72px] shrink-0 items-center gap-3 px-4 lg:px-5">
           <Logo dark={ink} />

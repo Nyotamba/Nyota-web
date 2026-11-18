@@ -22,4 +22,6 @@ function pick(): NyotaDb {
 
 export const db: NyotaDb = pick();
 export const isPreview = previewRole() !== null;
+/** Sample data on screen (shared demo or admin preview): a banner says so on every page. */
+export const isSampleData = isPreview || db.mode === 'demo';
 export * from './types';

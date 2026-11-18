@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { AppShell } from '../../components/AppShell';
 import { useSession } from '../../App';
 import { startPreview } from '../../lib/preview';
+import { db } from '../../lib/db';
 
 export function AdminShell({ children }: { children: ReactNode }) {
   const isOwner = useSession()?.isOwner;
@@ -31,5 +32,5 @@ export function AdminShell({ children }: { children: ReactNode }) {
       </div>
     </div>
   );
-  return <AppShell variant="light" badge={isOwner ? 'Owner' : 'Admin'} tabs={tabs} extra={preview}>{children}</AppShell>;
+  return <AppShell variant="light" badge={isOwner ? 'Owner' : 'Admin'} tabs={tabs} extra={db.mode === 'demo' ? undefined : preview}>{children}</AppShell>;
 }

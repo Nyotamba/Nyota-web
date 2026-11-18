@@ -44,6 +44,7 @@ export function createDemoDb(space = ''): NyotaDb {
   for (const co of state.companies) if (co.about === undefined) Object.assign(co, seed.companies.find((x) => x.id === co.id) ?? {}, { name: co.name });
   state.openingInterests ??= seed.openingInterests;
   state.events ??= seed.events;
+  state.schoolLogos ??= seed.schoolLogos;
   state.outcomes ??= seed.outcomes;
   for (const co of state.companies) co.premium ??= seed.companies.find((x) => x.id === co.id)?.premium ?? false;
   for (const o of state.openings ?? []) o.skills ??= seed.openings?.find((x) => x.id === o.id)?.skills ?? [];

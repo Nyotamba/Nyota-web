@@ -39,6 +39,7 @@ export default function RegisterCompany() {
                 We review every company before it joins the fair. Once approved, you will receive an access code at{' '}
                 <strong className="text-ink">{f.email.trim()}</strong> to create your account.
               </p>
+              {db.mode === 'demo' && <p className="m-0 rounded-field bg-sand px-4 py-3 text-sm font-semibold text-ink">This is a demo: your registration was not sent.</p>}
               <Link to="/" className="btn-secondary text-[15px]">Back to the homepage</Link>
             </section>
           ) : (

@@ -107,7 +107,14 @@ export default function App() {
         </Routes>
         <ScrollToTop />
         <AfterSignIn session={session ?? null} />
-        {isPreview ? <PreviewBar /> : db.mode === 'demo' && <DemoBar />}
+        {isPreview ? <PreviewBar /> : db.mode === 'demo' && (
+          <>
+            <div className="fixed inset-x-0 top-0 z-50 bg-orange px-4 py-1 text-center text-[13px] font-bold text-ink">
+              DEMO · Sample data. Nothing you enter here is sent to anyone.
+            </div>
+            <DemoBar />
+          </>
+        )}
       </Router>
     </SessionContext.Provider>
   );
