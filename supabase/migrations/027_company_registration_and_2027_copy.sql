@@ -72,6 +72,7 @@ end $$;
 
 revoke execute on function register_company(text, text, text, text, text, text, text, text),
   approve_company_registration(uuid), reject_company_registration(uuid) from public;
+revoke execute on function approve_company_registration(uuid), reject_company_registration(uuid) from anon;
 grant execute on function register_company(text, text, text, text, text, text, text, text) to anon, authenticated;
 grant execute on function approve_company_registration(uuid), reject_company_registration(uuid) to authenticated;
 
