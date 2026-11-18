@@ -12,18 +12,16 @@ export function ForStudents() {
       actions={<>
         <Link to="/sign-in?as=student" className="btn-primary min-h-[56px] px-7 text-[17px]">Join as a student</Link>
         <Link to="/sign-in" className="btn-secondary min-h-[56px] px-6 text-[17px]">Sign in</Link>
-      </>}
-      note={<>Companies see your profile only if you agree to share it. You can withdraw at any time. <Link to="/privacy" className="font-semibold">Read the privacy notice</Link>.</>}>
+      </>}>
       <Items title="At the fair" items={[
         ['Company sessions', 'Companies present their work in Africa and the roles they are hiring for.'],
         ['Questions', 'You can put your questions to recruiters during the sessions.'],
         ['Jobs and internships', 'Companies post their full-time roles and internships. You can tell them which ones interest you.'],
-        ['Interviews', 'Companies request interviews with the candidates they shortlist. You choose a time from their slots.'],
       ]} />
       <Steps title="How to take part" steps={[
         ['Create your profile', 'Add your background, the roles you want, where you want to work and your CV.'],
         ['Get verified', 'Your club confirms that you are a student or alumnus of your school.'],
-        ['Join the sessions', 'Register for the sessions you want. If a company requests an interview, book a time.'],
+        ['Join the sessions', 'Register for the sessions you want.'],
       ]} />
     </Page>
   );
@@ -40,20 +38,19 @@ export function ForCompanies() {
       note={<>Register by {COMPANY_DEADLINE} to see candidate profiles from {PROFILES_OPEN}.</>}>
       <Items title="What you can do" items={[
         ['Search profiles', 'Filter verified candidates by function, sector, country, language and availability.'],
-        ['Shortlist with your team', 'Keep one shared shortlist and send interview requests.'],
-        ['Schedule interviews', 'Publish your slots. Candidates book a time and you both receive a calendar invite.'],
+        ['Shortlist with your team', 'Keep one shared shortlist of the candidates you want to meet.'],
         ['Present your company', 'Plan for two to three hours in total. Sessions run in the afternoon, for African and European time zones.'],
       ]} />
       <Steps title="How to take part" steps={[
         ['Register your company', `Complete the form by ${COMPANY_DEADLINE}.`],
         ['Receive your access code', 'We review each registration and email you a code to create your account.'],
-        ['Meet candidates', `Candidate profiles open from ${PROFILES_OPEN}. Interviews and sessions follow at the fair.`],
+        ['Meet candidates', `Candidate profiles open from ${PROFILES_OPEN}. Sessions follow at the fair.`],
       ]} />
     </Page>
   );
 }
 
-function Page({ title, intro, actions, note, children }: { title: string; intro: string; actions: ReactNode; note: ReactNode; children: ReactNode }) {
+function Page({ title, intro, actions, note, children }: { title: string; intro: string; actions: ReactNode; note?: ReactNode; children: ReactNode }) {
   return (
     <PublicShell>
       <div className="mx-auto flex max-w-page flex-col gap-16 px-4 py-12 md:px-10 md:py-16 xl:px-20">
@@ -61,7 +58,7 @@ function Page({ title, intro, actions, note, children }: { title: string; intro:
           <h1 className="m-0 font-display text-[56px] leading-[0.95] tracking-display md:text-[80px]">{title}</h1>
           <p className="m-0 max-w-[62ch] text-lg leading-[1.55] text-muted md:text-xl">{intro}</p>
           <div className="flex flex-wrap items-center gap-3.5">{actions}</div>
-          <p className="m-0 max-w-[70ch] text-sm leading-relaxed text-muted">{note}</p>
+          {note && <p className="m-0 max-w-[70ch] text-sm leading-relaxed text-muted">{note}</p>}
         </header>
         {children}
         <AboutNyota />

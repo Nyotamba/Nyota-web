@@ -10,7 +10,6 @@ const TABS: Tab[] = [
   { to: '/students', label: 'For students' },
   { to: '/companies', label: 'For companies' },
   { to: '/sessions', label: 'Programme' },
-  { to: '/privacy', label: 'Privacy notice' },
 ];
 const SPACE = { student: '/student/profile', company: '/company/page', admin: '/admin' } as const;
 

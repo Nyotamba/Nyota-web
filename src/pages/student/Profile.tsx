@@ -221,7 +221,7 @@ export function ProfileEditor({ id, admin = false }: { id: string; admin?: boole
 
           {!admin && <fieldset className="m-0 flex flex-col gap-4 rounded-[18px] border-2 border-ink bg-surface p-6 md:p-8">
             <legend className="px-2 text-xl font-bold">Consent</legend>
-            <p className="m-0 text-[15px] leading-relaxed text-muted">{S.consent_text}</p>
+            <p className="m-0 text-[15px] leading-relaxed text-muted">{S.consent_text} <Link to="/privacy" className="font-semibold">Read the privacy notice</Link>.</p>
             <label htmlFor="p-consent" className="flex cursor-pointer items-start gap-3 text-[15px] font-semibold leading-normal">
               <input id="p-consent" type="checkbox" className="m-0 size-[22px] shrink-0 accent-ink"
                 checked={Boolean(cand.consent)}
