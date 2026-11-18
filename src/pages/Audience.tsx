@@ -8,7 +8,7 @@ import { COMPANY_DEADLINE, EDITION_2026, ORGANISING_SCHOOLS, PAST_EMPLOYERS, PRO
 /** Page for students: what happens, how to join. */
 export function ForStudents() {
   return (
-    <Page title="For students" intro="The fair is free for MBA students and alumni of European business schools, whatever your nationality."
+    <Page title="For students" intro="Meet companies offering full-time jobs and internships in or linked to Africa. The fair is free for MBA students and alumni of European business schools, whatever your nationality."
       actions={<>
         <Link to="/sign-in?as=student" className="btn-primary min-h-[56px] px-7 text-[17px]">Join as a student</Link>
         <Link to="/sign-in" className="btn-secondary min-h-[56px] px-6 text-[17px]">Sign in</Link>
@@ -17,6 +17,7 @@ export function ForStudents() {
       <Items title="At the fair" items={[
         ['Company sessions', 'Companies present their work in Africa and the roles they are hiring for.'],
         ['Questions', 'You can put your questions to recruiters during the sessions.'],
+        ['Jobs and internships', 'Companies post their full-time roles and internships. You can tell them which ones interest you.'],
         ['Interviews', 'Companies request interviews with the candidates they shortlist. You choose a time from their slots.'],
       ]} />
       <Steps title="How to take part" steps={[
@@ -112,8 +113,8 @@ function AboutNyota() {
       <div className="flex flex-col gap-4">
         <H2>Run by Nyota</H2>
         <p className="m-0 max-w-[70ch] text-[17px] leading-[1.6] text-muted">
-          Nyota is an association of MBA students from business schools across Europe, including {schoolList(schools.map((s) => s.name))}.
-          The IESE Africa Business Club started the fair in 2026. Nyota means “star” in Swahili.
+          Nyota (“star” in Swahili) is an association of MBA students from business schools across Europe, including{' '}
+          {schoolList(schools.map((s) => s.name))}.
         </p>
         <LogoStrip list={schools} />
       </div>
